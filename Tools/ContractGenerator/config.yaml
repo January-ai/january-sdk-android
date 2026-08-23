@@ -1,0 +1,24 @@
+additionalProperties:
+  packageName: ai.january.partner.transport
+  groupId: ai.january
+  artifactId: partner-transport-compatibility
+  artifactVersion: 0.0.0
+  library: jvm-retrofit2
+  serializationLibrary: moshi
+  dateLibrary: java8
+  collectionType: list
+  enumPropertyNaming: UPPERCASE
+  nonPublicApi: true
+  useCoroutines: true
+  useResponseAsReturnType: true
+  useLoggingInterceptor: false
+  hideGenerationTimestamp: true
+  omitGradleWrapper: false
+  useSettingsGradle: true
+  sourceFolder: src/main/kotlin
+globalProperties:
+  apiDocs: false
+  apiTests: false
+  modelDocs: false
+  modelTests: false
+

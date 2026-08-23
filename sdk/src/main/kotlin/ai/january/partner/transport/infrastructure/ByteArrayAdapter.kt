@@ -1,0 +1,12 @@
+package ai.january.partner.transport.infrastructure
+
+import com.squareup.moshi.FromJson
+import com.squareup.moshi.ToJson
+
+internal class ByteArrayAdapter {
+    @ToJson
+    fun toJson(data: ByteArray): String = String(data)
+
+    @FromJson
+    fun fromJson(data: String): ByteArray = data.toByteArray()
+}
