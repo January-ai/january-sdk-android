@@ -47,7 +47,7 @@ public class FoodsResourceTest {
                 query = "banana",
                 category = FoodCategory.BRANDED,
                 limit = 10,
-                endUserId = PartnerUserId("oren-sdk-test"),
+                endUserId = PartnerUserId("test-user-123"),
             ),
         )
 
@@ -57,7 +57,7 @@ public class FoodsResourceTest {
 
         val request = server.takeRequest()
         assertEquals("Bearer fixture-api-key", request.getHeader("Authorization"))
-        assertEquals("oren-sdk-test", request.getHeader("x-end-user-id"))
+        assertEquals("test-user-123", request.getHeader("x-end-user-id"))
         assertTrue(request.getHeader("User-Agent")!!.startsWith("JanuaryPartnerSDK-Android/0.1.0"))
         assertEquals("/v1.2/foods/search", request.requestUrl!!.encodedPath)
         assertEquals("banana", request.requestUrl!!.queryParameter("query"))

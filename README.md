@@ -1,38 +1,89 @@
 # January Partner SDK for Android
 
-Private Kotlin/Android SDK for Partner API v1.2. The public API is coroutine-first:
-network operations are `suspend` functions and never block the calling thread.
+Build personalized nutrition experiences with the January Partner API. The
+Android SDK provides idiomatic Kotlin models and coroutine-first APIs.
+
+## Requirements
+
+- Android API 26 or later
+- Java 17 or later
+- Kotlin coroutines
+
+## Installation
+
+Ensure Maven Central is available:
 
 ```kotlin
-val client = JanuaryPartnerClient(developmentApiKey = apiKey)
-val results = client.foods.search(
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+Add the SDK to your app module:
+
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    implementation("ai.january:partner-sdk:0.1.0")
+}
+```
+
+## Quick start
+
+```kotlin
+import ai.january.partner.JanuaryPartnerClient
+import ai.january.partner.JanuaryException
+import ai.january.partner.PartnerUserId
+import ai.january.partner.foods.SearchFoodsRequest
+
+val january = JanuaryPartnerClient(developmentApiKey = apiKey)
+
+val results = january.foods.search(
     SearchFoodsRequest(
-        query = "banana",
-        endUserId = PartnerUserId("your-user-id"),
+        query = "greek yogurt",
+        endUserId = PartnerUserId(userId),
     ),
 )
+
+results.items.forEach { food ->
+    println(food.name)
+}
 ```
 
-The bearer key is temporarily supported only for private development testing.
-Never embed it in a distributed Android application. Token-provider authentication
-will replace this development initializer before public distribution.
+Network operations are exposed as `suspend` functions and should be called from
+a coroutine owned by your application, such as `viewModelScope`.
 
-Generated Retrofit transport code is internal. Consumers use the handwritten
-`JanuaryPartnerClient`, resource, request, response, identifier, and error types.
+## API resources
 
-## Verify
+- `foods` — food search, barcode lookup, natural-language search, and alternatives
+- `restaurants` — restaurant and menu search
+- `photoScanning` — meal-photo scanning and corrections
+- `foodLogs` — create, retrieve, update, and delete food logs
+- `glucose` — glucose prediction
 
-```sh
-./gradlew :sdk:testDebugUnitTest :sdk:assembleRelease
-./scripts/check-generated-transport.sh
+## Error handling
+
+SDK requests throw `JanuaryException`, which provides a category, message, and
+HTTP status when available.
+
+```kotlin
+try {
+    val results = january.foods.search(request)
+    // Use results
+} catch (error: JanuaryException) {
+    println("${error.category}: ${error.message}")
+}
 ```
 
-The public SDK covers all 13 v1.2 operations across Foods, Restaurants, Photo
-Scanning, Food Logs, and Glucose. The generated Retrofit transport remains an
-internal implementation detail.
-Opt-in live tests use `JANUARY_API_KEY` and `JANUARY_END_USER_ID` from the process
-environment and never print either value.
+## Authentication
 
-`Contract/sdk-contract.lock.json` pins release 1.2.0 and archive SHA-256
-`959ab95b4a95218fd4e3948ac0841748ec81534eb1c4476c8165920e94a3e361`.
-Regenerate the internal transport with `./scripts/generate-transport.sh`.
+Keep API credentials out of source control and application logs. Do not embed a
+long-lived API key in a distributed application.
+
+## Documentation
+
+See the [January Partner API documentation](https://docs.january.ai/nutrition/apis/v1.2/).

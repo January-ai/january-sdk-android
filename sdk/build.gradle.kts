@@ -2,6 +2,9 @@ plugins {
     id("com.android.library")
 }
 
+group = "ai.january"
+version = "0.1.0"
+
 android {
     namespace = "ai.january.partner"
     compileSdk = 36
