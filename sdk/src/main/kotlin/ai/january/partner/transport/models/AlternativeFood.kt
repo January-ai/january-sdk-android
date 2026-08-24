@@ -23,8 +23,8 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.AlternativeServing
 import ai.january.partner.transport.models.CompleteScanNutritionFacts
-import ai.january.partner.transport.models.NaturalLanguageServing
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -40,7 +40,7 @@ import com.squareup.moshi.JsonClass
  */
 
 
-internal data class NaturalLanguageFood (
+internal data class AlternativeFood (
 
     @Json(name = "name")
     val name: kotlin.String,
@@ -57,7 +57,7 @@ internal data class NaturalLanguageFood (
     val brandName: kotlin.String? = null,
 
     @Json(name = "servings")
-    val servings: kotlin.collections.List<NaturalLanguageServing>? = null
+    val servings: kotlin.collections.List<AlternativeServing>? = null
 
 ) {
 

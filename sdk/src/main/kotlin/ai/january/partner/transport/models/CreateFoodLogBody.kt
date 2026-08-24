@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param foods
- * @param timestampUtc UTC consumption time, ending in Z. Omitted = now.
+ * @param timestampUtc When the meal was eaten — any ISO-8601 offset; stored and returned in UTC. Omitted = now.
  * @param name
  */
 
@@ -42,9 +42,9 @@ internal data class CreateFoodLogBody (
     @Json(name = "foods")
     val foods: kotlin.collections.List<FoodLogInputFood>,
 
-    /* UTC consumption time, ending in Z. Omitted = now. */
+    /* When the meal was eaten — any ISO-8601 offset; stored and returned in UTC. Omitted = now. */
     @Json(name = "timestamp_utc")
-    val timestampUtc: kotlin.String? = null,
+    val timestampUtc: java.time.OffsetDateTime? = null,
 
     @Json(name = "name")
     val name: kotlin.String? = null

@@ -33,6 +33,7 @@ import com.squareup.moshi.JsonClass
  * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
  * @param unit
  * @param quantity
+ * @param selectedQuantity Quantity the parser selected from the text ('2 cups' → 2); text scans only. Advisory — corrections reads the serving's own quantity.
  */
 
 
@@ -46,7 +47,11 @@ internal data class DetectedServing (
     val unit: kotlin.String,
 
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal? = null
+    val quantity: java.math.BigDecimal? = null,
+
+    /* Quantity the parser selected from the text ('2 cups' → 2); text scans only. Advisory — corrections reads the serving's own quantity. */
+    @Json(name = "selected_quantity")
+    val selectedQuantity: java.math.BigDecimal? = null
 
 ) {
 

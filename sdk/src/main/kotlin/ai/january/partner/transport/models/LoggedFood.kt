@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.ConsumedServing
+import ai.january.partner.transport.models.FoodLogInputServing
 import ai.january.partner.transport.models.NutritionFacts
 import ai.january.partner.transport.models.ServingDetails
 
@@ -58,7 +58,7 @@ internal data class LoggedFood (
     val nutrients: NutritionFacts,
 
     @Json(name = "consumed_serving")
-    val consumedServing: ConsumedServing,
+    val consumedServing: FoodLogInputServing,
 
     @Json(name = "serving_details")
     val servingDetails: ServingDetails,

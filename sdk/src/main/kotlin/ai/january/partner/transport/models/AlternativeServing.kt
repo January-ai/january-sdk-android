@@ -33,11 +33,10 @@ import com.squareup.moshi.JsonClass
  * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
  * @param unit
  * @param quantity
- * @param selectedQuantity Quantity the parser selected from the text; omitted when the serving has no gram weight.
  */
 
 
-internal data class NaturalLanguageServing (
+internal data class AlternativeServing (
 
     /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
     @Json(name = "id")
@@ -47,11 +46,7 @@ internal data class NaturalLanguageServing (
     val unit: kotlin.String,
 
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal? = null,
-
-    /* Quantity the parser selected from the text; omitted when the serving has no gram weight. */
-    @Json(name = "selected_quantity")
-    val selectedQuantity: java.math.BigDecimal? = null
+    val quantity: java.math.BigDecimal? = null
 
 ) {
 

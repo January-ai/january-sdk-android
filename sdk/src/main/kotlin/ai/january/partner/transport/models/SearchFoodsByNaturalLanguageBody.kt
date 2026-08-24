@@ -23,8 +23,6 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.CompleteScanNutritionFacts
-import ai.january.partner.transport.models.NaturalLanguageFoodDetection
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -32,18 +30,15 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param detections
- * @param totalNutrients
+ * @param text Natural-language description of what was eaten; parsed into detected foods with quantities.
  */
 
 
-internal data class SearchFoodsByNaturalLanguageResponse (
+internal data class SearchFoodsByNaturalLanguageBody (
 
-    @Json(name = "detections")
-    val detections: kotlin.collections.List<NaturalLanguageFoodDetection>,
-
-    @Json(name = "total_nutrients")
-    val totalNutrients: CompleteScanNutritionFacts? = null
+    /* Natural-language description of what was eaten; parsed into detected foods with quantities. */
+    @Json(name = "text")
+    val text: kotlin.String
 
 ) {
 

@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.NaturalLanguageFood
+import ai.january.partner.transport.models.HeightUnit
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -31,14 +31,18 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param food
+ * @param `value`
+ * @param unit
  */
 
 
-internal data class NaturalLanguageFoodDetection (
+internal data class Height (
 
-    @Json(name = "food")
-    val food: NaturalLanguageFood
+    @Json(name = "value")
+    val `value`: java.math.BigDecimal,
+
+    @Json(name = "unit")
+    val unit: HeightUnit
 
 ) {
 

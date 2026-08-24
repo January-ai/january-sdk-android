@@ -28,64 +28,19 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
+ * Biological sex, as consumed by the prediction model.
  *
- *
- * Values: GLUTEN,LACTOSE,YEAST,TREE_NUTS,PEANUTS,DAIRY,EGGS,SULFITES,SOY,WHEAT,SHELLFISH,FISH,MUSHROOMS,SESAME,MSG,CAFFEINE,FODMAPS
+ * Values: MALE,FEMALE
  */
 
 @JsonClass(generateAdapter = false)
-internal enum class DietRestriction(val value: kotlin.String) {
+internal enum class Sex(val value: kotlin.String) {
 
-    @Json(name = "gluten")
-    GLUTEN("gluten"),
+    @Json(name = "male")
+    MALE("male"),
 
-    @Json(name = "lactose")
-    LACTOSE("lactose"),
-
-    @Json(name = "yeast")
-    YEAST("yeast"),
-
-    @Json(name = "tree_nuts")
-    TREE_NUTS("tree_nuts"),
-
-    @Json(name = "peanuts")
-    PEANUTS("peanuts"),
-
-    @Json(name = "dairy")
-    DAIRY("dairy"),
-
-    @Json(name = "eggs")
-    EGGS("eggs"),
-
-    @Json(name = "sulfites")
-    SULFITES("sulfites"),
-
-    @Json(name = "soy")
-    SOY("soy"),
-
-    @Json(name = "wheat")
-    WHEAT("wheat"),
-
-    @Json(name = "shellfish")
-    SHELLFISH("shellfish"),
-
-    @Json(name = "fish")
-    FISH("fish"),
-
-    @Json(name = "mushrooms")
-    MUSHROOMS("mushrooms"),
-
-    @Json(name = "sesame")
-    SESAME("sesame"),
-
-    @Json(name = "msg")
-    MSG("msg"),
-
-    @Json(name = "caffeine")
-    CAFFEINE("caffeine"),
-
-    @Json(name = "fodmaps")
-    FODMAPS("fodmaps");
+    @Json(name = "female")
+    FEMALE("female");
 
     /**
      * Override [toString()] to avoid using the enum variable name as the value, and instead use
@@ -100,12 +55,12 @@ internal enum class DietRestriction(val value: kotlin.String) {
         /**
          * Converts the provided [data] to a [String] on success, null otherwise.
          */
-        fun encode(data: kotlin.Any?): kotlin.String? = if (data is DietRestriction) "$data" else null
+        fun encode(data: kotlin.Any?): kotlin.String? = if (data is Sex) "$data" else null
 
         /**
-         * Returns a valid [DietRestriction] for [data], null otherwise.
+         * Returns a valid [Sex] for [data], null otherwise.
          */
-        fun decode(data: kotlin.Any?): DietRestriction? = data?.let {
+        fun decode(data: kotlin.Any?): Sex? = data?.let {
           val normalizedData = "$it".lowercase()
           entries.firstOrNull { value ->
             it == value || normalizedData == "$value".lowercase()

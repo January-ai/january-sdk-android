@@ -17,12 +17,13 @@ internal interface FoodLogsApi {
     /**
      * POST v1.2/food-logs
      * Log foods for a user
-     * Creates a food log from food + serving ids (from search, scan, or NLP results). The response echoes the log hydrated with full nutrition — save its &#x60;id&#x60; to update or delete the log. Not idempotent: verify with the list endpoint before retrying a timed-out create.
+     * Creates a food log from food + serving ids (from search, scan, or detection results). The response echoes the log hydrated with full nutrition — save its &#x60;id&#x60; to update or delete the log. Not idempotent: verify with the list endpoint before retrying a timed-out create.
      * Responses:
      *  - 200:
      *  - 400: A field is missing or malformed; the message names it.
      *  - 401: The Authorization header is missing or the API key is invalid.
-     *  - 429: A rate limit was exceeded; retry after a short delay.
+     *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param createFoodLogBody
@@ -40,7 +41,8 @@ internal interface FoodLogsApi {
      *  - 200:
      *  - 400: log_id is not a UUID.
      *  - 401: The Authorization header is missing or the API key is invalid.
-     *  - 429: A rate limit was exceeded; retry after a short delay.
+     *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param logId The log id returned when the log was created.
@@ -58,16 +60,17 @@ internal interface FoodLogsApi {
      *  - 200:
      *  - 400: A date is missing, malformed, or the range is inverted; the message names it.
      *  - 401: The Authorization header is missing or the API key is invalid.
-     *  - 429: A rate limit was exceeded; retry after a short delay.
+     *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param start First UTC day of the range (inclusive, from 00:00:00 UTC).
-     * @param end Last UTC day of the range (inclusive, through 23:59:59 UTC). Must be after start.
+     * @param end Last UTC day of the range (inclusive, through 23:59:59 UTC). May equal start for a single day.
      * @param xEndUserTimezone Optional: the end user&#39;s IANA timezone, forwarded upstream for local-day date handling. (optional)
      * @return [ListFoodLogsResponse]
      */
     @GET("v1.2/food-logs")
-    suspend fun listFoodLogs(@Header("x-end-user-id") xEndUserId: kotlin.String, @Query("start") start: kotlin.String, @Query("end") end: kotlin.String, @Header("x-end-user-timezone") xEndUserTimezone: kotlin.String? = null): Response<ListFoodLogsResponse>
+    suspend fun listFoodLogs(@Header("x-end-user-id") xEndUserId: kotlin.String, @Query("start") start: java.time.LocalDate, @Query("end") end: java.time.LocalDate, @Header("x-end-user-timezone") xEndUserTimezone: kotlin.String? = null): Response<ListFoodLogsResponse>
 
     /**
      * PATCH v1.2/food-logs/{log_id}
@@ -78,7 +81,8 @@ internal interface FoodLogsApi {
      *  - 400: A field is malformed; the message names it.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 404: No log with this id for this user.
-     *  - 429: A rate limit was exceeded; retry after a short delay.
+     *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param logId The log id returned when the log was created.

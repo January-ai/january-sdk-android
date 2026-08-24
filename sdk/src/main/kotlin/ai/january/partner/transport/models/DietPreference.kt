@@ -30,41 +30,38 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * Values: NONE,VEGETARIAN,VEGAN,KETO,PALEO,PESCATARIAN,LOW_CARBOHYDRATE,HIGH_PROTEIN,KOSHER,HALAL
+ * Values: VEGETARIAN,VEGAN,KETO,PALEO,PESCATARIAN,LOW_CARBOHYDRATE,HIGH_PROTEIN,KOSHER,HALAL
  */
 
 @JsonClass(generateAdapter = false)
 internal enum class DietPreference(val value: kotlin.String) {
 
-    @Json(name = "None")
-    NONE("None"),
+    @Json(name = "vegetarian")
+    VEGETARIAN("vegetarian"),
 
-    @Json(name = "Vegetarian")
-    VEGETARIAN("Vegetarian"),
+    @Json(name = "vegan")
+    VEGAN("vegan"),
 
-    @Json(name = "Vegan")
-    VEGAN("Vegan"),
+    @Json(name = "keto")
+    KETO("keto"),
 
-    @Json(name = "Keto")
-    KETO("Keto"),
+    @Json(name = "paleo")
+    PALEO("paleo"),
 
-    @Json(name = "Paleo")
-    PALEO("Paleo"),
+    @Json(name = "pescatarian")
+    PESCATARIAN("pescatarian"),
 
-    @Json(name = "Pescatarian")
-    PESCATARIAN("Pescatarian"),
+    @Json(name = "low_carbohydrate")
+    LOW_CARBOHYDRATE("low_carbohydrate"),
 
-    @Json(name = "Low carbohydrate")
-    LOW_CARBOHYDRATE("Low carbohydrate"),
+    @Json(name = "high_protein")
+    HIGH_PROTEIN("high_protein"),
 
-    @Json(name = "High protein")
-    HIGH_PROTEIN("High protein"),
+    @Json(name = "kosher")
+    KOSHER("kosher"),
 
-    @Json(name = "Kosher")
-    KOSHER("Kosher"),
-
-    @Json(name = "Halal")
-    HALAL("Halal");
+    @Json(name = "halal")
+    HALAL("halal");
 
     /**
      * Override [toString()] to avoid using the enum variable name as the value, and instead use

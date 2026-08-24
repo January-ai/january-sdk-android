@@ -33,7 +33,7 @@ import com.squareup.moshi.JsonClass
  *
  * @param id Stable food-log identifier; the upstream 400 response explicitly rejects non-UUID values.
  * @param foods
- * @param timestampUtc
+ * @param timestampUtc Returned UTC timestamp. Treat as an opaque string because deployed responses are not consistently RFC 3339 formatted.
  * @param name
  */
 
@@ -47,6 +47,7 @@ internal data class FoodLog (
     @Json(name = "foods")
     val foods: kotlin.collections.List<LoggedFood>,
 
+    /* Returned UTC timestamp. Treat as an opaque string because deployed responses are not consistently RFC 3339 formatted. */
     @Json(name = "timestamp_utc")
     val timestampUtc: kotlin.String,
 

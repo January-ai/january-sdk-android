@@ -32,20 +32,20 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param dietRestrictions Allergens/ingredients to avoid; send [\"None\"] if none apply. Case-sensitive.
- * @param dietPreferences Dietary patterns to match; send [\"None\"] if none apply. Case-sensitive.
+ * @param dietRestrictions Allergens/ingredients to avoid. Omit it (or send []) if none apply.
+ * @param dietPreferences Dietary patterns to match. Omit it (or send []) if none apply.
  */
 
 
 internal data class SuggestFoodAlternativesBody (
 
-    /* Allergens/ingredients to avoid; send [\"None\"] if none apply. Case-sensitive. */
+    /* Allergens/ingredients to avoid. Omit it (or send []) if none apply. */
     @Json(name = "diet_restrictions")
-    val dietRestrictions: kotlin.collections.List<DietRestriction>,
+    val dietRestrictions: kotlin.collections.List<DietRestriction>? = null,
 
-    /* Dietary patterns to match; send [\"None\"] if none apply. Case-sensitive. */
+    /* Dietary patterns to match. Omit it (or send []) if none apply. */
     @Json(name = "diet_preferences")
-    val dietPreferences: kotlin.collections.List<DietPreference>
+    val dietPreferences: kotlin.collections.List<DietPreference>? = null
 
 ) {
 

@@ -24,8 +24,10 @@
 package ai.january.partner.transport.models
 
 import ai.january.partner.transport.models.ActivityLevel
-import ai.january.partner.transport.models.Gender
+import ai.january.partner.transport.models.Height
 import ai.january.partner.transport.models.MedicalCondition
+import ai.january.partner.transport.models.Sex
+import ai.january.partner.transport.models.Weight
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -34,11 +36,11 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param age
- * @param gender
- * @param height Inches.
- * @param weight Pounds.
+ * @param sex
+ * @param height
+ * @param weight
  * @param activityLevel
- * @param healthConditions Case-sensitive. Type 1 diabetes is not supported by the prediction model.
+ * @param healthConditions Omit it (or send []) if none apply. Type 1 diabetes is not supported by the prediction model.
  */
 
 
@@ -47,21 +49,19 @@ internal data class GlucosePredictionProfile (
     @Json(name = "age")
     val age: java.math.BigDecimal,
 
-    @Json(name = "gender")
-    val gender: Gender,
+    @Json(name = "sex")
+    val sex: Sex,
 
-    /* Inches. */
     @Json(name = "height")
-    val height: java.math.BigDecimal,
+    val height: Height,
 
-    /* Pounds. */
     @Json(name = "weight")
-    val weight: java.math.BigDecimal,
+    val weight: Weight,
 
     @Json(name = "activity_level")
     val activityLevel: ActivityLevel? = null,
 
-    /* Case-sensitive. Type 1 diabetes is not supported by the prediction model. */
+    /* Omit it (or send []) if none apply. Type 1 diabetes is not supported by the prediction model. */
     @Json(name = "health_conditions")
     val healthConditions: kotlin.collections.List<MedicalCondition>? = null
 

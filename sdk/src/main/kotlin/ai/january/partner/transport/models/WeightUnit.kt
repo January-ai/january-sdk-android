@@ -30,17 +30,17 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * Values: MALE,FEMALE
+ * Values: LB,KG
  */
 
 @JsonClass(generateAdapter = false)
-internal enum class Gender(val value: kotlin.String) {
+internal enum class WeightUnit(val value: kotlin.String) {
 
-    @Json(name = "male")
-    MALE("male"),
+    @Json(name = "lb")
+    LB("lb"),
 
-    @Json(name = "female")
-    FEMALE("female");
+    @Json(name = "kg")
+    KG("kg");
 
     /**
      * Override [toString()] to avoid using the enum variable name as the value, and instead use
@@ -55,12 +55,12 @@ internal enum class Gender(val value: kotlin.String) {
         /**
          * Converts the provided [data] to a [String] on success, null otherwise.
          */
-        fun encode(data: kotlin.Any?): kotlin.String? = if (data is Gender) "$data" else null
+        fun encode(data: kotlin.Any?): kotlin.String? = if (data is WeightUnit) "$data" else null
 
         /**
-         * Returns a valid [Gender] for [data], null otherwise.
+         * Returns a valid [WeightUnit] for [data], null otherwise.
          */
-        fun decode(data: kotlin.Any?): Gender? = data?.let {
+        fun decode(data: kotlin.Any?): WeightUnit? = data?.let {
           val normalizedData = "$it".lowercase()
           entries.firstOrNull { value ->
             it == value || normalizedData == "$value".lowercase()

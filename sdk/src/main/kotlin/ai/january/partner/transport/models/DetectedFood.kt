@@ -34,9 +34,9 @@ import com.squareup.moshi.JsonClass
  *
  * @param name
  * @param nutrients
+ * @param servings Never empty: every detection producer guarantees at least one serving.
  * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
  * @param brandName Empty for generic (non-branded) foods.
- * @param servings
  */
 
 
@@ -48,16 +48,17 @@ internal data class DetectedFood (
     @Json(name = "nutrients")
     val nutrients: CompleteScanNutritionFacts,
 
+    /* Never empty: every detection producer guarantees at least one serving. */
+    @Json(name = "servings")
+    val servings: kotlin.collections.List<DetectedServing>,
+
     /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
     @Json(name = "id")
     val id: kotlin.Long? = null,
 
     /* Empty for generic (non-branded) foods. */
     @Json(name = "brand_name")
-    val brandName: kotlin.String? = null,
-
-    @Json(name = "servings")
-    val servings: kotlin.collections.List<DetectedServing>? = null
+    val brandName: kotlin.String? = null
 
 ) {
 
