@@ -18,6 +18,7 @@ import ai.january.partner.photos.CorrectPhotoScanRequest
 import ai.january.partner.photos.FoodDetection
 import ai.january.partner.photos.ScanFoodPhotoRequest
 import ai.january.partner.foods.DetectedFood
+import ai.january.partner.foods.DetectedServing
 import ai.january.partner.models.CompleteScanNutritionFacts
 import ai.january.partner.restaurants.SearchRestaurantsRequest
 import java.time.OffsetDateTime
@@ -51,7 +52,7 @@ public class PublicSurfaceTest {
             envelope, envelope, """{"detections":[]}""", """{"alternatives":[]}""",
             envelope, envelope, photo, photo, foodLog, """{"total_count":0,"items":[]}""",
             foodLog, """{"status":"deleted"}""",
-            """{"cgp":[[0,100]],"scoring":"low_impact","cgp_min":100,"cgp_max":100}""",
+            """{"prediction":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
         )
         responses.forEach { body ->
             server.enqueue(MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(body))
@@ -64,7 +65,14 @@ public class PublicSurfaceTest {
         val userId = PartnerUserId("fixture-user")
         val user = FoodLogUserContext(userId, "America/New_York")
         val food = FoodSelection(1, ServingSelection(2, 1.0))
-        val detection = FoodDetection(DetectedFood(1, "Banana", nutrients = CompleteScanNutritionFacts()))
+        val detection = FoodDetection(
+            DetectedFood(
+                1,
+                "Banana",
+                nutrients = CompleteScanNutritionFacts(),
+                servings = listOf(DetectedServing(2, 1.0, "serving")),
+            ),
+        )
 
         client.foods.search(SearchFoodsRequest("banana", endUserId = userId))
         client.foods.lookupBarcode(LookupFoodByBarcodeRequest("049000006346", userId))
@@ -88,11 +96,11 @@ public class PublicSurfaceTest {
         val paths = List(13) { server.takeRequest().requestUrl!!.encodedPath }
         assertEquals(
             listOf(
-                "/v1.2/foods/search", "/v1.2/foods/barcode/049000006346", "/v1.2/foods/search/nlp",
-                "/v1.2/foods/1/alternatives", "/v1.2/restaurants/search", "/v1.2/restaurants/menu/search",
-                "/v1.2/meal-scan", "/v1.2/meal-scan/fix-ai", "/v1.2/food-logs", "/v1.2/food-logs",
+                "/v1.2/foods", "/v1.2/foods/barcode/049000006346", "/v1.2/food-scans/text",
+                "/v1.2/foods/1/alternatives", "/v1.2/restaurants", "/v1.2/restaurants/menu-items",
+                "/v1.2/food-scans/photo", "/v1.2/food-scans/corrections", "/v1.2/food-logs", "/v1.2/food-logs",
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001",
-                "/v1.2/food-logs/00000000-0000-0000-0000-000000000001", "/v1.2/glucose-predict",
+                "/v1.2/food-logs/00000000-0000-0000-0000-000000000001", "/v1.2/glucose/predictions",
             ),
             paths,
         )
