@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "JanuaryPartnerSDK"
 include(":sdk")
+include(":demo")

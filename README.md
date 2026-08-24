@@ -87,3 +87,24 @@ long-lived API key in a distributed application.
 ## Documentation
 
 See the [January Partner API documentation](https://docs.january.ai/nutrition/apis/v1.2/).
+
+## Demo app
+
+The repository includes a Jetpack Compose demo for food and restaurant search,
+meal-photo scanning, food logs, and glucose prediction.
+
+1. Add your development key to the untracked `local.properties` file:
+
+   ```properties
+   january.apiKey=YOUR_API_KEY
+   ```
+
+2. Open the repository in Android Studio and run the `demo` configuration, or
+   install it from the command line:
+
+   ```bash
+   ./gradlew :demo:installDebug
+   ```
+
+The demo uses Material 3 navigation and controls, Android's system photo picker,
+and runtime location permission only when nearby restaurant search requests it.
