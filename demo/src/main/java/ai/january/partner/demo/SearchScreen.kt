@@ -8,22 +8,30 @@ import android.location.LocationManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.FilterList
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Restaurant
@@ -36,17 +44,22 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -56,18 +69,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import ai.january.partner.foods.FoodCategory
+import ai.january.partner.foods.DietPreference
+import ai.january.partner.foods.DietRestriction
 import ai.january.partner.foods.FoodSearchItem
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
+import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
+import ai.january.partner.foods.SuggestFoodAlternativesRequest
 import ai.january.partner.glucose.GlucosePrediction
 import ai.january.partner.glucose.GlucosePredictionProfile
 import ai.january.partner.glucose.Height
@@ -81,9 +103,13 @@ import ai.january.partner.models.ServingSelection
 import ai.january.partner.restaurants.Restaurant
 import ai.january.partner.restaurants.RestaurantMenuItem
 import ai.january.partner.restaurants.SearchRestaurantsRequest
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.launch
+import ai.january.partner.JanuaryPartnerClient
+import ai.january.partner.PartnerUserId
+import coil3.compose.AsyncImage
 
 private enum class SearchScope { FOODS, RESTAURANTS }
 private enum class FoodMode { NAME, DESCRIPTION, BARCODE }
@@ -106,17 +132,22 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     val client = state.client
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     var scope by remember { mutableStateOf(SearchScope.FOODS) }
     var foodMode by remember { mutableStateOf(FoodMode.NAME) }
     var restaurantMode by remember { mutableStateOf(RestaurantMode.RESTAURANTS) }
     var query by remember { mutableStateOf("") }
     var category by remember { mutableStateOf<FoodCategory?>(null) }
     var foodResults by remember { mutableStateOf<List<FoodSearchItem>>(emptyList()) }
-    var naturalResults by remember { mutableStateOf<List<String>>(emptyList()) }
+    var foodResultLimit by remember { mutableStateOf(10) }
+    var foodLimitMenuOpen by remember { mutableStateOf(false) }
+    var naturalResult by remember { mutableStateOf<SearchFoodsByNaturalLanguageResponse?>(null) }
     var restaurants by remember { mutableStateOf<List<Restaurant>>(emptyList()) }
     var menuItems by remember { mutableStateOf<List<RestaurantMenuItem>>(emptyList()) }
     var selectedFood by remember { mutableStateOf<FoodSearchItem?>(null) }
     var selectedRestaurant by remember { mutableStateOf<Restaurant?>(null) }
+    var selectedMenuItem by remember { mutableStateOf<RestaurantMenuItem?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var latitude by remember { mutableDoubleStateOf(37.7749) }
@@ -125,9 +156,12 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var isUsingCurrentLocation by remember { mutableStateOf(false) }
     var cityMenuExpanded by remember { mutableStateOf(false) }
     var locationLabel by remember { mutableStateOf("Preset city · ${searchCities.first().name}") }
+    var radius by remember { mutableDoubleStateOf(8000.0) }
+    var resultLimit by remember { mutableStateOf(10) }
+    var showFilters by remember { mutableStateOf(false) }
 
     fun clearResults() {
-        foodResults = emptyList(); naturalResults = emptyList(); restaurants = emptyList(); menuItems = emptyList(); error = null
+        foodResults = emptyList(); naturalResult = null; restaurants = emptyList(); menuItems = emptyList(); error = null
     }
 
     fun updateLocation() {
@@ -161,6 +195,8 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     fun submit(forcedRestaurantName: String? = null) {
         val value = (forcedRestaurantName ?: query).trim()
         if (value.isEmpty() || client == null) return
+        focusManager.clearFocus(force = true)
+        keyboardController?.hide()
         loading = true
         error = null
         coroutineScope.launch {
@@ -168,26 +204,28 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 when (scope) {
                     SearchScope.FOODS -> when (foodMode) {
                         FoodMode.NAME -> foodResults = client.foods.search(
-                            SearchFoodsRequest(value, category, 10, state.partnerUserId),
+                            SearchFoodsRequest(value, category, foodResultLimit, state.partnerUserId),
                         ).items
-                        FoodMode.DESCRIPTION -> naturalResults = client.foods.searchNaturalLanguage(
+                        FoodMode.DESCRIPTION -> naturalResult = client.foods.searchNaturalLanguage(
                             SearchFoodsByNaturalLanguageRequest(value, state.partnerUserId),
-                        ).detections.map { it.food.name }
+                        )
                         FoodMode.BARCODE -> foodResults = client.foods.lookupBarcode(
                             LookupFoodByBarcodeRequest(value, state.partnerUserId),
                         ).items
                     }
                     SearchScope.RESTAURANTS -> when (restaurantMode) {
                         RestaurantMode.RESTAURANTS -> restaurants = client.restaurants.search(
-                            SearchRestaurantsRequest(value, latitude, longitude, endUserId = state.partnerUserId),
+                            SearchRestaurantsRequest(value, latitude, longitude, radius, resultLimit, state.partnerUserId),
                         ).items
                         RestaurantMode.MENU_ITEMS -> menuItems = client.restaurants.searchMenuItems(
-                            SearchRestaurantsRequest(value, latitude, longitude, endUserId = state.partnerUserId),
+                            SearchRestaurantsRequest(value, latitude, longitude, radius, resultLimit, state.partnerUserId),
                         ).items
                     }
                 }
             }.onFailure { error = it.message ?: "The request failed." }
             loading = false
+            focusManager.clearFocus(force = true)
+            keyboardController?.hide()
         }
     }
 
@@ -196,21 +234,59 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
         return
     }
 
+    selectedRestaurant?.let { restaurant ->
+        RestaurantDetailScreen(
+            client = client,
+            restaurant = restaurant,
+            latitude = latitude,
+            longitude = longitude,
+            radius = radius,
+            resultLimit = resultLimit,
+            menuQuery = query,
+            endUserId = state.partnerUserId,
+            onBack = { selectedRestaurant = null },
+            modifier = modifier,
+        )
+        return
+    }
+
+    selectedMenuItem?.let { item ->
+        MenuItemDetailScreen(item, { selectedMenuItem = null }, modifier)
+        return
+    }
+
     Column(modifier.fillMaxSize()) {
-        DemoTopBar("Search", settingsAction)
         DemoScreen {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
+                item { Text("Search", style = MaterialTheme.typography.displaySmall) }
                 item {
                     OutlinedTextField(
                         value = query,
                         onValueChange = { query = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text(if (scope == SearchScope.FOODS) "Food name" else "Restaurant or dish") },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        placeholder = {
+                            Text(
+                                if (scope == SearchScope.RESTAURANTS) {
+                                    if (restaurantMode == RestaurantMode.RESTAURANTS) "Restaurant name" else "Dish or restaurant"
+                                } else when (foodMode) {
+                                    FoodMode.NAME -> "Food name"
+                                    FoodMode.DESCRIPTION -> "Describe what was eaten"
+                                    FoodMode.BARCODE -> "6–14 digit barcode"
+                                },
+                            )
+                        },
                         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                         singleLine = true,
+                        shape = RoundedCornerShape(18.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = JanuaryColors.Control,
+                            unfocusedContainerColor = JanuaryColors.Control,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                        ),
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { submit() }),
                     )
@@ -234,17 +310,60 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     }
                     if (foodMode == FoodMode.NAME) {
                         item {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                listOf(
-                                    "All" to null,
-                                    "General" to FoodCategory.GENERAL,
-                                    "Branded" to FoodCategory.BRANDED,
-                                    "Recipe" to FoodCategory.RECIPE,
-                                ).forEach { (label, value) ->
-                                    FilterChip(selected = category == value, onClick = { category = value }, label = { Text(label) })
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    listOf(
+                                        "All" to null,
+                                        "General" to FoodCategory.GENERAL,
+                                        "Branded" to FoodCategory.BRANDED,
+                                    ).forEach { (label, value) ->
+                                        FilterChip(
+                                            selected = category == value,
+                                            onClick = { category = value },
+                                            modifier = Modifier.heightIn(min = 44.dp),
+                                            label = { Text(label, style = MaterialTheme.typography.labelLarge) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                containerColor = MaterialTheme.colorScheme.surface,
+                                                labelColor = JanuaryColors.Body,
+                                                selectedContainerColor = JanuaryColors.Ink,
+                                                selectedLabelColor = JanuaryColors.Paper,
+                                            ),
+                                        )
+                                    }
+                                }
+                                Row {
+                                    FilterChip(
+                                        selected = category == FoodCategory.RECIPE,
+                                        onClick = { category = FoodCategory.RECIPE },
+                                        modifier = Modifier.heightIn(min = 44.dp),
+                                        label = { Text("Recipe", style = MaterialTheme.typography.labelLarge) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            containerColor = MaterialTheme.colorScheme.surface,
+                                            labelColor = JanuaryColors.Body,
+                                            selectedContainerColor = JanuaryColors.Ink,
+                                            selectedLabelColor = JanuaryColors.Paper,
+                                        ),
+                                    )
                                 }
                             }
                         }
+                    } else if (foodMode == FoodMode.BARCODE) {
+                        item {
+                            DemoOutlinedButton(
+                                text = "Scan barcode",
+                                onClick = {
+                                    GmsBarcodeScanning.getClient(context).startScan()
+                                        .addOnSuccessListener { barcode ->
+                                            barcode.rawValue?.let { value -> query = value; submit(value) }
+                                        }
+                                        .addOnFailureListener { error = it.message ?: "Barcode scanning is unavailable." }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                icon = { Icon(Icons.Outlined.QrCodeScanner, contentDescription = null) },
+                            )
+                        }
+                    } else {
+                        item { Text("Try “a bowl of oatmeal with honey and a banana.”", color = JanuaryColors.Muted) }
                     }
                 } else {
                     item {
@@ -257,51 +376,13 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     }
                     item {
                         DemoCard {
-                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Text("Search location", fontWeight = FontWeight.SemiBold)
-                                ExposedDropdownMenuBox(
-                                    expanded = cityMenuExpanded,
-                                    onExpandedChange = { cityMenuExpanded = it },
-                                ) {
-                                    OutlinedTextField(
-                                        value = if (isUsingCurrentLocation) "Current location" else selectedCity.name,
-                                        onValueChange = {},
-                                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                                        readOnly = true,
-                                        label = { Text("U.S. city") },
-                                        leadingIcon = { Icon(Icons.Outlined.LocationOn, contentDescription = null) },
-                                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = cityMenuExpanded) },
-                                    )
-                                    ExposedDropdownMenu(
-                                        expanded = cityMenuExpanded,
-                                        onDismissRequest = { cityMenuExpanded = false },
-                                    ) {
-                                        searchCities.forEach { city ->
-                                            DropdownMenuItem(
-                                                text = { Text(city.name) },
-                                                onClick = {
-                                                    selectedCity = city
-                                                    latitude = city.latitude
-                                                    longitude = city.longitude
-                                                    isUsingCurrentLocation = false
-                                                    locationLabel = "Preset city · ${city.name}"
-                                                    cityMenuExpanded = false
-                                                },
-                                            )
-                                        }
-                                    }
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("Search location", fontWeight = FontWeight.SemiBold)
+                                    Text(if (isUsingCurrentLocation) "Current location" else selectedCity.name, color = JanuaryColors.Muted)
+                                    Text("${"%.1f".format(radius / 1609.344)} mi · $resultLimit results", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
                                 }
-                                Text(
-                                    "%.4f, %.4f".format(latitude, longitude),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontFamily = FontFamily.Monospace,
-                                )
-                                Button(onClick = ::requestLocation, modifier = Modifier.fillMaxWidth()) {
-                                    Icon(Icons.Outlined.LocationOn, contentDescription = null)
-                                    Text(" Use my current location")
-                                }
-                                Text(locationLabel, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                IconButton(onClick = { showFilters = true }) { Icon(Icons.Outlined.FilterList, "Search filters") }
                             }
                         }
                     }
@@ -309,28 +390,73 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 if (query.isBlank()) {
                     item {
                         EmptySearchCard(
-                            title = if (scope == SearchScope.FOODS) "Find a food" else "Search nearby",
-                            message = if (scope == SearchScope.FOODS) "Search January's database, then choose a serving and quantity." else "Find restaurants and menu items near a location.",
+                            title = if (scope == SearchScope.RESTAURANTS) "Search nearby" else when (foodMode) {
+                                FoodMode.NAME -> "Find a food"
+                                FoodMode.DESCRIPTION -> "Describe a meal"
+                                FoodMode.BARCODE -> "Enter or scan a barcode"
+                            },
+                            message = if (scope == SearchScope.RESTAURANTS) "Find restaurants or dishes around a location." else if (foodMode == FoodMode.DESCRIPTION) {
+                                "January will identify foods, servings, and nutrition from a sentence."
+                            } else "Search January's database, then choose a serving and quantity.",
                         )
                     }
                 }
                 item {
-                    Button(onClick = { submit() }, modifier = Modifier.fillMaxWidth(), enabled = query.isNotBlank() && client != null && !loading) {
-                        if (loading) CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
-                        else Text(if (scope == SearchScope.FOODS) "Search foods" else "Search nearby")
-                    }
+                    DemoPrimaryButton(
+                        text = if (scope == SearchScope.RESTAURANTS) "Search nearby" else when (foodMode) {
+                            FoodMode.NAME -> "Search foods"
+                            FoodMode.DESCRIPTION -> "Parse meal"
+                            FoodMode.BARCODE -> "Look up barcode"
+                        },
+                        onClick = { submit() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = client != null,
+                        loading = loading,
+                    )
                 }
                 if (client == null) item { ApiKeyRequiredCard() }
                 error?.let { message -> item { ErrorCard(message) { submit() } } }
                 if (foodResults.isNotEmpty()) {
-                    item { SectionLabel("Results · January food database") }
-                    items(foodResults, key = { it.id.value }) { food ->
-                        FoodResultCard(food, onClick = { selectedFood = food })
+                    item {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            SectionLabel("Results · January food database", Modifier.weight(1f))
+                            Box {
+                                TextButton(onClick = { foodLimitMenuOpen = true }) { Text("${foodResults.size}", fontFamily = FontFamily.Monospace) }
+                                androidx.compose.material3.DropdownMenu(foodLimitMenuOpen, { foodLimitMenuOpen = false }) {
+                                    listOf(10, 20, 40).forEach { limit ->
+                                        DropdownMenuItem({ Text("$limit results") }, { foodResultLimit = limit; foodLimitMenuOpen = false })
+                                    }
+                                }
+                            }
+                        }
+                        DemoCard(contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
+                            foodResults.forEachIndexed { index, food ->
+                                FoodResultCard(food, onClick = { selectedFood = food })
+                                if (index < foodResults.lastIndex) HorizontalDivider(color = JanuaryColors.Divider)
+                            }
+                        }
                     }
                 }
-                if (naturalResults.isNotEmpty()) {
-                    item { SectionLabel("Foods detected") }
-                    items(naturalResults) { name -> SimpleResultCard(name, "Parsed from meal description") }
+                naturalResult?.let { natural ->
+                    natural.totalNutrients?.let { nutrients ->
+                        item {
+                            SectionLabel("Meal summary")
+                            DemoCard { ScanStyleMacroStrip(nutrients.calories?.value, nutrients.protein?.value, nutrients.carbohydrates?.value, nutrients.totalFat?.value) }
+                        }
+                    }
+                    if (natural.detections.isNotEmpty()) item { SectionLabel("Foods detected") }
+                    items(natural.detections) { detection ->
+                        DemoCard {
+                            Text(detection.food.name, style = MaterialTheme.typography.titleMedium)
+                            detection.food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
+                            ScanStyleMacroStrip(
+                                detection.food.nutrients.calories?.value,
+                                detection.food.nutrients.protein?.value,
+                                detection.food.nutrients.carbohydrates?.value,
+                                detection.food.nutrients.totalFat?.value,
+                            )
+                        }
+                    }
                 }
                 if (restaurants.isNotEmpty()) {
                     item { SectionLabel("Nearby restaurants") }
@@ -341,7 +467,15 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 if (menuItems.isNotEmpty()) {
                     item { SectionLabel("Nearby menu items") }
                     items(menuItems, key = { it.id }) { item ->
-                        SimpleResultCard(item.name, listOfNotNull(item.restaurantName, item.calories?.let { "${it.toInt()} cal" }).joinToString(" · "))
+                        MenuItemResultCard(item) { selectedMenuItem = item }
+                    }
+                }
+                if (!loading && error == null && query.isNotBlank() && foodResults.isEmpty() && naturalResult == null && restaurants.isEmpty() && menuItems.isEmpty()) {
+                    item {
+                        EmptySearchCard(
+                            if (scope == SearchScope.FOODS) "No foods found" else "No nearby matches",
+                            if (scope == SearchScope.FOODS) "Try a different search." else "Try another name, location, or radius.",
+                        )
                     }
                 }
                 item { Spacer(Modifier.height(20.dp)) }
@@ -349,17 +483,20 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
         }
     }
 
-    selectedRestaurant?.let { restaurant ->
-        RestaurantSheet(
-            restaurant = restaurant,
-            onDismiss = { selectedRestaurant = null },
-            onMenu = {
-                selectedRestaurant = null
-                scope = SearchScope.RESTAURANTS
-                restaurantMode = RestaurantMode.MENU_ITEMS
-                query = restaurant.name
-                submit(restaurant.name)
+    if (showFilters) {
+        RestaurantFiltersSheet(
+            selectedCity = selectedCity,
+            onCity = { city ->
+                selectedCity = city; latitude = city.latitude; longitude = city.longitude
+                isUsingCurrentLocation = false; locationLabel = "Preset city · ${city.name}"
             },
+            radius = radius,
+            onRadius = { radius = it },
+            limit = resultLimit,
+            onLimit = { resultLimit = it },
+            locationLabel = locationLabel,
+            onCurrentLocation = ::requestLocation,
+            onDismiss = { showFilters = false },
         )
     }
 }
@@ -372,8 +509,18 @@ private fun <T> ChoiceRow(options: List<T>, selected: T, label: (T) -> String, o
             SegmentedButton(
                 selected = option == selected,
                 onClick = { onSelect(option) },
+                modifier = Modifier.heightIn(min = 50.dp),
                 shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                label = { Text(label(option), maxLines = 1) },
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = JanuaryColors.Surface,
+                    activeContentColor = JanuaryColors.Ink,
+                    activeBorderColor = JanuaryColors.ControlStrong,
+                    inactiveContainerColor = JanuaryColors.ControlStrong,
+                    inactiveContentColor = JanuaryColors.Muted,
+                    inactiveBorderColor = JanuaryColors.Border,
+                ),
+                icon = {},
+                label = { Text(label(option), maxLines = 1, style = MaterialTheme.typography.labelLarge) },
             )
         }
     }
@@ -396,18 +543,23 @@ private fun EmptySearchCard(title: String, message: String) {
 
 @Composable
 private fun FoodResultCard(food: FoodSearchItem, onClick: () -> Unit) {
-    DemoCard(modifier = Modifier.clickable(onClick = onClick)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-            Column(Modifier.weight(1f)) {
-                Text(food.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    listOfNotNull(food.brandName, food.calories?.let { "${it.toInt()} cal" }, food.servings.firstOrNull()?.unit).joinToString(" · "),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Icon(Icons.Outlined.ChevronRight, contentDescription = null)
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(Modifier.size(58.dp).clip(RoundedCornerShape(14.dp)).background(JanuaryColors.Control), contentAlignment = Alignment.Center) {
+            if (food.photoUrl != null) AsyncImage(food.photoUrl, food.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            else Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = JanuaryColors.Green)
         }
+        Column(Modifier.weight(1f)) {
+            Text(food.name, style = MaterialTheme.typography.titleMedium)
+            Text(
+                listOfNotNull(food.brandName, food.calories?.let { "${it.toInt()} cal" }, food.servings.firstOrNull()?.unit).joinToString(" · "),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(Icons.Outlined.ChevronRight, contentDescription = null)
     }
 }
 
@@ -417,7 +569,7 @@ private fun RestaurantResultCard(restaurant: Restaurant, onClick: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(restaurant.name, style = MaterialTheme.typography.titleMedium)
-                Text(listOfNotNull(restaurant.city, restaurant.distance?.let { "%.1f mi".format(it) }).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(listOfNotNull(restaurant.city, restaurant.distance?.let { "%.1f mi".format(it / 1609.344) }).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Outlined.ChevronRight, contentDescription = null)
         }
@@ -429,6 +581,24 @@ private fun SimpleResultCard(title: String, subtitle: String) {
     DemoCard {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun MenuItemResultCard(item: RestaurantMenuItem, onClick: () -> Unit) {
+    DemoCard(Modifier.clickable(onClick = onClick)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(58.dp).clip(RoundedCornerShape(14.dp)).background(JanuaryColors.Control), contentAlignment = Alignment.Center) {
+                if (item.photoUrl != null) AsyncImage(item.photoUrl, item.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                else Icon(Icons.Outlined.Restaurant, null, tint = JanuaryColors.Green)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(item.name, style = MaterialTheme.typography.titleMedium)
+                Text(item.restaurantName, color = JanuaryColors.Muted)
+                item.calories?.let { Text("${it.toInt()} cal", style = MaterialTheme.typography.bodySmall) }
+            }
+            Icon(Icons.Outlined.ChevronRight, null, tint = JanuaryColors.Subdued)
+        }
     }
 }
 
@@ -448,6 +618,8 @@ private fun FoodDetailScreen(
     var prediction by remember { mutableStateOf<GlucosePrediction?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var showAlternatives by remember { mutableStateOf(false) }
+    var showGlucoseSheet by remember { mutableStateOf(false) }
 
     val baseline = serving?.quantity?.takeIf { it > 0 } ?: 1.0
     val scale = serving?.let { quantity * it.scalingFactor / baseline } ?: quantity
@@ -455,6 +627,7 @@ private fun FoodDetailScreen(
     fun predict() {
         val sdk = state.client ?: return
         val selectedServing = serving ?: return
+        showGlucoseSheet = true
         loading = true
         error = null
         coroutineScope.launch {
@@ -470,7 +643,7 @@ private fun FoodDetailScreen(
                         foods = listOf(FoodSelection(food.id.value, ServingSelection(selectedServing.id.value, quantity))),
                         startTime = OffsetDateTime.now(),
                         endUserId = state.partnerUserId,
-                        timezone = ZoneId.systemDefault().id,
+                        timezone = state.timezone,
                     ),
                 )
             }.onSuccess { prediction = it }
@@ -491,13 +664,12 @@ private fun FoodDetailScreen(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                DemoCard {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-                    }
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(28.dp)).background(JanuaryColors.Control),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (food.photoUrl != null) AsyncImage(food.photoUrl, food.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    else Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = JanuaryColors.Green)
                 }
                 Text(food.name, style = MaterialTheme.typography.headlineMedium)
                 food.brandName?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -584,18 +756,64 @@ private fun FoodDetailScreen(
                     }
                 }
 
-                Button(
+                DemoPrimaryButton(
+                    text = "Check glucose",
                     onClick = ::predict,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = serving != null && state.client != null && !loading,
-                ) {
-                    if (loading) CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
-                    else Text("Check glucose")
-                }
+                    enabled = serving != null && state.client != null,
+                    loading = loading,
+                )
+                DemoPrimaryButton(
+                    text = "Find alternatives",
+                    onClick = { showAlternatives = true },
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 if (state.client == null) ApiKeyRequiredCard()
                 error?.let { ErrorCard(it, ::predict) }
-                prediction?.let { GlucosePredictionResult(it, food, quantity) }
                 Spacer(Modifier.height(20.dp))
+            }
+        }
+    }
+
+    if (showAlternatives) {
+        AlternativesSheet(state, food, onDismiss = { showAlternatives = false })
+    }
+    if (showGlucoseSheet && serving != null) {
+        val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showGlucoseSheet = false },
+            sheetState = sheetState,
+            containerColor = JanuaryColors.Paper,
+        ) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.weight(1f))
+                    Text("Glucose response", style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = { showGlucoseSheet = false }, modifier = Modifier.weight(1f)) { Text("Done") }
+                }
+                Text(food.name, style = MaterialTheme.typography.titleMedium)
+                Text("${formatNumber(quantity)} ${serving!!.unit}", color = JanuaryColors.Muted, fontFamily = FontFamily.Monospace)
+                if (loading) {
+                    DemoCard {
+                        Column(Modifier.fillMaxWidth().padding(vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Text("Predicting your glucose response…")
+                            Text("This usually takes a few seconds.", color = JanuaryColors.Muted)
+                        }
+                    }
+                } else {
+                    error?.let { ErrorCard(it, ::predict) }
+                    prediction?.let { GlucosePredictionResult(it, listOf(DemoSelectedFood(food, serving!!, quantity))) }
+                }
+                DemoCard {
+                    Text("Demo profile", style = MaterialTheme.typography.titleMedium)
+                    Text("42 years · Female · 66 in · 150 lb · No reported condition", color = JanuaryColors.Muted)
+                }
+                Text("This is an estimate for demonstration purposes, not medical advice.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(24.dp))
             }
         }
     }
@@ -614,19 +832,246 @@ private fun NutritionRow(label: String, value: Double, unit: String) {
     }
 }
 
+@Composable
+private fun ScanStyleMacroStrip(calories: Double?, protein: Double?, carbs: Double?, fat: Double?) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Metric("Calories", calories, "cal")
+        Metric("Protein", protein, "g")
+        Metric("Carbs", carbs, "g")
+        Metric("Fat", fat, "g")
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RestaurantSheet(restaurant: Restaurant, onDismiss: () -> Unit, onMenu: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 24.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(restaurant.name, style = MaterialTheme.typography.headlineMedium)
-            restaurant.address1?.let { Text(it) }
-            restaurant.city?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            Button(onClick = onMenu, modifier = Modifier.fillMaxWidth()) { Text("Show menu items") }
-            Spacer(Modifier.height(12.dp))
+private fun RestaurantFiltersSheet(
+    selectedCity: SearchCity,
+    onCity: (SearchCity) -> Unit,
+    radius: Double,
+    onRadius: (Double) -> Unit,
+    limit: Int,
+    onLimit: (Int) -> Unit,
+    locationLabel: String,
+    onCurrentLocation: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var cityMenu by remember { mutableStateOf(false) }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("Search filters", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                TextButton(onClick = onDismiss) { Text("Done") }
+            }
+            SectionLabel("Location")
+            DemoCard {
+                ExposedDropdownMenuBox(cityMenu, { cityMenu = it }) {
+                    OutlinedTextField(
+                        selectedCity.name,
+                        {},
+                        Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                        readOnly = true,
+                        label = { Text("City") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(cityMenu) },
+                    )
+                    ExposedDropdownMenu(cityMenu, { cityMenu = false }) {
+                        searchCities.forEach { city -> DropdownMenuItem({ Text(city.name) }, { onCity(city); cityMenu = false }) }
+                    }
+                }
+                DemoOutlinedButton(
+                    "Use my current location",
+                    onCurrentLocation,
+                    Modifier.fillMaxWidth(),
+                    icon = { Icon(Icons.Outlined.LocationOn, null) },
+                )
+                Text(locationLabel, color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            SectionLabel("Radius")
+            DemoCard {
+                Slider(radius.toFloat(), { onRadius(it.toDouble()) }, valueRange = 500f..17000f)
+                Text("${"%.1f".format(radius / 1609.344)} mi · ${radius.toInt()} m", fontFamily = FontFamily.Monospace)
+            }
+            SectionLabel("Results")
+            DemoCard {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Limit: $limit", Modifier.weight(1f))
+                    IconButton(onClick = { onLimit((limit - 1).coerceAtLeast(1)) }) { Icon(Icons.Outlined.Remove, "Decrease limit") }
+                    IconButton(onClick = { onLimit((limit + 1).coerceAtMost(100)) }) { Icon(Icons.Outlined.Add, "Increase limit") }
+                }
+            }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RestaurantDetailScreen(
+    client: JanuaryPartnerClient?,
+    restaurant: Restaurant,
+    latitude: Double,
+    longitude: Double,
+    radius: Double,
+    resultLimit: Int,
+    menuQuery: String,
+    endUserId: PartnerUserId?,
+    onBack: () -> Unit,
+    modifier: Modifier,
+) {
+    var items by remember(restaurant.id) { mutableStateOf<List<RestaurantMenuItem>>(emptyList()) }
+    var loading by remember(restaurant.id) { mutableStateOf(true) }
+    var error by remember(restaurant.id) { mutableStateOf<String?>(null) }
+    var selected by remember { mutableStateOf<RestaurantMenuItem?>(null) }
+    LaunchedEffect(restaurant.id) {
+        if (client == null) { loading = false; return@LaunchedEffect }
+        runCatching {
+            client.restaurants.searchMenuItems(
+                SearchRestaurantsRequest(menuQuery.ifBlank { restaurant.name }, latitude, longitude, radius, resultLimit, endUserId),
+            ).items.filter {
+                val a = it.restaurantName.normalizedRestaurantName()
+                val b = restaurant.name.normalizedRestaurantName()
+                a.contains(b) || b.contains(a)
+            }
+        }.onSuccess { items = it }.onFailure { error = it.message ?: "Menu items could not be loaded." }
+        loading = false
+    }
+    selected?.let { MenuItemDetailScreen(it, { selected = null }, modifier); return }
+    Column(modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text("Restaurant") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") } },
+        )
+        DemoScreen {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(restaurant.name, style = MaterialTheme.typography.displaySmall)
+                SectionLabel("Location")
+                DemoCard {
+                    restaurant.city?.let {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("City")
+                            Text(it, color = JanuaryColors.Muted)
+                        }
+                    }
+                    restaurant.address1?.let { Text(it) }
+                    restaurant.address2?.let { Text(it) }
+                    restaurant.distance?.let { Text("${"%.1f".format(it / 1609.344)} mi", fontFamily = FontFamily.Monospace) }
+                }
+                SectionLabel("Menu items")
+                if (loading) DemoCard { Text("Loading menu…") }
+                error?.let { ErrorCard(it) }
+                if (!loading && error == null && items.isEmpty()) EmptySearchCard("No menu items found", "January did not return menu items for this restaurant.")
+                items.forEach { item ->
+                    MenuItemResultCard(item) { selected = item }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MenuItemDetailScreen(item: RestaurantMenuItem, onBack: () -> Unit, modifier: Modifier) {
+    Column(modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text("Menu item") },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") } },
+        )
+        DemoScreen {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(item.name, style = MaterialTheme.typography.displaySmall)
+                Text(item.restaurantName, color = JanuaryColors.Muted)
+                DemoCard { ScanStyleMacroStrip(item.calories, item.protein, item.carbohydrates, item.totalFat) }
+                DemoCard {
+                    listOfNotNull(
+                        item.netCarbohydrates?.let { "Net carbohydrates" to it },
+                        item.fiber?.let { "Fiber" to it },
+                        item.totalSugars?.let { "Total sugars" to it },
+                        item.addedSugars?.let { "Added sugars" to it },
+                        item.glycemicIndex?.let { "Glycemic index" to it },
+                        item.glycemicLoad?.let { "Glycemic load" to it },
+                    ).forEach { (name, value) -> NutritionRow(name, value, if (name.contains("index") || name.contains("load")) "" else "g") }
+                }
+                if (item.servings.isNotEmpty()) {
+                    SectionLabel("Servings")
+                    DemoCard { item.servings.forEach { Text("${formatNumber(it.quantity)} ${it.unit}") } }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss: () -> Unit) {
+    val client = state.client ?: return
+    val coroutineScope = rememberCoroutineScope()
+    var restrictions by remember { mutableStateOf<Set<DietRestriction>>(emptySet()) }
+    var preferences by remember { mutableStateOf<Set<DietPreference>>(emptySet()) }
+    var results by remember { mutableStateOf<ai.january.partner.foods.SuggestFoodAlternativesResponse?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    fun load() {
+        loading = true; error = null
+        coroutineScope.launch {
+            runCatching {
+                client.foods.suggestAlternatives(SuggestFoodAlternativesRequest(food.id.value, restrictions.toList(), preferences.toList(), state.partnerUserId))
+            }.onSuccess { results = it }.onFailure { error = it.message ?: "Alternatives could not be loaded." }
+            loading = false
+        }
+    }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = JanuaryColors.Paper) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onDismiss) { Text("Close") }
+                Text("Alternatives", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Spacer(Modifier.weight(.2f))
+            }
+            SectionLabel("Dietary restrictions")
+            DietChoices(DietRestriction.entries, restrictions, { restrictions = it }, { it.value.replace('_', ' ').replaceFirstChar(Char::uppercase) })
+            SectionLabel("Dietary preferences")
+            DietChoices(DietPreference.entries, preferences, { preferences = it }, { it.value.replace('_', ' ').replaceFirstChar(Char::uppercase) })
+            DemoPrimaryButton("Find alternatives", ::load, Modifier.fillMaxWidth(), loading = loading)
+            error?.let { ErrorCard(it, ::load) }
+            results?.alternatives.orEmpty().forEach { alternative ->
+                DemoCard {
+                    Text(alternative.food.name, style = MaterialTheme.typography.titleMedium)
+                    alternative.food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
+                    ScanStyleMacroStrip(
+                        alternative.food.nutrients.calories?.value,
+                        alternative.food.nutrients.protein?.value,
+                        alternative.food.nutrients.carbohydrates?.value,
+                        alternative.food.nutrients.totalFat?.value,
+                    )
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun <T> DietChoices(values: List<T>, selected: Set<T>, onChange: (Set<T>) -> Unit, label: (T) -> String) {
+    values.chunked(2).forEach { row ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            row.forEach { value ->
+                FilterChip(
+                    selected = value in selected,
+                    onClick = { onChange(if (value in selected) selected - value else selected + value) },
+                    label = { Text(label(value), maxLines = 1) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            if (row.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+private fun String.normalizedRestaurantName(): String = substringBefore("(").lowercase().filter { it.isLetterOrDigit() || it == ' ' }.trim()
 
 @Composable
 private fun Metric(label: String, value: Double?, unit: String) {

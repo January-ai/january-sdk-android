@@ -8,6 +8,9 @@
         android:label="January Partner Demo"
         android:supportsRtl="true"
         android:theme="@style/Theme.JanuaryPartnerDemo">
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

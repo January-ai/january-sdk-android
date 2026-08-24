@@ -1,34 +1,46 @@
 package ai.january.partner.demo
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,24 +53,33 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import ai.january.partner.foods.FoodSearchItem
-import ai.january.partner.foods.SearchFoodsRequest
+import androidx.compose.ui.unit.sp
+import ai.january.partner.foods.ServingOption
 import ai.january.partner.glucose.GlucosePrediction
 import ai.january.partner.glucose.GlucosePredictionProfile
 import ai.january.partner.glucose.Height
 import ai.january.partner.glucose.HeightUnit
+import ai.january.partner.glucose.MedicalCondition
 import ai.january.partner.glucose.PredictGlucoseRequest
 import ai.january.partner.glucose.Sex
 import ai.january.partner.glucose.Weight
 import ai.january.partner.glucose.WeightUnit
 import ai.january.partner.models.FoodSelection
 import ai.january.partner.models.ServingSelection
+import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+
+private val GoldText = androidx.compose.ui.graphics.Color(0xFF6E5613)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,16 +90,18 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
     var sex by remember { mutableStateOf(Sex.FEMALE) }
     var height by remember { mutableStateOf("66") }
     var weight by remember { mutableStateOf("150") }
-    var food by remember { mutableStateOf<FoodSearchItem?>(null) }
-    var showFoodSearch by remember { mutableStateOf(false) }
+    var conditions by remember { mutableStateOf<Set<MedicalCondition>>(emptySet()) }
+    var foods by remember { mutableStateOf<List<DemoSelectedFood>>(emptyList()) }
+    var startTime by remember { mutableStateOf(OffsetDateTime.now()) }
+    var showFoodPicker by remember { mutableStateOf(false) }
+    var showConditions by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<GlucosePrediction?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
     fun predict() {
-        val selected = food ?: return
-        val serving = selected.servings.firstOrNull() ?: return
         val sdk = client ?: return
+        if (foods.isEmpty()) return
         loading = true
         error = null
         coroutineScope.launch {
@@ -90,11 +113,14 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                             sex = sex,
                             height = Height(height.toDouble(), HeightUnit.INCHES),
                             weight = Weight(weight.toDouble(), WeightUnit.POUNDS),
+                            healthConditions = conditions.toList(),
                         ),
-                        foods = listOf(FoodSelection(selected.id.value, ServingSelection(serving.id.value, 1.0))),
-                        startTime = OffsetDateTime.now(),
+                        foods = foods.map {
+                            FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
+                        },
+                        startTime = startTime,
                         endUserId = state.partnerUserId,
-                        timezone = ZoneId.systemDefault().id,
+                        timezone = state.timezone,
                     ),
                 )
             }.onSuccess { result = it }
@@ -103,113 +129,371 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
         }
     }
 
-    Column(modifier.fillMaxSize()) {
-        DemoTopBar("Glucose", settingsAction)
-        DemoScreen {
-            Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                if (result == null) {
-                    SectionLabel("About you")
-                    DemoCard {
-                        NumberField("Age", age, { age = it }, "years")
-                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                            Sex.entries.forEachIndexed { index, option ->
-                                SegmentedButton(
-                                    selected = sex == option,
-                                    onClick = { sex = option },
-                                    shape = SegmentedButtonDefaults.itemShape(index, Sex.entries.size),
-                                    label = { Text(option.name.lowercase().replaceFirstChar(Char::uppercase)) },
-                                )
-                            }
-                        }
-                        NumberField("Height", height, { height = it }, "in")
-                        NumberField("Weight", weight, { weight = it }, "lb")
-                    }
-                    SectionLabel("This meal")
-                    DemoCard {
-                        if (food == null) {
-                            Button(onClick = { showFoodSearch = true }, modifier = Modifier.fillMaxWidth()) {
-                                Icon(Icons.Outlined.Add, contentDescription = null); Text(" Add food")
-                            }
-                        } else {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(food!!.name, style = MaterialTheme.typography.titleMedium)
-                                    Text("1 × ${food!!.servings.firstOrNull()?.unit ?: "serving"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                                IconButton(onClick = { food = null }) { Icon(Icons.Outlined.Close, contentDescription = "Remove food") }
-                            }
+    if (result == null) {
+        Column(
+            modifier = modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())
+                .padding(horizontal = DemoScreenPadding, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            Text("Glucose", style = MaterialTheme.typography.displaySmall, color = JanuaryColors.Ink)
+
+            FormSection("About you") {
+                MeasurementRow("Age", age, { age = numericText(it) }, "years")
+                HorizontalDivider(color = JanuaryColors.Divider)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Sex", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.weight(1f))
+                    SingleChoiceSegmentedButtonRow(Modifier.weight(2f)) {
+                        listOf(Sex.FEMALE, Sex.MALE).forEachIndexed { index, option ->
+                            SegmentedButton(
+                                selected = sex == option,
+                                onClick = { sex = option },
+                                modifier = Modifier.heightIn(min = 46.dp),
+                                shape = SegmentedButtonDefaults.itemShape(index, 2),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = JanuaryColors.Surface,
+                                    activeContentColor = JanuaryColors.Ink,
+                                    inactiveContainerColor = JanuaryColors.ControlStrong,
+                                    inactiveContentColor = JanuaryColors.Ink,
+                                ),
+                                icon = {},
+                                label = { Text(if (option == Sex.FEMALE) "Female" else "Male") },
+                            )
                         }
                     }
-                    Button(onClick = ::predict, modifier = Modifier.fillMaxWidth(), enabled = food != null && client != null && !loading) {
-                        if (loading) CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
-                        else Text("Predict glucose response")
-                    }
-                    if (client == null) ApiKeyRequiredCard()
-                    error?.let { ErrorCard(it, ::predict) }
-                } else {
-                    GlucosePredictionResult(result!!, food)
-                    Button(onClick = { result = null }, modifier = Modifier.fillMaxWidth()) { Text("Adjust meal") }
                 }
-                Spacer(Modifier.height(20.dp))
+                HorizontalDivider(color = JanuaryColors.Divider)
+                MeasurementRow("Height", height, { height = numericText(it) }, "in")
+                HorizontalDivider(color = JanuaryColors.Divider)
+                MeasurementRow("Weight", weight, { weight = numericText(it) }, "lb")
+                HorizontalDivider(color = JanuaryColors.Divider)
+                Row(
+                    modifier = Modifier.fillMaxWidth().clickable { showConditions = true }.padding(vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text("Health conditions", style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.weight(1f))
+                    Text(if (conditions.isEmpty()) "None" else "${conditions.size} selected", color = JanuaryColors.Muted)
+                    Icon(Icons.Outlined.ChevronRight, contentDescription = null, tint = JanuaryColors.Subdued)
+                }
             }
+
+            FormSection("This meal") {
+                StartTimeRow(startTime = startTime, onChange = { startTime = it })
+                foods.forEachIndexed { index, selected ->
+                    HorizontalDivider(color = JanuaryColors.Divider)
+                    SelectedFoodRow(
+                        selected = selected,
+                        onServingChange = { serving ->
+                            foods = foods.toMutableList().also { it[index] = selected.copy(serving = serving) }
+                        },
+                        onQuantityChange = { quantity ->
+                            foods = if (quantity < 0.25) {
+                                foods.filterIndexed { itemIndex, _ -> itemIndex != index }
+                            } else {
+                                foods.toMutableList().also { it[index] = selected.copy(quantity = quantity) }
+                            }
+                        },
+                        onRemove = { foods = foods.filterIndexed { itemIndex, _ -> itemIndex != index } },
+                    )
+                }
+                HorizontalDivider(color = JanuaryColors.Divider)
+                TextButton(
+                    onClick = { showFoodPicker = true },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                ) {
+                    Text("＋  Add food", color = GoldText, style = MaterialTheme.typography.titleMedium)
+                }
+            }
+
+            error?.let { ErrorCard(it, ::predict) }
+            DemoPrimaryButton(
+                text = "Predict glucose response",
+                onClick = ::predict,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = foods.isNotEmpty() && client != null,
+                loading = loading,
+            )
+            if (client == null) ApiKeyRequiredCard()
+            Spacer(Modifier.height(24.dp))
+        }
+    } else {
+        Column(
+            modifier = modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState())
+                .padding(horizontal = DemoScreenPadding, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            TextButton(onClick = { result = null }) { Text("‹  Glucose", color = GoldText) }
+            GlucosePredictionResult(result!!, foods)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DemoSecondaryButton("Adjust meal", { result = null }, Modifier.weight(1f))
+                DemoPrimaryButton("Start over", { result = null; foods = emptyList() }, Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 
-    if (showFoodSearch && client != null) {
-        GlucoseFoodPicker(
+    if (showFoodPicker && client != null) {
+        FoodPickerSheet(
             state = state,
-            onDismiss = { showFoodSearch = false },
-            onSelect = { food = it; showFoodSearch = false },
+            onDismiss = { showFoodPicker = false },
+            onSelect = { foods = foods + it },
+        )
+    }
+    if (showConditions) {
+        ConditionsSheet(
+            selected = conditions,
+            onChange = { conditions = it },
+            onDismiss = { showConditions = false },
+        )
+    }
+}
+
+private fun numericText(value: String): String = value.filter { it.isDigit() || it == '.' }
+
+@Composable
+private fun FormSection(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionLabel(title, Modifier.padding(horizontal = 6.dp))
+        DemoCard { content() }
+    }
+}
+
+@Composable
+private fun MeasurementRow(label: String, value: String, onChange: (String) -> Unit, unit: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.weight(1f))
+        BasicTextField(
+            value = value,
+            onValueChange = onChange,
+            modifier = Modifier.width(72.dp),
+            textStyle = TextStyle(
+                color = JanuaryColors.Ink,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontFamily = FontFamily.Monospace,
+                textAlign = TextAlign.End,
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+        )
+        Text(unit, modifier = Modifier.padding(start = 10.dp), color = JanuaryColors.Muted)
+    }
+}
+
+@Composable
+internal fun StartTimeRow(startTime: OffsetDateTime, onChange: (OffsetDateTime) -> Unit) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("Start time", style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.weight(1f))
+        TextButton(
+            contentPadding = PaddingValues(0.dp),
+            onClick = {
+            DatePickerDialog(
+                context,
+                { _, year, month, day -> onChange(startTime.with(LocalDate.of(year, month + 1, day))) },
+                startTime.year,
+                startTime.monthValue - 1,
+                startTime.dayOfMonth,
+            ).show()
+        }) {
+            Text(
+                startTime.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
+                modifier = Modifier.background(JanuaryColors.Control, RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 7.dp),
+                color = JanuaryColors.Ink,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
+        TextButton(
+            contentPadding = PaddingValues(0.dp),
+            onClick = {
+            TimePickerDialog(
+                context,
+                { _, hour, minute -> onChange(startTime.withHour(hour).withMinute(minute)) },
+                startTime.hour,
+                startTime.minute,
+                false,
+            ).show()
+        }) {
+            Text(
+                startTime.format(DateTimeFormatter.ofPattern("h:mm a")),
+                modifier = Modifier.background(JanuaryColors.Control, RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 7.dp),
+                color = JanuaryColors.Ink,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun SelectedFoodRow(
+    selected: DemoSelectedFood,
+    onServingChange: (ServingOption) -> Unit,
+    onQuantityChange: (Double) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(selected.food.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Outlined.Close, contentDescription = "Remove ${selected.food.name}")
+                }
+            }
+            Box {
+                TextButton(onClick = { menuOpen = true }) {
+                    Text("${formatDemoNumber(selected.serving.quantity)} ${selected.serving.unit}", color = JanuaryColors.Muted)
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    selected.food.servings.forEach { serving ->
+                        DropdownMenuItem(
+                            text = { Text("${formatDemoNumber(serving.quantity)} ${serving.unit}") },
+                            onClick = { onServingChange(serving); menuOpen = false },
+                        )
+                    }
+                }
+            }
+        }
+        DemoQuantityButton("−", false) { onQuantityChange(selected.quantity - 0.25) }
+        Text(
+            formatDemoNumber(selected.quantity),
+            modifier = Modifier.width(48.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontFamily = FontFamily.Monospace,
+            textAlign = TextAlign.Center,
+        )
+        DemoQuantityButton("+", true) { onQuantityChange(selected.quantity + 0.25) }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ConditionsSheet(
+    selected: Set<MedicalCondition>,
+    onChange: (Set<MedicalCondition>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text("Health conditions", style = MaterialTheme.typography.headlineMedium)
+            Text("Select all that apply. Leave both unselected if neither condition applies.", color = JanuaryColors.Muted)
+            DemoCard {
+                ConditionRow("Type 2 diabetes", MedicalCondition.TYPE_2_DIABETES, selected, onChange)
+                HorizontalDivider(color = JanuaryColors.Divider)
+                ConditionRow("Prediabetes", MedicalCondition.PREDIABETES, selected, onChange)
+            }
+            DemoPrimaryButton("Done", onDismiss, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Composable
+private fun ConditionRow(
+    label: String,
+    condition: MedicalCondition,
+    selected: Set<MedicalCondition>,
+    onChange: (Set<MedicalCondition>) -> Unit,
+) {
+    val isSelected = condition in selected
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable {
+            onChange(if (isSelected) selected - condition else selected + condition)
+        }.padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, modifier = Modifier.weight(1f))
+        Icon(
+            if (isSelected) Icons.Outlined.CheckCircle else Icons.Outlined.Circle,
+            contentDescription = if (isSelected) "Selected" else "Not selected",
+            tint = if (isSelected) JanuaryColors.Green else JanuaryColors.Border,
         )
     }
 }
 
 @Composable
-private fun NumberField(label: String, value: String, onChange: (String) -> Unit, unit: String) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = { next -> if (next.all { it.isDigit() || it == '.' }) onChange(next) },
-        modifier = Modifier.fillMaxWidth(),
-        label = { Text(label) },
-        suffix = { Text(unit) },
-        singleLine = true,
-    )
-}
-
-@Composable
-internal fun GlucosePredictionResult(result: GlucosePrediction, food: FoodSearchItem?, quantity: Double = 1.0) {
+internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<DemoSelectedFood>) {
     val peak = result.prediction.maxByOrNull { it.value }
-    Text("Estimated response", style = MaterialTheme.typography.headlineMedium)
-    Text("${result.impact.value.replaceFirstChar(Char::uppercase)} impact", color = when (result.impact.value) {
-        "high" -> MaterialTheme.colorScheme.error
-        "medium" -> JanuaryColors.Rust
-        else -> MaterialTheme.colorScheme.secondary
-    }, fontWeight = FontWeight.Bold)
+    val mealStart = result.prediction.minByOrNull { it.minutes }
+    val delta = ((peak?.value ?: 0.0) - (mealStart?.value ?: 0.0)).coerceAtLeast(0.0)
+    val impactColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
+    Text("Estimated response", style = MaterialTheme.typography.displaySmall)
+    Text(
+        "${result.impact.value.replaceFirstChar(Char::uppercase)} impact",
+        color = impactColor,
+        fontWeight = FontWeight.Bold,
+    )
     DemoCard {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 SectionLabel("Likely peak")
-                Text(peak?.value?.toInt()?.toString() ?: "—", style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+                Text(
+                    peak?.value?.toInt()?.toString() ?: "—",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontFamily = FontFamily.Monospace,
+                )
             }
             Text("mg/dL", fontWeight = FontWeight.SemiBold)
         }
         GlucoseChart(result)
     }
-    food?.let {
-        DemoCard {
-            SectionLabel("Meal")
-            Text(it.name, style = MaterialTheme.typography.titleMedium)
-            Text("${formatDemoNumber(quantity)} × ${it.servings.firstOrNull()?.unit ?: "serving"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    DemoCard {
+        foods.forEachIndexed { index, food ->
+            if (index > 0) HorizontalDivider(color = JanuaryColors.Divider)
+            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(food.food.name, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "${formatDemoNumber(food.serving.quantity)} ${food.serving.unit} · quantity ${formatDemoNumber(food.quantity)}",
+                        color = JanuaryColors.Muted,
+                    )
+                }
+                if (index == 0) {
+                    Text("+${delta.toInt()}", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = impactColor)
+                }
+            }
         }
     }
+    androidx.compose.material3.Card(
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = JanuaryColors.GoldContainer),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionLabel("Worth knowing")
+            Text("This estimate reflects the foods, servings, and profile entered above. Adjusting the meal will generate a new prediction.")
+        }
+    }
+    Text(
+        "This is a prediction, not a medical recommendation.",
+        style = MaterialTheme.typography.bodySmall,
+        color = JanuaryColors.Muted,
+    )
 }
 
 @Composable
 internal fun GlucoseChart(result: GlucosePrediction) {
-    val lineColor = JanuaryColors.Rust
+    val lineColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
     val bandColor = MaterialTheme.colorScheme.secondaryContainer
     Column {
         Canvas(Modifier.fillMaxWidth().height(230.dp)) {
@@ -219,58 +503,23 @@ internal fun GlucoseChart(result: GlucosePrediction) {
             val maxX = points.maxOf { it.minutes }.coerceAtLeast(minX + 1)
             val minY = result.chart.min
             val maxY = result.chart.max.coerceAtLeast(minY + 1)
-            drawRect(bandColor, topLeft = Offset(0f, size.height * .35f), size = androidx.compose.ui.geometry.Size(size.width, size.height * .35f))
+            drawRect(
+                bandColor,
+                topLeft = Offset(0f, size.height * .35f),
+                size = androidx.compose.ui.geometry.Size(size.width, size.height * .35f),
+            )
             val path = Path()
             points.forEachIndexed { index, point ->
                 val x = ((point.minutes - minX) / (maxX - minX) * size.width).toFloat()
                 val y = (size.height - ((point.value - minY) / (maxY - minY) * size.height)).toFloat()
                 if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
             }
-            drawPath(path, lineColor, style = Stroke(width = 5.dp.toPx(), cap = StrokeCap.Round))
+            drawPath(path, lineColor, style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("0", "40", "80", "120 min").forEach { Text(it, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace) }
-        }
-    }
-}
-
-private fun formatDemoNumber(value: Double): String =
-    if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value).trimEnd('0')
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun GlucoseFoodPicker(state: DemoState, onDismiss: () -> Unit, onSelect: (FoodSearchItem) -> Unit) {
-    val coroutineScope = rememberCoroutineScope()
-    var query by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<List<FoodSearchItem>>(emptyList()) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    fun search() {
-        val client = state.client ?: return
-        if (query.isBlank()) return
-        loading = true
-        coroutineScope.launch {
-            runCatching { client.foods.search(SearchFoodsRequest(query, endUserId = state.partnerUserId)).items }
-                .onSuccess { results = it }
-                .onFailure { error = it.message ?: "Search failed." }
-            loading = false
-        }
-    }
-
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Add food", style = MaterialTheme.typography.headlineMedium)
-            OutlinedTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(), label = { Text("Search foods") }, singleLine = true)
-            Button(onClick = ::search, modifier = Modifier.fillMaxWidth(), enabled = query.isNotBlank() && !loading) { Text("Search") }
-            error?.let { ErrorCard(it, ::search) }
-            results.take(6).forEach { item ->
-                DemoCard(modifier = Modifier.clickable { onSelect(item) }) {
-                    Text(item.name, style = MaterialTheme.typography.titleMedium)
-                    Text(item.calories?.let { "${it.toInt()} cal" } ?: "Nutrition unavailable", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+            listOf("0", "40", "80", "120 min").forEach {
+                Text(it, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
             }
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
