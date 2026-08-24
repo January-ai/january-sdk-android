@@ -16,11 +16,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
@@ -33,6 +38,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +46,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -61,9 +68,21 @@ import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
+import ai.january.partner.glucose.GlucosePrediction
+import ai.january.partner.glucose.GlucosePredictionProfile
+import ai.january.partner.glucose.Height
+import ai.january.partner.glucose.HeightUnit
+import ai.january.partner.glucose.PredictGlucoseRequest
+import ai.january.partner.glucose.Sex
+import ai.january.partner.glucose.Weight
+import ai.january.partner.glucose.WeightUnit
+import ai.january.partner.models.FoodSelection
+import ai.january.partner.models.ServingSelection
 import ai.january.partner.restaurants.Restaurant
 import ai.january.partner.restaurants.RestaurantMenuItem
 import ai.january.partner.restaurants.SearchRestaurantsRequest
+import java.time.OffsetDateTime
+import java.time.ZoneId
 import kotlinx.coroutines.launch
 
 private enum class SearchScope { FOODS, RESTAURANTS }
@@ -170,6 +189,11 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
             }.onFailure { error = it.message ?: "The request failed." }
             loading = false
         }
+    }
+
+    selectedFood?.let { food ->
+        FoodDetailScreen(state = state, food = food, onBack = { selectedFood = null }, modifier = modifier)
+        return
     }
 
     Column(modifier.fillMaxSize()) {
@@ -325,7 +349,6 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
         }
     }
 
-    selectedFood?.let { FoodDetailsSheet(it, onDismiss = { selectedFood = null }) }
     selectedRestaurant?.let { restaurant ->
         RestaurantSheet(
             restaurant = restaurant,
@@ -411,22 +434,183 @@ private fun SimpleResultCard(title: String, subtitle: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun FoodDetailsSheet(food: FoodSearchItem, onDismiss: () -> Unit) {
-    var serving by remember(food) { mutableStateOf(food.servings.firstOrNull()) }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 24.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(food.name, style = MaterialTheme.typography.headlineMedium)
-            if (food.servings.isEmpty()) Text("No serving options were returned.")
-            else ChoiceRow(food.servings, serving ?: food.servings.first(), { "${formatNumber(it.quantity)} ${it.unit}" }, { serving = it })
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Metric("Calories", food.calories, "cal")
-                Metric("Protein", food.protein, "g")
-                Metric("Carbs", food.carbohydrates, "g")
-                Metric("Fat", food.totalFat, "g")
-            }
-            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Done") }
-            Spacer(Modifier.height(12.dp))
+private fun FoodDetailScreen(
+    state: DemoState,
+    food: FoodSearchItem,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val initialServing = remember(food) { food.servings.firstOrNull { it.isPrimary } ?: food.servings.firstOrNull() }
+    var serving by remember(food) { mutableStateOf(initialServing) }
+    var quantity by remember(food) { mutableDoubleStateOf(initialServing?.quantity?.takeIf { it > 0 } ?: 1.0) }
+    var servingMenuExpanded by remember { mutableStateOf(false) }
+    var prediction by remember { mutableStateOf<GlucosePrediction?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val baseline = serving?.quantity?.takeIf { it > 0 } ?: 1.0
+    val scale = serving?.let { quantity * it.scalingFactor / baseline } ?: quantity
+
+    fun predict() {
+        val sdk = state.client ?: return
+        val selectedServing = serving ?: return
+        loading = true
+        error = null
+        coroutineScope.launch {
+            runCatching {
+                sdk.glucose.predict(
+                    PredictGlucoseRequest(
+                        userProfile = GlucosePredictionProfile(
+                            age = 42.0,
+                            sex = Sex.FEMALE,
+                            height = Height(66.0, HeightUnit.INCHES),
+                            weight = Weight(150.0, WeightUnit.POUNDS),
+                        ),
+                        foods = listOf(FoodSelection(food.id.value, ServingSelection(selectedServing.id.value, quantity))),
+                        startTime = OffsetDateTime.now(),
+                        endUserId = state.partnerUserId,
+                        timezone = ZoneId.systemDefault().id,
+                    ),
+                )
+            }.onSuccess { prediction = it }
+                .onFailure { error = it.message ?: "The prediction failed." }
+            loading = false
         }
+    }
+
+    Column(modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text("Food details") },
+            navigationIcon = {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back to results") }
+            },
+        )
+        DemoScreen {
+            Column(
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                DemoCard {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                    }
+                }
+                Text(food.name, style = MaterialTheme.typography.headlineMedium)
+                food.brandName?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+
+                DemoCard {
+                    if (food.servings.isEmpty()) {
+                        Text("No serving options were returned.")
+                    } else {
+                        ExposedDropdownMenuBox(
+                            expanded = servingMenuExpanded,
+                            onExpandedChange = { servingMenuExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value = serving?.let(::servingLabel).orEmpty(),
+                                onValueChange = {},
+                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
+                                readOnly = true,
+                                label = { Text("Serving") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = servingMenuExpanded) },
+                            )
+                            ExposedDropdownMenu(
+                                expanded = servingMenuExpanded,
+                                onDismissRequest = { servingMenuExpanded = false },
+                            ) {
+                                food.servings.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(servingLabel(option)) },
+                                        onClick = {
+                                            serving = option
+                                            quantity = option.quantity.takeIf { it > 0 } ?: 1.0
+                                            prediction = null
+                                            servingMenuExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text("Quantity: ${formatNumber(quantity)}", fontFamily = FontFamily.Monospace)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { quantity = (quantity - .25).coerceAtLeast(.25); prediction = null }) {
+                                    Icon(Icons.Outlined.Remove, contentDescription = "Decrease quantity")
+                                }
+                                IconButton(onClick = { quantity = (quantity + .25).coerceAtMost(100.0); prediction = null }) {
+                                    Icon(Icons.Outlined.Add, contentDescription = "Increase quantity")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                DemoCard {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Metric("Calories", food.calories?.times(scale), "cal")
+                        Metric("Protein", food.protein?.times(scale), "g")
+                        Metric("Carbs", food.carbohydrates?.times(scale), "g")
+                        Metric("Fat", food.totalFat?.times(scale), "g")
+                    }
+                }
+
+                val facts = listOf(
+                    "Net carbohydrates" to food.netCarbohydrates,
+                    "Saturated fat" to food.saturatedFat,
+                    "Fiber" to food.fiber,
+                    "Total sugars" to food.totalSugars,
+                    "Added sugars" to food.addedSugars,
+                    "Sodium" to food.sodium,
+                    "Potassium" to food.potassium,
+                    "Cholesterol" to food.cholesterol,
+                ).filter { it.second != null }
+                if (facts.isNotEmpty() || food.glycemicIndex != null || food.glycemicLoad != null) {
+                    SectionLabel("Nutrition facts")
+                    DemoCard {
+                        facts.forEachIndexed { index, (label, value) ->
+                            NutritionRow(label, value!! * scale, if (label in listOf("Sodium", "Potassium", "Cholesterol")) "mg" else "g")
+                            if (index < facts.lastIndex) HorizontalDivider()
+                        }
+                        food.glycemicIndex?.let { NutritionRow("Glycemic index", it, "") }
+                        food.glycemicLoad?.let { NutritionRow("Glycemic load", it, "") }
+                    }
+                }
+
+                Button(
+                    onClick = ::predict,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = serving != null && state.client != null && !loading,
+                ) {
+                    if (loading) CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
+                    else Text("Check glucose")
+                }
+                if (state.client == null) ApiKeyRequiredCard()
+                error?.let { ErrorCard(it, ::predict) }
+                prediction?.let { GlucosePredictionResult(it, food, quantity) }
+                Spacer(Modifier.height(20.dp))
+            }
+        }
+    }
+}
+
+private fun servingLabel(serving: ServingOption): String = buildString {
+    append("${formatNumber(serving.quantity)} ${serving.unit}")
+    serving.weightGrams?.let { append(" · ${formatNumber(it)} g") }
+}
+
+@Composable
+private fun NutritionRow(label: String, value: Double, unit: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label)
+        Text("${formatNumber(value)}${if (unit.isEmpty()) "" else " $unit"}", fontFamily = FontFamily.Monospace)
     }
 }
 

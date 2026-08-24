@@ -150,7 +150,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                     if (client == null) ApiKeyRequiredCard()
                     error?.let { ErrorCard(it, ::predict) }
                 } else {
-                    PredictionResult(result!!, food)
+                    GlucosePredictionResult(result!!, food)
                     Button(onClick = { result = null }, modifier = Modifier.fillMaxWidth()) { Text("Adjust meal") }
                 }
                 Spacer(Modifier.height(20.dp))
@@ -180,7 +180,7 @@ private fun NumberField(label: String, value: String, onChange: (String) -> Unit
 }
 
 @Composable
-private fun PredictionResult(result: GlucosePrediction, food: FoodSearchItem?) {
+internal fun GlucosePredictionResult(result: GlucosePrediction, food: FoodSearchItem?, quantity: Double = 1.0) {
     val peak = result.prediction.maxByOrNull { it.value }
     Text("Estimated response", style = MaterialTheme.typography.headlineMedium)
     Text("${result.impact.value.replaceFirstChar(Char::uppercase)} impact", color = when (result.impact.value) {
@@ -202,12 +202,13 @@ private fun PredictionResult(result: GlucosePrediction, food: FoodSearchItem?) {
         DemoCard {
             SectionLabel("Meal")
             Text(it.name, style = MaterialTheme.typography.titleMedium)
+            Text("${formatDemoNumber(quantity)} × ${it.servings.firstOrNull()?.unit ?: "serving"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 @Composable
-private fun GlucoseChart(result: GlucosePrediction) {
+internal fun GlucoseChart(result: GlucosePrediction) {
     val lineColor = JanuaryColors.Rust
     val bandColor = MaterialTheme.colorScheme.secondaryContainer
     Column {
@@ -232,6 +233,9 @@ private fun GlucoseChart(result: GlucosePrediction) {
         }
     }
 }
+
+private fun formatDemoNumber(value: Double): String =
+    if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value).trimEnd('0')
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
