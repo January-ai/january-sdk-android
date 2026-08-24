@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.WeightUnit
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,19 +31,18 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param quantity
+ * @param `value`
+ * @param unit
  */
 
 
-internal data class ConsumedHistoricalServing (
+internal data class Weight (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
-    @Json(name = "id")
-    val id: kotlin.Long,
+    @Json(name = "value")
+    val `value`: java.math.BigDecimal,
 
-    @Json(name = "quantity")
-    val quantity: java.math.BigDecimal
+    @Json(name = "unit")
+    val unit: WeightUnit
 
 ) {
 

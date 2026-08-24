@@ -23,6 +23,8 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.GlucoseChart
+import ai.january.partner.transport.models.GlucosePredictionPoint
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,29 +32,24 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param cgp The predicted glucose curve as [minutes after start_time, mg/dL] points at 15-minute intervals.
- * @param scoring
- * @param cgpMin The chart's suggested Y-axis lower bound (mg/dL) — a fixed target-range bound, NOT the minimum of the predicted curve.
- * @param cgpMax The chart's suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. NOT the maximum of the predicted curve.
+ * @param prediction The predicted glucose curve at 15-minute intervals, starting at start_time.
+ * @param impactScore The meal's overall glucose impact.
+ * @param chart
  */
 
 
 internal data class GlucosePrediction (
 
-    /* The predicted glucose curve as [minutes after start_time, mg/dL] points at 15-minute intervals. */
-    @Json(name = "cgp")
-    val cgp: kotlin.collections.List<kotlin.collections.List<java.math.BigDecimal>>,
+    /* The predicted glucose curve at 15-minute intervals, starting at start_time. */
+    @Json(name = "prediction")
+    val prediction: kotlin.collections.List<GlucosePredictionPoint>,
 
-    @Json(name = "scoring")
-    val scoring: kotlin.String,
+    /* The meal's overall glucose impact. */
+    @Json(name = "impact_score")
+    val impactScore: kotlin.String,
 
-    /* The chart's suggested Y-axis lower bound (mg/dL) — a fixed target-range bound, NOT the minimum of the predicted curve. */
-    @Json(name = "cgp_min")
-    val cgpMin: java.math.BigDecimal,
-
-    /* The chart's suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. NOT the maximum of the predicted curve. */
-    @Json(name = "cgp_max")
-    val cgpMax: java.math.BigDecimal
+    @Json(name = "chart")
+    val chart: GlucoseChart
 
 ) {
 

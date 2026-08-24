@@ -30,19 +30,20 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param quantity
+ * @param min Suggested Y-axis lower bound (mg/dL). A fixed target-range bound, not the minimum of the curve.
+ * @param max Suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. Not the maximum of the curve.
  */
 
 
-internal data class ConsumedServing (
+internal data class GlucoseChart (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
-    @Json(name = "id")
-    val id: kotlin.Long,
+    /* Suggested Y-axis lower bound (mg/dL). A fixed target-range bound, not the minimum of the curve. */
+    @Json(name = "min")
+    val min: java.math.BigDecimal,
 
-    @Json(name = "quantity")
-    val quantity: java.math.BigDecimal
+    /* Suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. Not the maximum of the curve. */
+    @Json(name = "max")
+    val max: java.math.BigDecimal
 
 ) {
 

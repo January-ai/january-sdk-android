@@ -6,23 +6,64 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import java.time.OffsetDateTime
 
-public enum class Gender { @Json(name = "male") MALE, @Json(name = "female") FEMALE }
-public enum class ActivityLevel {
-    @Json(name = "sedentary") SEDENTARY, @Json(name = "lightly_active") LIGHTLY_ACTIVE,
-    @Json(name = "moderately_active") MODERATELY_ACTIVE, @Json(name = "very_active") VERY_ACTIVE,
+public enum class Sex { @Json(name = "male") MALE, @Json(name = "female") FEMALE }
+public typealias Gender = Sex
+
+public enum class HeightUnit(public val value: String) {
+    @Json(name = "in") INCHES("in"),
+    @Json(name = "cm") CENTIMETERS("cm"),
 }
+
+@JsonClass(generateAdapter = false)
+public data class Height(public val value: Double, public val unit: HeightUnit)
+
+public enum class WeightUnit(public val value: String) {
+    @Json(name = "lb") POUNDS("lb"),
+    @Json(name = "kg") KILOGRAMS("kg"),
+}
+
+@JsonClass(generateAdapter = false)
+public data class Weight(public val value: Double, public val unit: WeightUnit)
+
+public enum class ActivityLevel {
+    @Json(name = "sedentary") SEDENTARY,
+    @Json(name = "lightly_active") LIGHTLY_ACTIVE,
+    @Json(name = "moderately_active") MODERATELY_ACTIVE,
+    @Json(name = "very_active") VERY_ACTIVE,
+}
+
 public enum class MedicalCondition {
-    @Json(name = "Type 2 diabetes") TYPE_2_DIABETES,
-    @Json(name = "Prediabetes") PREDIABETES,
-    @Json(name = "None of the above") NONE_OF_THE_ABOVE,
+    @Json(name = "type_2_diabetes") TYPE_2_DIABETES,
+    @Json(name = "prediabetes") PREDIABETES,
 }
 
 @JsonClass(generateAdapter = false)
 public data class GlucosePredictionProfile(
-    public val age: Double, public val gender: Gender, public val height: Double, public val weight: Double,
+    public val age: Double,
+    public val sex: Sex,
+    public val height: Height,
+    public val weight: Weight,
     @Json(name = "activity_level") public val activityLevel: ActivityLevel? = null,
     @Json(name = "health_conditions") public val healthConditions: List<MedicalCondition>? = null,
-)
+) {
+    public constructor(
+        age: Double,
+        gender: Sex,
+        height: Double,
+        weight: Double,
+        activityLevel: ActivityLevel? = null,
+        healthConditions: List<MedicalCondition>? = null,
+    ) : this(
+        age = age,
+        sex = gender,
+        height = Height(height, HeightUnit.INCHES),
+        weight = Weight(weight, WeightUnit.POUNDS),
+        activityLevel = activityLevel,
+        healthConditions = healthConditions,
+    )
+
+    public val gender: Sex get() = sex
+}
 
 @JsonClass(generateAdapter = false)
 public data class CgmReading(public val timestamp: String, public val value: Double)
@@ -32,26 +73,40 @@ public data class ConsumedHistoricalServing(public val id: Long, public val quan
 
 @JsonClass(generateAdapter = false)
 public data class ConsumedHistoricalFood(
-    public val timestamp: String, public val id: Long, public val serving: ConsumedHistoricalServing,
+    public val timestamp: String,
+    public val id: Long,
+    public val serving: ConsumedHistoricalServing,
 )
 
 public data class PredictGlucoseRequest(
-    public val userProfile: GlucosePredictionProfile, public val foods: List<FoodSelection>,
-    public val startTime: OffsetDateTime, public val cgmData: List<CgmReading>? = null,
+    public val userProfile: GlucosePredictionProfile,
+    public val foods: List<FoodSelection>,
+    public val startTime: OffsetDateTime,
+    public val cgmData: List<CgmReading>? = null,
     public val consumedFoods: List<ConsumedHistoricalFood>? = null,
-    public val endUserId: PartnerUserId? = null, public val timezone: String? = null,
+    public val endUserId: PartnerUserId? = null,
+    public val timezone: String? = null,
 )
 
-public enum class GlucoseImpact {
-    @Json(name = "low_impact") LOW_IMPACT, @Json(name = "medium_impact") MEDIUM_IMPACT,
-    @Json(name = "high_impact") HIGH_IMPACT,
+@JvmInline
+public value class GlucoseImpact(public val value: String) {
+    public companion object {
+        public val LOW: GlucoseImpact = GlucoseImpact("low")
+        public val MEDIUM: GlucoseImpact = GlucoseImpact("medium")
+        public val HIGH: GlucoseImpact = GlucoseImpact("high")
+    }
 }
 
-@JsonClass(generateAdapter = false)
-public data class GlucosePrediction(
-    @Json(name = "cgp") public val curve: List<List<Double>>,
-    public val scoring: GlucoseImpact,
-    @Json(name = "cgp_min") public val minimum: Double,
-    @Json(name = "cgp_max") public val maximum: Double,
-)
+public data class GlucosePredictionPoint(public val minutes: Double, public val value: Double)
+public data class GlucoseChart(public val min: Double, public val max: Double)
 
+public data class GlucosePrediction(
+    public val prediction: List<GlucosePredictionPoint>,
+    public val impact: GlucoseImpact,
+    public val chart: GlucoseChart,
+) {
+    public val curve: List<List<Double>> get() = prediction.map { listOf(it.minutes, it.value) }
+    public val scoring: GlucoseImpact get() = impact
+    public val minimum: Double get() = chart.min
+    public val maximum: Double get() = chart.max
+}

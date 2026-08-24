@@ -19,7 +19,15 @@ public class GlucoseResource internal constructor(private val api: GlucoseApi) {
         )
         return executeApiCall(
             operation = { api.predictGlucose(body, request.endUserId?.value, request.timezone) },
-            transform = { bridgeModel(it) },
+            transform = { prediction ->
+                GlucosePrediction(
+                    prediction = prediction.prediction.map {
+                        GlucosePredictionPoint(it.minutes.toDouble(), it.value.toDouble())
+                    },
+                    impact = GlucoseImpact(prediction.impactScore),
+                    chart = GlucoseChart(prediction.chart.min.toDouble(), prediction.chart.max.toDouble()),
+                )
+            },
         )
     }
 }
@@ -32,4 +40,3 @@ private data class PredictBody(
     @Json(name = "cgm_data") val cgmData: List<CgmReading>?,
     @Json(name = "consumed_foods") val consumedFoods: List<ConsumedHistoricalFood>?,
 )
-

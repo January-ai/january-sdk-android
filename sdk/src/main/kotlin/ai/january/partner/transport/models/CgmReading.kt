@@ -38,7 +38,7 @@ import com.squareup.moshi.JsonClass
 internal data class CgmReading (
 
     @Json(name = "timestamp")
-    val timestamp: kotlin.String,
+    val timestamp: java.time.OffsetDateTime,
 
     /* mg/dL. At most one reading per 15-minute window. */
     @Json(name = "value")

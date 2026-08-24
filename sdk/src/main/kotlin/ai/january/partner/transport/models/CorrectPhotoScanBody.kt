@@ -31,25 +31,25 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param mealName The meal name from the meal-scan response.
- * @param detections The detections array from the meal-scan response, exactly as returned (all ten nutrient keys, non-empty servings).
+ * @param detections The detections array from a photo or text food scan, exactly as returned. Omitted zero-value nutrient keys are filled in automatically; each detection needs at least one serving.
  * @param userInput Plain-English description of what to correct.
+ * @param mealName The meal name from the scan, when it returned one (photo scans do; text scans don't). Defaults to 'Meal'.
  */
 
 
 internal data class CorrectPhotoScanBody (
 
-    /* The meal name from the meal-scan response. */
-    @Json(name = "meal_name")
-    val mealName: kotlin.String,
-
-    /* The detections array from the meal-scan response, exactly as returned (all ten nutrient keys, non-empty servings). */
+    /* The detections array from a photo or text food scan, exactly as returned. Omitted zero-value nutrient keys are filled in automatically; each detection needs at least one serving. */
     @Json(name = "detections")
     val detections: kotlin.collections.List<FoodDetection>,
 
     /* Plain-English description of what to correct. */
     @Json(name = "user_input")
-    val userInput: kotlin.String
+    val userInput: kotlin.String,
+
+    /* The meal name from the scan, when it returned one (photo scans do; text scans don't). Defaults to 'Meal'. */
+    @Json(name = "meal_name")
+    val mealName: kotlin.String? = null
 
 ) {
 

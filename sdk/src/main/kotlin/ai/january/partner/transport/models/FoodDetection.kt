@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param food
- * @param confidenceScore
+ * @param confidenceScore Photo scans only; absent on text scans.
  */
 
 
@@ -41,6 +41,7 @@ internal data class FoodDetection (
     @Json(name = "food")
     val food: DetectedFood,
 
+    /* Photo scans only; absent on text scans. */
     @Json(name = "confidence_score")
     val confidenceScore: kotlin.String? = null
 

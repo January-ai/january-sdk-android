@@ -30,16 +30,18 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param minutes
- * @param `value`
+ * @param minutes Minutes after start_time.
+ * @param `value` Predicted glucose, mg/dL.
  */
 
 
 internal data class GlucosePredictionPoint (
 
+    /* Minutes after start_time. */
     @Json(name = "minutes")
     val minutes: java.math.BigDecimal,
 
+    /* Predicted glucose, mg/dL. */
     @Json(name = "value")
     val `value`: java.math.BigDecimal
 

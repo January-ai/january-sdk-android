@@ -30,20 +30,17 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * Values: TYPE_2_DIABETES,PREDIABETES,NONE_OF_THE_ABOVE
+ * Values: TYPE_2_DIABETES,PREDIABETES
  */
 
 @JsonClass(generateAdapter = false)
 internal enum class MedicalCondition(val value: kotlin.String) {
 
-    @Json(name = "Type 2 diabetes")
-    TYPE_2_DIABETES("Type 2 diabetes"),
+    @Json(name = "type_2_diabetes")
+    TYPE_2_DIABETES("type_2_diabetes"),
 
-    @Json(name = "Prediabetes")
-    PREDIABETES("Prediabetes"),
-
-    @Json(name = "None of the above")
-    NONE_OF_THE_ABOVE("None of the above");
+    @Json(name = "prediabetes")
+    PREDIABETES("prediabetes");
 
     /**
      * Override [toString()] to avoid using the enum variable name as the value, and instead use

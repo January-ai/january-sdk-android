@@ -57,8 +57,8 @@ public class AllEndpointsLiveTest {
         client.foods.suggestAlternatives(
             SuggestFoodAlternativesRequest(
                 foodId = food.id.value,
-                dietRestrictions = listOf(DietRestriction.NONE),
-                dietPreferences = listOf(DietPreference.NONE),
+                dietRestrictions = emptyList(),
+                dietPreferences = emptyList(),
                 endUserId = userId,
             ),
         )
@@ -149,7 +149,7 @@ public class AllEndpointsLiveTest {
                 userProfile = GlucosePredictionProfile(
                     age = 35.0, gender = Gender.MALE, height = 70.0, weight = 175.0,
                     activityLevel = ActivityLevel.MODERATELY_ACTIVE,
-                    healthConditions = listOf(MedicalCondition.NONE_OF_THE_ABOVE),
+                    healthConditions = emptyList(),
                 ),
                 foods = listOf(selectedFood),
                 startTime = OffsetDateTime.now(ZoneOffset.UTC),

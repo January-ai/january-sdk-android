@@ -54,7 +54,7 @@ public class PhotoScanningResourceTest {
         val urlRequest = server.takeRequest()
         val dataRequest = server.takeRequest()
         assertEquals("POST", urlRequest.method)
-        assertEquals("/v1.2/meal-scan", urlRequest.requestUrl!!.encodedPath)
+        assertEquals("/v1.2/food-scans/photo", urlRequest.requestUrl!!.encodedPath)
         assertEquals(BURGER_IMAGE_URL, adapter.fromJson(urlRequest.body.readUtf8())!!.image)
         val encodedImage = adapter.fromJson(dataRequest.body.readUtf8())!!.image
         assertTrue(encodedImage.startsWith("data:image/png;base64,"))

@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.NutritionFacts
 import ai.january.partner.transport.models.ServingOption
 
 import com.squareup.moshi.Json
@@ -37,17 +38,10 @@ import com.squareup.moshi.JsonClass
  * @param restaurantName
  * @param servings
  * @param isChain
- * @param energy Calories (kcal).
- * @param protein
- * @param carbs
- * @param netCarbs
- * @param fat
- * @param fiber
- * @param sugars
- * @param addedSugars
- * @param gi Glycemic index.
- * @param gl Glycemic load.
- * @param photoUrl
+ * @param nutrients
+ * @param glycemicIndex Glycemic index.
+ * @param glycemicLoad Glycemic load.
+ * @param imageUrl URL of a picture of the dish, when the source has one.
  * @param distance Distance from (latitude, longitude) in meters.
  */
 
@@ -73,41 +67,20 @@ internal data class RestaurantMenuItem (
     @Json(name = "is_chain")
     val isChain: kotlin.Boolean? = null,
 
-    /* Calories (kcal). */
-    @Json(name = "energy")
-    val energy: java.math.BigDecimal? = null,
-
-    @Json(name = "protein")
-    val protein: java.math.BigDecimal? = null,
-
-    @Json(name = "carbs")
-    val carbs: java.math.BigDecimal? = null,
-
-    @Json(name = "net_carbs")
-    val netCarbs: java.math.BigDecimal? = null,
-
-    @Json(name = "fat")
-    val fat: java.math.BigDecimal? = null,
-
-    @Json(name = "fiber")
-    val fiber: java.math.BigDecimal? = null,
-
-    @Json(name = "sugars")
-    val sugars: java.math.BigDecimal? = null,
-
-    @Json(name = "added_sugars")
-    val addedSugars: java.math.BigDecimal? = null,
+    @Json(name = "nutrients")
+    val nutrients: NutritionFacts? = null,
 
     /* Glycemic index. */
-    @Json(name = "gi")
-    val gi: java.math.BigDecimal? = null,
+    @Json(name = "glycemic_index")
+    val glycemicIndex: java.math.BigDecimal? = null,
 
     /* Glycemic load. */
-    @Json(name = "gl")
-    val gl: java.math.BigDecimal? = null,
+    @Json(name = "glycemic_load")
+    val glycemicLoad: java.math.BigDecimal? = null,
 
-    @Json(name = "photo_url")
-    val photoUrl: kotlin.String? = null,
+    /* URL of a picture of the dish, when the source has one. */
+    @Json(name = "image_url")
+    val imageUrl: kotlin.String? = null,
 
     /* Distance from (latitude, longitude) in meters. */
     @Json(name = "distance")

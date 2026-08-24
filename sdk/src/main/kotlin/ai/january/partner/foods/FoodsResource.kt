@@ -7,6 +7,8 @@ import ai.january.partner.ServingId
 import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
 import ai.january.partner.transport.apis.FoodsApi
+import ai.january.partner.transport.apis.PhotoScanningApi
+import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
 import ai.january.partner.transport.models.SuggestFoodAlternativesBody
 import java.io.IOException
 import java.math.BigDecimal
@@ -14,6 +16,7 @@ import kotlinx.coroutines.CancellationException
 
 public class FoodsResource internal constructor(
     private val api: FoodsApi,
+    private val photoScanningApi: PhotoScanningApi,
 ) {
     public suspend fun search(request: SearchFoodsRequest): FoodSearchResults {
         if (request.query.isBlank() || request.query.length > 256) {
@@ -71,7 +74,12 @@ public class FoodsResource internal constructor(
     public suspend fun searchNaturalLanguage(
         request: SearchFoodsByNaturalLanguageRequest,
     ): SearchFoodsByNaturalLanguageResponse = executeApiCall(
-        operation = { api.searchFoodsByNaturalLanguage(request.query, request.endUserId?.value) },
+        operation = {
+            photoScanningApi.searchFoodsByNaturalLanguage(
+                SearchFoodsByNaturalLanguageBody(request.query),
+                request.endUserId?.value,
+            )
+        },
         transform = { bridgeModel(it) },
     )
 
@@ -108,27 +116,27 @@ public class FoodsResource internal constructor(
                 id = FoodId(item.id),
                 name = item.name,
                 brandName = item.brandName,
-                calories = item.energy?.toDouble(),
-                protein = item.protein?.toDouble(),
-                carbohydrates = item.carbs?.toDouble(),
-                netCarbohydrates = item.netCarbs?.toDouble(),
-                totalFat = item.fat?.toDouble(),
-                saturatedFat = item.fatTotalSaturated?.toDouble(),
-                fiber = item.fiber?.toDouble(),
-                totalSugars = item.sugars?.toDouble(),
-                addedSugars = item.addedSugars?.toDouble(),
-                sodium = item.sodium?.toDouble(),
-                potassium = item.potassium?.toDouble(),
-                cholesterol = item.cholesterol?.toDouble(),
-                glycemicIndex = item.gi?.toDouble(),
-                glycemicLoad = item.gl?.toDouble(),
-                photoUrl = item.photoUrl,
+                calories = item.nutrients.calories?.value?.toDouble(),
+                protein = item.nutrients.protein?.value?.toDouble(),
+                carbohydrates = item.nutrients.carbohydrates?.value?.toDouble(),
+                netCarbohydrates = item.nutrients.netCarbohydrates?.value?.toDouble(),
+                totalFat = item.nutrients.totalFat?.value?.toDouble(),
+                saturatedFat = item.nutrients.saturatedFat?.value?.toDouble(),
+                fiber = item.nutrients.fiber?.value?.toDouble(),
+                totalSugars = item.nutrients.totalSugars?.value?.toDouble(),
+                addedSugars = item.nutrients.addedSugars?.value?.toDouble(),
+                sodium = item.nutrients.sodium?.value?.toDouble(),
+                potassium = item.nutrients.potassium?.value?.toDouble(),
+                cholesterol = item.nutrients.cholesterol?.value?.toDouble(),
+                glycemicIndex = item.glycemicIndex?.toDouble(),
+                glycemicLoad = item.glycemicLoad?.toDouble(),
+                photoUrl = item.imageUrl,
                 servings = item.servings.map { serving ->
                     ServingOption(
                         id = ServingId(serving.id),
                         quantity = serving.quantity.toDouble(),
                         unit = serving.unit,
-                        scalingFactor = serving.scalingFactor.toDouble(),
+                        scalingFactor = serving.scalingFactor?.toDouble() ?: 1.0,
                         weightGrams = serving.weightGrams?.toDouble(),
                         isPrimary = serving.isPrimary,
                     )

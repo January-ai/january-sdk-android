@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.DetectedFood
+import ai.january.partner.transport.models.AlternativeFood
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -38,7 +38,7 @@ import com.squareup.moshi.JsonClass
 internal data class FoodAlternative (
 
     @Json(name = "food")
-    val food: DetectedFood
+    val food: AlternativeFood
 
 ) {
 

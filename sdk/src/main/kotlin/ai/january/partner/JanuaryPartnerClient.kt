@@ -44,9 +44,10 @@ public class JanuaryPartnerClient private constructor(
             authName = "bearerAuth",
             bearerToken = developmentApiKey,
         )
-        foods = FoodsResource(apiClient.createService(FoodsApi::class.java))
+        val photoScanningApi = apiClient.createService(PhotoScanningApi::class.java)
+        foods = FoodsResource(apiClient.createService(FoodsApi::class.java), photoScanningApi)
         restaurants = RestaurantsResource(apiClient.createService(RestaurantsApi::class.java))
-        photoScanning = PhotoScanningResource(apiClient.createService(PhotoScanningApi::class.java))
+        photoScanning = PhotoScanningResource(photoScanningApi)
         foodLogs = FoodLogsResource(apiClient.createService(FoodLogsApi::class.java))
         glucose = GlucoseResource(apiClient.createService(GlucoseApi::class.java))
     }

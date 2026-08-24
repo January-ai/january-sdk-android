@@ -35,31 +35,23 @@ public data class SearchFoodsByNaturalLanguageResponse(
 )
 
 public enum class DietRestriction(public val value: String) {
-    @Json(name = "None") NONE("None"), @Json(name = "Gluten") GLUTEN("Gluten"),
-    @Json(name = "Lactose") LACTOSE("Lactose"), @Json(name = "Yeast") YEAST("Yeast"),
-    @Json(name = "Tree nuts") TREE_NUTS("Tree nuts"), @Json(name = "Peanuts") PEANUTS("Peanuts"),
-    @Json(name = "Dairy") DAIRY("Dairy"), @Json(name = "Eggs") EGGS("Eggs"),
-    @Json(name = "Sulfites") SULFITES("Sulfites"), @Json(name = "Soy") SOY("Soy"),
-    @Json(name = "Wheat") WHEAT("Wheat"), @Json(name = "Shellfish") SHELLFISH("Shellfish"),
-    @Json(name = "Fish") FISH("Fish"), @Json(name = "Mushrooms") MUSHROOMS("Mushrooms"),
-    @Json(name = "Sesame") SESAME("Sesame"),
-    @Json(name = "Monosodium glutamate (MSG)") MONOSODIUM_GLUTAMATE("Monosodium glutamate (MSG)"),
-    @Json(name = "Caffeine") CAFFEINE("Caffeine"), @Json(name = "FODMAPs") FODMAPS("FODMAPs"),
+    GLUTEN("gluten"), LACTOSE("lactose"), YEAST("yeast"), TREE_NUTS("tree_nuts"),
+    PEANUTS("peanuts"), DAIRY("dairy"), EGGS("eggs"), SULFITES("sulfites"),
+    SOY("soy"), WHEAT("wheat"), SHELLFISH("shellfish"), FISH("fish"),
+    MUSHROOMS("mushrooms"), SESAME("sesame"), MONOSODIUM_GLUTAMATE("msg"),
+    CAFFEINE("caffeine"), FODMAPS("fodmaps"),
 }
 
 public enum class DietPreference(public val value: String) {
-    @Json(name = "None") NONE("None"), @Json(name = "Vegetarian") VEGETARIAN("Vegetarian"),
-    @Json(name = "Vegan") VEGAN("Vegan"), @Json(name = "Keto") KETO("Keto"),
-    @Json(name = "Paleo") PALEO("Paleo"), @Json(name = "Pescatarian") PESCATARIAN("Pescatarian"),
-    @Json(name = "Low carbohydrate") LOW_CARBOHYDRATE("Low carbohydrate"),
-    @Json(name = "High protein") HIGH_PROTEIN("High protein"),
-    @Json(name = "Kosher") KOSHER("Kosher"), @Json(name = "Halal") HALAL("Halal"),
+    VEGETARIAN("vegetarian"), VEGAN("vegan"), KETO("keto"), PALEO("paleo"),
+    PESCATARIAN("pescatarian"), LOW_CARBOHYDRATE("low_carbohydrate"),
+    HIGH_PROTEIN("high_protein"), KOSHER("kosher"), HALAL("halal"),
 }
 
 public data class SuggestFoodAlternativesRequest(
     public val foodId: Long,
-    public val dietRestrictions: List<DietRestriction> = listOf(DietRestriction.NONE),
-    public val dietPreferences: List<DietPreference> = listOf(DietPreference.NONE),
+    public val dietRestrictions: List<DietRestriction> = emptyList(),
+    public val dietPreferences: List<DietPreference> = emptyList(),
     public val endUserId: PartnerUserId? = null,
 )
 
@@ -80,4 +72,3 @@ public data class FoodAlternative(public val food: DetectedFood)
 
 @JsonClass(generateAdapter = false)
 public data class SuggestFoodAlternativesResponse(public val alternatives: List<FoodAlternative>)
-

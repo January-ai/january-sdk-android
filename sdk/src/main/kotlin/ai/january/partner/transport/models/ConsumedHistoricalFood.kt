@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.ConsumedHistoricalServing
+import ai.january.partner.transport.models.FoodLogInputServing
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -40,14 +40,14 @@ import com.squareup.moshi.JsonClass
 internal data class ConsumedHistoricalFood (
 
     @Json(name = "timestamp")
-    val timestamp: kotlin.String,
+    val timestamp: java.time.OffsetDateTime,
 
     /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
     @Json(name = "id")
     val id: kotlin.Long,
 
     @Json(name = "serving")
-    val serving: ConsumedHistoricalServing
+    val serving: FoodLogInputServing
 
 ) {
 

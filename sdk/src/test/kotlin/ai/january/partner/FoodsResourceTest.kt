@@ -33,7 +33,7 @@ public class FoodsResourceTest {
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
                 .setBody(
-                    """{"total_count":1,"items":[{"id":84222716,"name":"Banana","brand_name":"One","energy":160,"protein":2,"carbs":15,"net_carbs":13,"fat":10,"fat_total_saturated":5,"fiber":2,"sugars":13,"added_sugars":11,"sodium":20,"potassium":170,"cholesterol":2.5,"gi":34.9,"gl":5.2,"photo_url":null,"servings":[{"id":67943292,"quantity":1,"unit":"bar","scaling_factor":1,"weight_grams":60,"is_primary":true}]}]}""",
+                    """{"total_count":1,"items":[{"id":84222716,"name":"Banana","brand_name":"One","nutrients":{"calories":{"value":160,"unit":"kcal"},"protein":{"value":2,"unit":"g"},"carbohydrates":{"value":15,"unit":"g"}},"glycemic_index":34.9,"glycemic_load":5.2,"image_url":null,"servings":[{"id":67943292,"quantity":1,"unit":"bar","scaling_factor":1,"weight_grams":60,"is_primary":true}]}]}""",
                 ),
         )
         val client = JanuaryPartnerClient.testing(
@@ -59,7 +59,7 @@ public class FoodsResourceTest {
         assertEquals("Bearer fixture-api-key", request.getHeader("Authorization"))
         assertEquals("test-user-123", request.getHeader("x-end-user-id"))
         assertTrue(request.getHeader("User-Agent")!!.startsWith("JanuaryPartnerSDK-Android/0.1.0"))
-        assertEquals("/v1.2/foods/search", request.requestUrl!!.encodedPath)
+        assertEquals("/v1.2/foods", request.requestUrl!!.encodedPath)
         assertEquals("banana", request.requestUrl!!.queryParameter("query"))
         assertEquals("branded", request.requestUrl!!.queryParameter("category"))
         assertEquals("10", request.requestUrl!!.queryParameter("limit"))

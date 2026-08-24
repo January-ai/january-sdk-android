@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.NutritionFacts
 import ai.january.partner.transport.models.ServingOption
 
 import com.squareup.moshi.Json
@@ -33,23 +34,12 @@ import com.squareup.moshi.JsonClass
  *
  * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
  * @param name
- * @param brandName
- * @param energy
- * @param protein
- * @param carbs
- * @param netCarbs
- * @param fat
- * @param fatTotalSaturated
- * @param fiber
- * @param sugars
- * @param addedSugars
- * @param sodium
- * @param potassium
- * @param cholesterol
- * @param gi Glycemic index.
- * @param gl Glycemic load.
- * @param photoUrl
+ * @param nutrients
  * @param servings
+ * @param brandName Absent for generic (non-branded) foods.
+ * @param glycemicIndex Glycemic index.
+ * @param glycemicLoad Glycemic load.
+ * @param imageUrl URL of a picture of the food, when the database has one.
  */
 
 
@@ -62,58 +52,27 @@ internal data class FoodSearchItem (
     @Json(name = "name")
     val name: kotlin.String,
 
-    @Json(name = "brand_name")
-    val brandName: kotlin.String?,
-
-    @Json(name = "energy")
-    val energy: java.math.BigDecimal?,
-
-    @Json(name = "protein")
-    val protein: java.math.BigDecimal?,
-
-    @Json(name = "carbs")
-    val carbs: java.math.BigDecimal?,
-
-    @Json(name = "net_carbs")
-    val netCarbs: java.math.BigDecimal?,
-
-    @Json(name = "fat")
-    val fat: java.math.BigDecimal?,
-
-    @Json(name = "fat_total_saturated")
-    val fatTotalSaturated: java.math.BigDecimal?,
-
-    @Json(name = "fiber")
-    val fiber: java.math.BigDecimal?,
-
-    @Json(name = "sugars")
-    val sugars: java.math.BigDecimal?,
-
-    @Json(name = "added_sugars")
-    val addedSugars: java.math.BigDecimal?,
-
-    @Json(name = "sodium")
-    val sodium: java.math.BigDecimal?,
-
-    @Json(name = "potassium")
-    val potassium: java.math.BigDecimal?,
-
-    @Json(name = "cholesterol")
-    val cholesterol: java.math.BigDecimal?,
-
-    /* Glycemic index. */
-    @Json(name = "gi")
-    val gi: java.math.BigDecimal?,
-
-    /* Glycemic load. */
-    @Json(name = "gl")
-    val gl: java.math.BigDecimal?,
-
-    @Json(name = "photo_url")
-    val photoUrl: kotlin.String?,
+    @Json(name = "nutrients")
+    val nutrients: NutritionFacts,
 
     @Json(name = "servings")
-    val servings: kotlin.collections.List<ServingOption>
+    val servings: kotlin.collections.List<ServingOption>,
+
+    /* Absent for generic (non-branded) foods. */
+    @Json(name = "brand_name")
+    val brandName: kotlin.String? = null,
+
+    /* Glycemic index. */
+    @Json(name = "glycemic_index")
+    val glycemicIndex: java.math.BigDecimal? = null,
+
+    /* Glycemic load. */
+    @Json(name = "glycemic_load")
+    val glycemicLoad: java.math.BigDecimal? = null,
+
+    /* URL of a picture of the food, when the database has one. */
+    @Json(name = "image_url")
+    val imageUrl: kotlin.String? = null
 
 ) {
 
