@@ -59,11 +59,31 @@ a coroutine owned by your application, such as `viewModelScope`.
 
 ## API resources
 
-- `foods` — food search, barcode lookup, natural-language search, and alternatives
+- `foods` — autocomplete, food search, full food details, barcode lookup, natural-language search, and alternatives
 - `restaurants` — restaurant and menu search
 - `photoScanning` — meal-photo scanning and corrections
 - `foodLogs` — create, retrieve, update, and delete food logs
 - `glucose` — glucose prediction
+
+## Full food details and portions
+
+Search and autocomplete return lightweight discovery results. Fetch the selected
+food to get every serving, then let the SDK scale all nutrients and build the
+selection used by food-log and glucose-prediction requests:
+
+```kotlin
+import ai.january.partner.foods.GetFoodRequest
+import ai.january.partner.foods.portion
+
+val food = january.foods.getFood(GetFoodRequest(foodId = result.id))
+val portion = food.portion(
+    servingId = food.servings[1].id,
+    quantity = 1.5,
+)
+
+println(portion.nutrition.calories?.value)
+val selection = portion.selection
+```
 
 ## Error handling
 

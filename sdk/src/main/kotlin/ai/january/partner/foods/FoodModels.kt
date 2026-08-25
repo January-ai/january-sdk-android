@@ -3,12 +3,40 @@ package ai.january.partner.foods
 import ai.january.partner.FoodId
 import ai.january.partner.PartnerUserId
 import ai.january.partner.ServingId
+import ai.january.partner.models.NutritionFacts
 
 public enum class FoodCategory {
     GENERAL,
     BRANDED,
     RECIPE,
 }
+
+public enum class AutocompleteFoodCategory {
+    GENERAL,
+    BRANDED,
+}
+
+public data class AutocompleteFoodsRequest(
+    public val query: String,
+    public val category: AutocompleteFoodCategory? = null,
+    public val limit: Int = 8,
+    public val endUserId: PartnerUserId? = null,
+)
+
+public data class FoodSuggestion(
+    public val id: FoodId,
+    public val name: String,
+    public val brandName: String? = null,
+    public val imageUrl: String? = null,
+    public val nutrients: NutritionFacts? = null,
+)
+
+public data class AutocompleteFoodsResponse(public val items: List<FoodSuggestion>)
+
+public data class GetFoodRequest(
+    public val foodId: FoodId,
+    public val endUserId: PartnerUserId? = null,
+)
 
 public data class SearchFoodsRequest(
     public val query: String,
@@ -42,6 +70,7 @@ public data class FoodSearchItem(
     public val glycemicLoad: Double?,
     public val photoUrl: String?,
     public val servings: List<ServingOption>,
+    public val nutrients: NutritionFacts? = null,
 )
 
 public data class ServingOption(

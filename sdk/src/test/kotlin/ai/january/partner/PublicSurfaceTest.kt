@@ -6,6 +6,8 @@ import ai.january.partner.foodlogs.FoodLogUserContext
 import ai.january.partner.foodlogs.ListFoodLogsRequest
 import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
+import ai.january.partner.foods.AutocompleteFoodsRequest
+import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
@@ -47,9 +49,10 @@ public class PublicSurfaceTest {
     }
 
     @Test
-    public fun allThirteenOperationsAreExposedThroughThePublicClient(): Unit = runBlocking {
+    public fun allContractOperationsAreExposedThroughThePublicClient(): Unit = runBlocking {
         val responses = listOf(
-            envelope, envelope, """{"detections":[]}""", """{"alternatives":[]}""",
+            """{"items":[]}""", foodItem, envelope, envelope,
+            """{"detections":[]}""", """{"alternatives":[]}""",
             envelope, envelope, photo, photo, foodLog, """{"total_count":0,"items":[]}""",
             foodLog, """{"status":"deleted"}""",
             """{"prediction":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
@@ -74,6 +77,8 @@ public class PublicSurfaceTest {
             ),
         )
 
+        client.foods.autocomplete(AutocompleteFoodsRequest("ban", endUserId = userId))
+        client.foods.getFood(GetFoodRequest(FoodId(1), userId))
         client.foods.search(SearchFoodsRequest("banana", endUserId = userId))
         client.foods.lookupBarcode(LookupFoodByBarcodeRequest("049000006346", userId))
         client.foods.searchNaturalLanguage(SearchFoodsByNaturalLanguageRequest("one banana", userId))
@@ -93,10 +98,11 @@ public class PublicSurfaceTest {
             ),
         )
 
-        val paths = List(13) { server.takeRequest().requestUrl!!.encodedPath }
+        val paths = List(15) { server.takeRequest().requestUrl!!.encodedPath }
         assertEquals(
             listOf(
-                "/v1.2/foods", "/v1.2/foods/barcode/049000006346", "/v1.2/food-scans/text",
+                "/v1.2/foods/autocomplete", "/v1.2/foods/1", "/v1.2/foods",
+                "/v1.2/foods/barcode/049000006346", "/v1.2/food-scans/text",
                 "/v1.2/foods/1/alternatives", "/v1.2/restaurants", "/v1.2/restaurants/menu-items",
                 "/v1.2/food-scans/photo", "/v1.2/food-scans/corrections", "/v1.2/food-logs", "/v1.2/food-logs",
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001",
@@ -108,6 +114,7 @@ public class PublicSurfaceTest {
 
     private companion object {
         const val envelope = """{"total_count":0,"items":[]}"""
+        const val foodItem = """{"id":1,"name":"Banana","nutrients":{},"servings":[{"id":2,"quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
         const val photo = """{"meal_name":"Fixture meal","detections":[]}"""
         const val foodLog = """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"timestamp_utc":"2026-08-22T12:00:00Z","name":"Fixture"}"""
     }

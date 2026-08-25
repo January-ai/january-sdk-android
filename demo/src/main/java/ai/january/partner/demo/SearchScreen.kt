@@ -81,15 +81,20 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import ai.january.partner.foods.FoodCategory
+import ai.january.partner.foods.AutocompleteFoodCategory
+import ai.january.partner.foods.AutocompleteFoodsRequest
 import ai.january.partner.foods.DietPreference
 import ai.january.partner.foods.DietRestriction
 import ai.january.partner.foods.FoodSearchItem
+import ai.january.partner.foods.FoodSuggestion
+import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
+import ai.january.partner.foods.portion
 import ai.january.partner.glucose.GlucosePrediction
 import ai.january.partner.glucose.GlucosePredictionProfile
 import ai.january.partner.glucose.Height
@@ -107,6 +112,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.PartnerUserId
 import coil3.compose.AsyncImage
@@ -139,6 +145,8 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var restaurantMode by remember { mutableStateOf(RestaurantMode.RESTAURANTS) }
     var query by remember { mutableStateOf("") }
     var category by remember { mutableStateOf<FoodCategory?>(null) }
+    var foodSuggestions by remember { mutableStateOf<List<FoodSuggestion>>(emptyList()) }
+    var autocompleteSuppressedQuery by remember { mutableStateOf<String?>(null) }
     var foodResults by remember { mutableStateOf<List<FoodSearchItem>>(emptyList()) }
     var foodResultLimit by remember { mutableStateOf(10) }
     var foodLimitMenuOpen by remember { mutableStateOf(false) }
@@ -161,7 +169,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var showFilters by remember { mutableStateOf(false) }
 
     fun clearResults() {
-        foodResults = emptyList(); naturalResult = null; restaurants = emptyList(); menuItems = emptyList(); error = null
+        foodSuggestions = emptyList(); foodResults = emptyList(); naturalResult = null; restaurants = emptyList(); menuItems = emptyList(); error = null
     }
 
     fun updateLocation() {
@@ -195,6 +203,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     fun submit(forcedRestaurantName: String? = null) {
         val value = (forcedRestaurantName ?: query).trim()
         if (value.isEmpty() || client == null) return
+        foodSuggestions = emptyList()
         focusManager.clearFocus(force = true)
         keyboardController?.hide()
         loading = true
@@ -227,6 +236,39 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
             focusManager.clearFocus(force = true)
             keyboardController?.hide()
         }
+    }
+
+    LaunchedEffect(scope, foodMode, category, query, client, state.partnerUserId) {
+        val value = query.trim()
+        val autocompleteCategory = when (category) {
+            FoodCategory.GENERAL -> AutocompleteFoodCategory.GENERAL
+            FoodCategory.BRANDED -> AutocompleteFoodCategory.BRANDED
+            FoodCategory.RECIPE, null -> null
+        }
+        val activeClient = client
+        val canAutocomplete = scope == SearchScope.FOODS &&
+            foodMode == FoodMode.NAME &&
+            category != FoodCategory.RECIPE &&
+            value.length in 2..64 &&
+            value != autocompleteSuppressedQuery &&
+            activeClient != null
+
+        if (!canAutocomplete) {
+            foodSuggestions = emptyList()
+            return@LaunchedEffect
+        }
+
+        delay(300)
+        foodSuggestions = runCatching {
+            requireNotNull(activeClient).foods.autocomplete(
+                AutocompleteFoodsRequest(
+                    query = value,
+                    category = autocompleteCategory,
+                    limit = 8,
+                    endUserId = state.partnerUserId,
+                ),
+            ).items
+        }.getOrDefault(emptyList())
     }
 
     selectedFood?.let { food ->
@@ -265,7 +307,10 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 item {
                     OutlinedTextField(
                         value = query,
-                        onValueChange = { query = it },
+                        onValueChange = {
+                            query = it
+                            if (it != autocompleteSuppressedQuery) autocompleteSuppressedQuery = null
+                        },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                         placeholder = {
                             Text(
@@ -290,6 +335,35 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { submit() }),
                     )
+                }
+                if (foodSuggestions.isNotEmpty()) {
+                    item {
+                        DemoCard(contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
+                            foodSuggestions.forEachIndexed { index, suggestion ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 48.dp)
+                                        .clickable {
+                                            autocompleteSuppressedQuery = suggestion.name
+                                            query = suggestion.name
+                                            foodSuggestions = emptyList()
+                                            submit(suggestion.name)
+                                        },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = suggestion.name,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium,
+                                    )
+                                }
+                                if (index < foodSuggestions.lastIndex) {
+                                    HorizontalDivider(color = JanuaryColors.Divider)
+                                }
+                            }
+                        }
+                    }
                 }
                 item {
                     ChoiceRow(
@@ -611,6 +685,7 @@ private fun FoodDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
+    var detailFood by remember(food) { mutableStateOf(food) }
     val initialServing = remember(food) { food.servings.firstOrNull { it.isPrimary } ?: food.servings.firstOrNull() }
     var serving by remember(food) { mutableStateOf(initialServing) }
     var quantity by remember(food) { mutableDoubleStateOf(initialServing?.quantity?.takeIf { it > 0 } ?: 1.0) }
@@ -621,12 +696,23 @@ private fun FoodDetailScreen(
     var showAlternatives by remember { mutableStateOf(false) }
     var showGlucoseSheet by remember { mutableStateOf(false) }
 
-    val baseline = serving?.quantity?.takeIf { it > 0 } ?: 1.0
-    val scale = serving?.let { quantity * it.scalingFactor / baseline } ?: quantity
+    val portion = serving?.let { runCatching { detailFood.portion(it.id, quantity) }.getOrNull() }
+
+    LaunchedEffect(food.id, state.client, state.partnerUserId) {
+        val sdk = state.client ?: return@LaunchedEffect
+        runCatching { sdk.foods.getFood(GetFoodRequest(food.id, state.partnerUserId)) }
+            .onSuccess { fullFood ->
+                detailFood = fullFood
+                val primary = fullFood.servings.firstOrNull { it.isPrimary } ?: fullFood.servings.firstOrNull()
+                serving = primary
+                quantity = primary?.quantity?.takeIf { it > 0 } ?: 1.0
+            }
+            .onFailure { error = it.message ?: "Complete serving details could not be loaded." }
+    }
 
     fun predict() {
         val sdk = state.client ?: return
-        val selectedServing = serving ?: return
+        val selectedPortion = portion ?: return
         showGlucoseSheet = true
         loading = true
         error = null
@@ -640,7 +726,7 @@ private fun FoodDetailScreen(
                             height = Height(66.0, HeightUnit.INCHES),
                             weight = Weight(150.0, WeightUnit.POUNDS),
                         ),
-                        foods = listOf(FoodSelection(food.id.value, ServingSelection(selectedServing.id.value, quantity))),
+                        foods = listOf(selectedPortion.selection),
                         startTime = OffsetDateTime.now(),
                         endUserId = state.partnerUserId,
                         timezone = state.timezone,
@@ -668,14 +754,14 @@ private fun FoodDetailScreen(
                     modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(28.dp)).background(JanuaryColors.Control),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (food.photoUrl != null) AsyncImage(food.photoUrl, food.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    if (detailFood.photoUrl != null) AsyncImage(detailFood.photoUrl, detailFood.name, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                     else Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = JanuaryColors.Green)
                 }
-                Text(food.name, style = MaterialTheme.typography.headlineMedium)
-                food.brandName?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Text(detailFood.name, style = MaterialTheme.typography.headlineMedium)
+                detailFood.brandName?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
 
                 DemoCard {
-                    if (food.servings.isEmpty()) {
+                    if (detailFood.servings.isEmpty()) {
                         Text("No serving options were returned.")
                     } else {
                         ExposedDropdownMenuBox(
@@ -694,7 +780,7 @@ private fun FoodDetailScreen(
                                 expanded = servingMenuExpanded,
                                 onDismissRequest = { servingMenuExpanded = false },
                             ) {
-                                food.servings.forEach { option ->
+                                detailFood.servings.forEach { option ->
                                     DropdownMenuItem(
                                         text = { Text(servingLabel(option)) },
                                         onClick = {
@@ -727,32 +813,32 @@ private fun FoodDetailScreen(
 
                 DemoCard {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Metric("Calories", food.calories?.times(scale), "cal")
-                        Metric("Protein", food.protein?.times(scale), "g")
-                        Metric("Carbs", food.carbohydrates?.times(scale), "g")
-                        Metric("Fat", food.totalFat?.times(scale), "g")
+                        Metric("Calories", portion?.nutrition?.calories?.value, portion?.nutrition?.calories?.unit ?: "cal")
+                        Metric("Protein", portion?.nutrition?.protein?.value, portion?.nutrition?.protein?.unit ?: "g")
+                        Metric("Carbs", portion?.nutrition?.carbohydrates?.value, portion?.nutrition?.carbohydrates?.unit ?: "g")
+                        Metric("Fat", portion?.nutrition?.totalFat?.value, portion?.nutrition?.totalFat?.unit ?: "g")
                     }
                 }
 
                 val facts = listOf(
-                    "Net carbohydrates" to food.netCarbohydrates,
-                    "Saturated fat" to food.saturatedFat,
-                    "Fiber" to food.fiber,
-                    "Total sugars" to food.totalSugars,
-                    "Added sugars" to food.addedSugars,
-                    "Sodium" to food.sodium,
-                    "Potassium" to food.potassium,
-                    "Cholesterol" to food.cholesterol,
+                    "Net carbohydrates" to portion?.nutrition?.netCarbohydrates,
+                    "Saturated fat" to portion?.nutrition?.saturatedFat,
+                    "Fiber" to portion?.nutrition?.fiber,
+                    "Total sugars" to portion?.nutrition?.totalSugars,
+                    "Added sugars" to portion?.nutrition?.addedSugars,
+                    "Sodium" to portion?.nutrition?.sodium,
+                    "Potassium" to portion?.nutrition?.potassium,
+                    "Cholesterol" to portion?.nutrition?.cholesterol,
                 ).filter { it.second != null }
-                if (facts.isNotEmpty() || food.glycemicIndex != null || food.glycemicLoad != null) {
+                if (facts.isNotEmpty() || portion?.glycemicIndex != null || portion?.glycemicLoad != null) {
                     SectionLabel("Nutrition facts")
                     DemoCard {
                         facts.forEachIndexed { index, (label, value) ->
-                            NutritionRow(label, value!! * scale, if (label in listOf("Sodium", "Potassium", "Cholesterol")) "mg" else "g")
+                            NutritionRow(label, value!!.value, value.unit)
                             if (index < facts.lastIndex) HorizontalDivider()
                         }
-                        food.glycemicIndex?.let { NutritionRow("Glycemic index", it, "") }
-                        food.glycemicLoad?.let { NutritionRow("Glycemic load", it, "") }
+                        portion?.glycemicIndex?.let { NutritionRow("Glycemic index", it, "") }
+                        portion?.glycemicLoad?.let { NutritionRow("Glycemic load", it, "") }
                     }
                 }
 
@@ -776,7 +862,7 @@ private fun FoodDetailScreen(
     }
 
     if (showAlternatives) {
-        AlternativesSheet(state, food, onDismiss = { showAlternatives = false })
+        AlternativesSheet(state, detailFood, onDismiss = { showAlternatives = false })
     }
     if (showGlucoseSheet && serving != null) {
         val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -794,7 +880,7 @@ private fun FoodDetailScreen(
                     Text("Glucose response", style = MaterialTheme.typography.titleMedium)
                     TextButton(onClick = { showGlucoseSheet = false }, modifier = Modifier.weight(1f)) { Text("Done") }
                 }
-                Text(food.name, style = MaterialTheme.typography.titleMedium)
+                Text(detailFood.name, style = MaterialTheme.typography.titleMedium)
                 Text("${formatNumber(quantity)} ${serving!!.unit}", color = JanuaryColors.Muted, fontFamily = FontFamily.Monospace)
                 if (loading) {
                     DemoCard {
@@ -806,7 +892,7 @@ private fun FoodDetailScreen(
                     }
                 } else {
                     error?.let { ErrorCard(it, ::predict) }
-                    prediction?.let { GlucosePredictionResult(it, listOf(DemoSelectedFood(food, serving!!, quantity))) }
+                    prediction?.let { GlucosePredictionResult(it, listOf(DemoSelectedFood(detailFood, serving!!, quantity))) }
                 }
                 DemoCard {
                     Text("Demo profile", style = MaterialTheme.typography.titleMedium)

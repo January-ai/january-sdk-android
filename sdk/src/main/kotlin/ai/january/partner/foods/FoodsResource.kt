@@ -6,6 +6,8 @@ import ai.january.partner.JanuaryException
 import ai.january.partner.ServingId
 import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
+import ai.january.partner.models.NutrientAmount
+import ai.january.partner.models.NutritionFacts
 import ai.january.partner.transport.apis.FoodsApi
 import ai.january.partner.transport.apis.PhotoScanningApi
 import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
@@ -18,6 +20,49 @@ public class FoodsResource internal constructor(
     private val api: FoodsApi,
     private val photoScanningApi: PhotoScanningApi,
 ) {
+    public suspend fun autocomplete(request: AutocompleteFoodsRequest): AutocompleteFoodsResponse {
+        if (request.query.length > 64) {
+            throw JanuaryException(
+                ErrorCategory.VALIDATION,
+                "Food autocomplete query must contain at most 64 characters.",
+            )
+        }
+        if (request.limit !in 1..20) {
+            throw JanuaryException(
+                ErrorCategory.VALIDATION,
+                "Food autocomplete limit must be between 1 and 20.",
+            )
+        }
+        return executeApiCall(
+            operation = {
+                api.autocompleteFoods(
+                    query = request.query,
+                    xEndUserId = request.endUserId?.value,
+                    category = request.category?.toTransport(),
+                    limit = BigDecimal.valueOf(request.limit.toLong()),
+                )
+            },
+            transform = { response ->
+                AutocompleteFoodsResponse(
+                    response.items.map {
+                        FoodSuggestion(
+                            id = FoodId(it.id),
+                            name = it.name,
+                            brandName = it.brandName,
+                            imageUrl = it.imageUrl,
+                            nutrients = it.nutrients?.toPublicNutrition(),
+                        )
+                    },
+                )
+            },
+        )
+    }
+
+    public suspend fun getFood(request: GetFoodRequest): FoodSearchItem = executeApiCall(
+        operation = { api.getFood(request.foodId.value, request.endUserId?.value) },
+        transform = { it.toPublic() },
+    )
+
     public suspend fun search(request: SearchFoodsRequest): FoodSearchResults {
         if (request.query.isBlank() || request.query.length > 256) {
             throw JanuaryException(
@@ -109,38 +154,46 @@ public class FoodsResource internal constructor(
         FoodCategory.RECIPE -> ai.january.partner.transport.models.FoodCategory.RECIPE
     }
 
+    private fun AutocompleteFoodCategory.toTransport() = when (this) {
+        AutocompleteFoodCategory.GENERAL ->
+            ai.january.partner.transport.models.AutocompleteFoodCategory.GENERAL
+        AutocompleteFoodCategory.BRANDED ->
+            ai.january.partner.transport.models.AutocompleteFoodCategory.BRANDED
+    }
+
     private fun ai.january.partner.transport.models.FoodSearchResults.toPublic() = FoodSearchResults(
         totalCount = totalCount.toInt(),
-        items = items.map { item ->
-            FoodSearchItem(
-                id = FoodId(item.id),
-                name = item.name,
-                brandName = item.brandName,
-                calories = item.nutrients.calories?.value?.toDouble(),
-                protein = item.nutrients.protein?.value?.toDouble(),
-                carbohydrates = item.nutrients.carbohydrates?.value?.toDouble(),
-                netCarbohydrates = item.nutrients.netCarbohydrates?.value?.toDouble(),
-                totalFat = item.nutrients.totalFat?.value?.toDouble(),
-                saturatedFat = item.nutrients.saturatedFat?.value?.toDouble(),
-                fiber = item.nutrients.fiber?.value?.toDouble(),
-                totalSugars = item.nutrients.totalSugars?.value?.toDouble(),
-                addedSugars = item.nutrients.addedSugars?.value?.toDouble(),
-                sodium = item.nutrients.sodium?.value?.toDouble(),
-                potassium = item.nutrients.potassium?.value?.toDouble(),
-                cholesterol = item.nutrients.cholesterol?.value?.toDouble(),
-                glycemicIndex = item.glycemicIndex?.toDouble(),
-                glycemicLoad = item.glycemicLoad?.toDouble(),
-                photoUrl = item.imageUrl,
-                servings = item.servings.map { serving ->
-                    ServingOption(
-                        id = ServingId(serving.id),
-                        quantity = serving.quantity.toDouble(),
-                        unit = serving.unit,
-                        scalingFactor = serving.scalingFactor?.toDouble() ?: 1.0,
-                        weightGrams = serving.weightGrams?.toDouble(),
-                        isPrimary = serving.isPrimary,
-                    )
-                },
+        items = items.map { it.toPublic() },
+    )
+
+    private fun ai.january.partner.transport.models.FoodSearchItem.toPublic() = FoodSearchItem(
+        id = FoodId(id),
+        name = name,
+        brandName = brandName,
+        nutrients = nutrients.toPublicNutrition(),
+        calories = nutrients.calories?.value?.toDouble(),
+        protein = nutrients.protein?.value?.toDouble(),
+        carbohydrates = nutrients.carbohydrates?.value?.toDouble(),
+        netCarbohydrates = nutrients.netCarbohydrates?.value?.toDouble(),
+        totalFat = nutrients.totalFat?.value?.toDouble(),
+        saturatedFat = nutrients.saturatedFat?.value?.toDouble(),
+        fiber = nutrients.fiber?.value?.toDouble(),
+        totalSugars = nutrients.totalSugars?.value?.toDouble(),
+        addedSugars = nutrients.addedSugars?.value?.toDouble(),
+        sodium = nutrients.sodium?.value?.toDouble(),
+        potassium = nutrients.potassium?.value?.toDouble(),
+        cholesterol = nutrients.cholesterol?.value?.toDouble(),
+        glycemicIndex = glycemicIndex?.toDouble(),
+        glycemicLoad = glycemicLoad?.toDouble(),
+        photoUrl = imageUrl,
+        servings = servings.map { serving ->
+            ServingOption(
+                id = ServingId(serving.id),
+                quantity = serving.quantity.toDouble(),
+                unit = serving.unit,
+                scalingFactor = serving.scalingFactor?.toDouble() ?: 1.0,
+                weightGrams = serving.weightGrams?.toDouble(),
+                isPrimary = serving.isPrimary,
             )
         },
     )
@@ -154,4 +207,18 @@ public class FoodsResource internal constructor(
         in 500..599 -> ErrorCategory.SERVER
         else -> ErrorCategory.TRANSPORT
     }
+}
+
+private fun ai.january.partner.transport.models.NutritionFacts.toPublicNutrition(): NutritionFacts {
+    fun ai.january.partner.transport.models.NutrientAmount?.amount(): NutrientAmount? =
+        this?.let { NutrientAmount(it.value.toDouble(), it.unit) }
+    return NutritionFacts(
+        calories = calories.amount(), protein = protein.amount(),
+        carbohydrates = carbohydrates.amount(), netCarbohydrates = netCarbohydrates.amount(),
+        totalFat = totalFat.amount(), transFat = transFat.amount(),
+        saturatedFat = saturatedFat.amount(), fiber = fiber.amount(),
+        totalSugars = totalSugars.amount(), addedSugars = addedSugars.amount(),
+        cholesterol = cholesterol.amount(), calcium = calcium.amount(), iron = iron.amount(),
+        potassium = potassium.amount(), sodium = sodium.amount(), vitaminD = vitaminD.amount(),
+    )
 }
