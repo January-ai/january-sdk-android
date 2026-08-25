@@ -21,7 +21,7 @@ internal interface GlucoseApi {
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
      *  - 504: The prediction took too long; retry.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param predictGlucoseBody
      * @param xEndUserId Optional: your stable ID for the end user this request acts on behalf of. Opaque to January. (optional)

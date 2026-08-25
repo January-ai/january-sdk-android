@@ -24,7 +24,6 @@
 package ai.january.partner.transport.models
 
 import ai.january.partner.transport.models.NutritionFacts
-import ai.january.partner.transport.models.ServingOption
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -33,51 +32,33 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param name
- * @param nutrients
- * @param servings
+ * @param name Generic foods are lowercase; branded foods keep their product name.
  * @param brandName Absent for generic (non-branded) foods.
- * @param glycemicIndex Glycemic index.
- * @param glycemicLoad Glycemic load.
- * @param imageUrl URL of a picture of the food, when the database has one.
- * @param upc The product's barcode, for branded foods that have one.
+ * @param imageUrl Thumbnail of the food, when the database has one.
+ * @param nutrients
  */
 
 
-internal data class FoodSearchItem (
+internal data class FoodSuggestion (
 
     /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
     @Json(name = "id")
     val id: kotlin.Long,
 
+    /* Generic foods are lowercase; branded foods keep their product name. */
     @Json(name = "name")
     val name: kotlin.String,
-
-    @Json(name = "nutrients")
-    val nutrients: NutritionFacts,
-
-    @Json(name = "servings")
-    val servings: kotlin.collections.List<ServingOption>,
 
     /* Absent for generic (non-branded) foods. */
     @Json(name = "brand_name")
     val brandName: kotlin.String? = null,
 
-    /* Glycemic index. */
-    @Json(name = "glycemic_index")
-    val glycemicIndex: java.math.BigDecimal? = null,
-
-    /* Glycemic load. */
-    @Json(name = "glycemic_load")
-    val glycemicLoad: java.math.BigDecimal? = null,
-
-    /* URL of a picture of the food, when the database has one. */
+    /* Thumbnail of the food, when the database has one. */
     @Json(name = "image_url")
     val imageUrl: kotlin.String? = null,
 
-    /* The product's barcode, for branded foods that have one. */
-    @Json(name = "upc")
-    val upc: kotlin.String? = null
+    @Json(name = "nutrients")
+    val nutrients: NutritionFacts? = null
 
 ) {
 

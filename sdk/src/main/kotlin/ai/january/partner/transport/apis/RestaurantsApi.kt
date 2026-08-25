@@ -20,7 +20,7 @@ internal interface RestaurantsApi {
      *  - 400: A parameter is missing or invalid; the message names the parameter and the accepted values.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param query Dish or restaurant name to search for.
      * @param latitude Latitude of the search location, e.g. 37.7749 (San Francisco).
@@ -42,7 +42,7 @@ internal interface RestaurantsApi {
      *  - 400: A parameter is missing or invalid; the message names the parameter and the accepted values.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param query Restaurant name to search for.
      * @param latitude Latitude of the search location, e.g. 37.7749 (San Francisco).

@@ -31,7 +31,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param message A developer-facing explanation of what went wrong and how to fix it.
- * @param code A stable machine-readable identifier for the class of failure — build retry logic on this, never on message wording. Current values: invalid_request, unauthorized, forbidden, not_found, payload_too_large, rate_limited, internal_error, upstream_error, service_unavailable, upstream_timeout. Only rate_limited and the four 5xx codes are safe to retry (with backoff). New codes may be added over time; treat an unknown code according to its HTTP status class.
+ * @param code A stable machine-readable identifier for the class of failure — build retry logic on this, never on message wording. Current values: invalid_request, unauthorized, forbidden, not_found, not_implemented, payload_too_large, rate_limited, internal_error, upstream_error, service_unavailable, upstream_timeout. Only rate_limited, internal_error, upstream_error, service_unavailable, and upstream_timeout are safe to retry (with backoff) — not_implemented is permanent until the feature ships. New codes may be added over time; treat an unknown code according to its HTTP status class.
  * @param docsUrl Link to the developer documentation for this API version.
  */
 
@@ -42,7 +42,7 @@ internal data class ErrorResponse (
     @Json(name = "message")
     val message: kotlin.String,
 
-    /* A stable machine-readable identifier for the class of failure — build retry logic on this, never on message wording. Current values: invalid_request, unauthorized, forbidden, not_found, payload_too_large, rate_limited, internal_error, upstream_error, service_unavailable, upstream_timeout. Only rate_limited and the four 5xx codes are safe to retry (with backoff). New codes may be added over time; treat an unknown code according to its HTTP status class. */
+    /* A stable machine-readable identifier for the class of failure — build retry logic on this, never on message wording. Current values: invalid_request, unauthorized, forbidden, not_found, not_implemented, payload_too_large, rate_limited, internal_error, upstream_error, service_unavailable, upstream_timeout. Only rate_limited, internal_error, upstream_error, service_unavailable, and upstream_timeout are safe to retry (with backoff) — not_implemented is permanent until the feature ships. New codes may be added over time; treat an unknown code according to its HTTP status class. */
     @Json(name = "code")
     val code: kotlin.String,
 

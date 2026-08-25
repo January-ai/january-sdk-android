@@ -23,7 +23,7 @@ internal interface FoodLogsApi {
      *  - 400: A field is missing or malformed; the message names it.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param createFoodLogBody
@@ -42,7 +42,7 @@ internal interface FoodLogsApi {
      *  - 400: log_id is not a UUID.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param logId The log id returned when the log was created.
@@ -61,7 +61,7 @@ internal interface FoodLogsApi {
      *  - 400: A date is missing, malformed, or the range is inverted; the message names it.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param start First UTC day of the range (inclusive, from 00:00:00 UTC).
@@ -82,7 +82,7 @@ internal interface FoodLogsApi {
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 404: No log with this id for this user.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param xEndUserId Your stable ID for the end user this request acts on — the data is per-user. Opaque to January; use the same ID your system already uses.
      * @param logId The log id returned when the log was created.

@@ -23,7 +23,7 @@ internal interface PhotoScanningApi {
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
      *  - 504: The vision model took too long; retry.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param correctPhotoScanBody
      * @param xEndUserId Optional: your stable ID for the end user this request acts on behalf of. Opaque to January. (optional)
@@ -34,8 +34,8 @@ internal interface PhotoScanningApi {
 
     /**
      * POST v1.2/food-scans/photo
-     * Scan a meal photo
-     * Analyzes a meal photo and returns the detected foods with their nutrition and an aggregated total. &#x60;image&#x60; accepts either an http(s) URL or a base64 data URI. Analysis can take tens of seconds for complex meals.
+     * Scan a food or label photo
+     * Analyzes a food photo and returns the detected foods with their nutrition and an aggregated total. Reading packaged-food labels (Nutrition Facts panels) is coming soon; until then, look packaged foods up by barcode (&#x60;GET /v1.2/foods/barcode/{upc}&#x60;). &#x60;image&#x60; accepts either an http(s) URL or a base64 data URI. Analysis can take tens of seconds for complex meals.
      * Responses:
      *  - 200:
      *  - 400: The image is missing or not an http(s) URL / data URI.
@@ -43,7 +43,7 @@ internal interface PhotoScanningApi {
      *  - 413: The request body exceeds 5 MB. Keep raw images under ~3.5 MB before base64-encoding.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
      *  - 504: The vision model took too long; retry, ideally with a smaller image.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param scanFoodPhotoBody
      * @param xEndUserId Optional: your stable ID for the end user this request acts on behalf of. Opaque to January. (optional)
@@ -61,7 +61,7 @@ internal interface PhotoScanningApi {
      *  - 400: The text is missing or too long.
      *  - 401: The Authorization header is missing or the API key is invalid.
      *  - 429: A rate limit was exceeded. When Retry-After is present, wait that many seconds; a per-day allowance resets with the day.
-     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the 5xx codes.
+     *  - 0: Any other error: the HTTP status plus { message, code, docs_url }. Retry only rate_limited and the transient 5xx codes — never not_implemented.
      *
      * @param searchFoodsByNaturalLanguageBody
      * @param xEndUserId Optional: your stable ID for the end user this request acts on behalf of. Opaque to January. (optional)
