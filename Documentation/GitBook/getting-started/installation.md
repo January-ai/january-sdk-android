@@ -26,7 +26,7 @@ exact revision approved by January:
 ```bash
 git clone https://github.com/January-ai/january-sdk-android.git
 cd january-sdk-android
-git checkout a6c2dc225cb2908541e028ba9edcc588aaa151f2
+git checkout ca207c04d6f9dd9d8f1c206b5f421b035a955c0c
 ./gradlew :sdk:testDebugUnitTest
 ```
 
