@@ -1,23 +1,24 @@
 package ai.january.partner.foodlogs
 
-import ai.january.partner.PartnerUserId
+import ai.january.partner.PartnerUserContext
 import ai.january.partner.models.FoodSelection
 import ai.january.partner.models.NutritionFacts
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-public data class FoodLogUserContext(public val endUserId: PartnerUserId, public val timezone: String? = null)
+@Deprecated("Use PartnerUserContext.", ReplaceWith("PartnerUserContext(endUserId, timezone)"))
+public typealias FoodLogUserContext = PartnerUserContext
 public data class CreateFoodLogRequest(
     public val foods: List<FoodSelection>, public val timestampUtc: String? = null,
-    public val name: String? = null, public val user: FoodLogUserContext,
+    public val name: String? = null, public val user: PartnerUserContext,
 )
-public data class ListFoodLogsRequest(public val start: String, public val end: String, public val user: FoodLogUserContext)
+public data class ListFoodLogsRequest(public val start: String, public val end: String, public val user: PartnerUserContext)
 public data class UpdateFoodLogRequest(
     public val id: String, public val foods: List<FoodSelection>? = null,
     public val timestampUtc: String? = null, public val name: String? = null,
-    public val user: FoodLogUserContext,
+    public val user: PartnerUserContext,
 )
-public data class DeleteFoodLogRequest(public val id: String, public val user: FoodLogUserContext)
+public data class DeleteFoodLogRequest(public val id: String, public val user: PartnerUserContext)
 
 @JsonClass(generateAdapter = false)
 public data class ConsumedServing(public val id: Long, public val quantity: Double)
@@ -55,4 +56,3 @@ public data class ListFoodLogsResponse(
 
 @JsonClass(generateAdapter = false)
 public data class DeleteFoodLogResponse(public val status: String)
-

@@ -104,6 +104,53 @@ try {
 Keep API credentials out of source control and application logs. Do not embed a
 long-lived API key in a distributed application.
 
+If your app manages the short-lived credential itself, pass it directly and
+recreate the client when the token changes:
+
+```kotlin
+val january = JanuaryPartnerClient.withClientToken(accessToken)
+val user = january.forUser(PartnerUserId(partnerUserId))
+```
+
+For automatic refresh, implement `JanuaryTokenProvider`. The SDK keeps
+the result only in memory, refreshes 60 seconds before expiration, shares one
+refresh across concurrent requests, and refreshes once after an
+HTTP 401 whose JSON body has `code: "token_expired"`:
+
+```kotlin
+val january = JanuaryPartnerClient.withClientTokenProvider {
+    partnerBackend.createJanuaryToken()
+}
+```
+
+Failed provider fetches use bounded exponential backoff with jitter. The default
+makes nine total attempts: the initial fetch plus eight retries. Customize it
+when constructing the client:
+
+```kotlin
+val january = JanuaryPartnerClient.withClientTokenProvider(
+    provider = JanuaryTokenProvider { partnerBackend.createJanuaryToken() },
+    tokenRetryPolicy = JanuaryTokenRetryPolicy(
+        maximumAttempts = 9,
+        initialDelay = Duration.ofSeconds(1),
+        multiplier = 2.0,
+        maximumDelay = Duration.ofSeconds(8),
+        jitterRatio = 0.2,
+    ),
+)
+```
+
+Deserialize the backend response directly as `JanuaryClientToken`; its
+stable shape is `{ token, expiresIn }`. The decoder also accepts January's
+snake-case `{ token, expires_in }` response. The provider owns its endpoint URL,
+HTTP method, app authentication, and headers; the SDK never supplies or guesses
+that URL. A `token_expired` response invalidates the cached token and replays
+the January API operation at most once; the retry policy applies to obtaining
+that replacement token, not repeatedly replaying the API operation. Other
+authentication errors are surfaced without retrying, and
+client-token requests omit `x-end-user-id` because the token already identifies
+the end user.
+
 ## Documentation
 
 See the [January Partner API documentation](https://docs.january.ai/nutrition/apis/v1.2/).
@@ -118,6 +165,20 @@ meal-photo scanning, food logs, and glucose prediction.
    ```properties
    january.apiKey=YOUR_API_KEY
    ```
+
+   To exercise the production-shaped token provider instead, run a partner
+   token endpoint and configure its URL. The Android emulator reaches the host
+   Mac through `10.0.2.2`:
+
+   ```properties
+   january.partnerTokenUrl=http://10.0.2.2:8787/january-token
+   january.internalApiBaseUrl=https://partners.dev.january.ai
+   ```
+
+   There are deliberately no URL defaults. When these values are present, the demo ignores `january.apiKey`, calls the
+   partner endpoint using the active demo user ID, and lets the SDK cache and
+   refresh the returned token. The API URL override exists only in the debug
+   variant and is excluded from the published release AAR.
 
 2. Open the repository in Android Studio and run the `demo` configuration, or
    install it from the command line:

@@ -5,6 +5,7 @@
 
     <application
         android:allowBackup="false"
+        android:forceDarkAllowed="false"
         android:label="January Partner Demo"
         android:supportsRtl="true"
         android:theme="@style/Theme.JanuaryPartnerDemo">

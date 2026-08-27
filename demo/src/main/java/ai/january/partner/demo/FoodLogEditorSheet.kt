@@ -27,10 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import ai.january.partner.foodlogs.CreateFoodLogRequest
+import ai.january.partner.PartnerUserContext
 import ai.january.partner.foodlogs.FoodLog
-import ai.january.partner.foodlogs.FoodLogUserContext
-import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foods.FoodSearchItem
 import ai.january.partner.foods.ServingOption
 import ai.january.partner.models.FoodSelection
@@ -38,18 +36,20 @@ import ai.january.partner.models.ServingSelection
 import ai.january.partner.FoodId
 import ai.january.partner.ServingId
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun FoodLogEditorSheet(
     state: DemoState,
-    user: FoodLogUserContext,
+    user: PartnerUserContext,
     existing: FoodLog? = null,
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
     val client = state.client ?: return
+    val userClient = remember(client, user) { client.forUser(user) }
     val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
@@ -70,24 +70,19 @@ internal fun FoodLogEditorSheet(
                 val selections = foods.map {
                     FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
                 }
+                val timestampUtc = timestamp.withOffsetSameInstant(ZoneOffset.UTC).toString()
                 if (existing == null) {
-                    client.foodLogs.create(
-                        CreateFoodLogRequest(
-                            foods = selections,
-                            timestampUtc = timestamp.toString(),
-                            name = name.trim().takeIf(String::isNotEmpty),
-                            user = user,
-                        ),
+                    userClient.foodLogs.create(
+                        foods = selections,
+                        timestampUtc = timestampUtc,
+                        name = name.trim().takeIf(String::isNotEmpty),
                     )
                 } else {
-                    client.foodLogs.update(
-                        UpdateFoodLogRequest(
-                            id = existing.id,
-                            foods = selections,
-                            timestampUtc = timestamp.toString(),
-                            name = name.trim().takeIf(String::isNotEmpty),
-                            user = user,
-                        ),
+                    userClient.foodLogs.update(
+                        id = existing.id,
+                        foods = selections,
+                        timestampUtc = timestampUtc,
+                        name = name.trim().takeIf(String::isNotEmpty),
                     )
                 }
             }.onSuccess {
@@ -105,17 +100,16 @@ internal fun FoodLogEditorSheet(
         dragHandle = null,
     ) {
         Column(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding, vertical = 20.dp)) {
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterStart)) {
-                    Text("Cancel", color = androidx.compose.ui.graphics.Color(0xFF6E5613))
-                }
-                Text(if (existing == null) "New food log" else "Edit food log", modifier = Modifier.align(Alignment.Center), style = MaterialTheme.typography.titleMedium)
-                TextButton(
-                    onClick = ::save,
-                    modifier = Modifier.align(Alignment.CenterEnd),
-                    enabled = foods.isNotEmpty() && !saving,
-                ) { Text(if (existing == null) "Save" else "Update") }
-            }
+            AppModalHeader(
+                title = if (existing == null) "New food log" else "Edit food log",
+                onDismiss = onDismiss,
+                modifier = Modifier.padding(horizontal = DemoScreenPadding, vertical = 12.dp),
+                action = {
+                    TextButton(onClick = ::save, enabled = foods.isNotEmpty() && !saving) {
+                        Text(if (existing == null) "Save" else "Update")
+                    }
+                },
+            )
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
                     .padding(horizontal = DemoScreenPadding),

@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,11 +86,12 @@ private val GoldText = androidx.compose.ui.graphics.Color(0xFF6E5613)
 @Composable
 fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier = Modifier) {
     val client = state.client
+    val userClient = state.userClient
     val coroutineScope = rememberCoroutineScope()
     var age by remember { mutableStateOf("42") }
     var sex by remember { mutableStateOf(Sex.FEMALE) }
-    var height by remember { mutableStateOf("66") }
-    var weight by remember { mutableStateOf("150") }
+    var heightInches by remember { mutableDoubleStateOf(66.0) }
+    var weightPounds by remember { mutableDoubleStateOf(150.0) }
     var conditions by remember { mutableStateOf<Set<MedicalCondition>>(emptySet()) }
     var foods by remember { mutableStateOf<List<DemoSelectedFood>>(emptyList()) }
     var startTime by remember { mutableStateOf(OffsetDateTime.now()) }
@@ -100,7 +102,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
     var error by remember { mutableStateOf<String?>(null) }
 
     fun predict() {
-        val sdk = client ?: return
+        val sdk = userClient ?: return
         if (foods.isEmpty()) return
         loading = true
         error = null
@@ -111,16 +113,14 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                         userProfile = GlucosePredictionProfile(
                             age = age.toDouble(),
                             sex = sex,
-                            height = Height(height.toDouble(), HeightUnit.INCHES),
-                            weight = Weight(weight.toDouble(), WeightUnit.POUNDS),
+                            height = Height(heightInches, HeightUnit.INCHES),
+                            weight = Weight(weightPounds, WeightUnit.POUNDS),
                             healthConditions = conditions.toList(),
                         ),
                         foods = foods.map {
                             FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
                         },
                         startTime = startTime,
-                        endUserId = state.partnerUserId,
-                        timezone = state.timezone,
                     ),
                 )
             }.onSuccess { result = it }
@@ -135,7 +135,35 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                 .padding(horizontal = DemoScreenPadding, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            Text("Glucose", style = MaterialTheme.typography.displaySmall, color = JanuaryColors.Ink)
+            AppScreenHeader("Glucose", settingsAction)
+            Text(
+                "Estimate how this meal may affect the active user's glucose response before it is eaten.",
+                color = JanuaryColors.Muted,
+            )
+
+            WorkflowGuideCard(
+                title = "How prediction works",
+                steps = listOf(
+                    WorkflowStep("Profile", "Add the user's profile and relevant health conditions."),
+                    WorkflowStep("Meal", "Choose foods, servings, quantities, and a start time."),
+                    WorkflowStep("Prediction", "${LocalAppBranding.current.name} combines these inputs with historical food or CGM data supplied by your app."),
+                ),
+            )
+
+            if (state.partnerContext != null) {
+                UserContextCard(
+                    endUserId = state.endUserId,
+                    timezone = state.timezone,
+                    description = "Food Logs and Glucose reuse this same app-owned identity.",
+                    onEdit = settingsAction,
+                )
+            } else {
+                DemoCard {
+                    Text("Set a stable user ID", style = MaterialTheme.typography.titleLarge)
+                    Text("Food Logs and Glucose reuse the same app-owned identity.", color = JanuaryColors.Muted)
+                    DemoPrimaryButton("Open Settings", settingsAction, Modifier.fillMaxWidth())
+                }
+            }
 
             FormSection("About you") {
                 MeasurementRow("Age", age, { age = numericText(it) }, "years")
@@ -146,29 +174,18 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                 ) {
                     Text("Sex", style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.weight(1f))
-                    SingleChoiceSegmentedButtonRow(Modifier.weight(2f)) {
-                        listOf(Sex.FEMALE, Sex.MALE).forEachIndexed { index, option ->
-                            SegmentedButton(
-                                selected = sex == option,
-                                onClick = { sex = option },
-                                modifier = Modifier.heightIn(min = 46.dp),
-                                shape = SegmentedButtonDefaults.itemShape(index, 2),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = JanuaryColors.Surface,
-                                    activeContentColor = JanuaryColors.Ink,
-                                    inactiveContainerColor = JanuaryColors.ControlStrong,
-                                    inactiveContentColor = JanuaryColors.Ink,
-                                ),
-                                icon = {},
-                                label = { Text(if (option == Sex.FEMALE) "Female" else "Male") },
-                            )
-                        }
-                    }
+                    SegmentedControl(
+                        options = listOf(Sex.FEMALE, Sex.MALE),
+                        selected = sex,
+                        label = { if (it == Sex.FEMALE) "Female" else "Male" },
+                        onSelect = { sex = it },
+                        modifier = Modifier.weight(2f),
+                    )
                 }
                 HorizontalDivider(color = JanuaryColors.Divider)
-                MeasurementRow("Height", height, { height = numericText(it) }, "in")
+                HeightInput(heightInches = heightInches, onHeightInchesChange = { heightInches = it })
                 HorizontalDivider(color = JanuaryColors.Divider)
-                MeasurementRow("Weight", weight, { weight = numericText(it) }, "lb")
+                WeightInput(weightPounds = weightPounds, onWeightPoundsChange = { weightPounds = it })
                 HorizontalDivider(color = JanuaryColors.Divider)
                 Row(
                     modifier = Modifier.fillMaxWidth().clickable { showConditions = true }.padding(vertical = 14.dp),
@@ -215,7 +232,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                 text = "Predict glucose response",
                 onClick = ::predict,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = foods.isNotEmpty() && client != null,
+                enabled = foods.isNotEmpty() && userClient != null,
                 loading = loading,
             )
             if (client == null) ApiKeyRequiredCard()
@@ -250,276 +267,5 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
             onChange = { conditions = it },
             onDismiss = { showConditions = false },
         )
-    }
-}
-
-private fun numericText(value: String): String = value.filter { it.isDigit() || it == '.' }
-
-@Composable
-private fun FormSection(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionLabel(title, Modifier.padding(horizontal = 6.dp))
-        DemoCard { content() }
-    }
-}
-
-@Composable
-private fun MeasurementRow(label: String, value: String, onChange: (String) -> Unit, unit: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.weight(1f))
-        BasicTextField(
-            value = value,
-            onValueChange = onChange,
-            modifier = Modifier.width(72.dp),
-            textStyle = TextStyle(
-                color = JanuaryColors.Ink,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                fontFamily = FontFamily.Monospace,
-                textAlign = TextAlign.End,
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true,
-        )
-        Text(unit, modifier = Modifier.padding(start = 10.dp), color = JanuaryColors.Muted)
-    }
-}
-
-@Composable
-internal fun StartTimeRow(startTime: OffsetDateTime, onChange: (OffsetDateTime) -> Unit) {
-    val context = LocalContext.current
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text("Start time", style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.weight(1f))
-        TextButton(
-            contentPadding = PaddingValues(0.dp),
-            onClick = {
-            DatePickerDialog(
-                context,
-                { _, year, month, day -> onChange(startTime.with(LocalDate.of(year, month + 1, day))) },
-                startTime.year,
-                startTime.monthValue - 1,
-                startTime.dayOfMonth,
-            ).show()
-        }) {
-            Text(
-                startTime.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
-                modifier = Modifier.background(JanuaryColors.Control, RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 7.dp),
-                color = JanuaryColors.Ink,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-        }
-        TextButton(
-            contentPadding = PaddingValues(0.dp),
-            onClick = {
-            TimePickerDialog(
-                context,
-                { _, hour, minute -> onChange(startTime.withHour(hour).withMinute(minute)) },
-                startTime.hour,
-                startTime.minute,
-                false,
-            ).show()
-        }) {
-            Text(
-                startTime.format(DateTimeFormatter.ofPattern("h:mm a")),
-                modifier = Modifier.background(JanuaryColors.Control, RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 7.dp),
-                color = JanuaryColors.Ink,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-@Composable
-internal fun SelectedFoodRow(
-    selected: DemoSelectedFood,
-    onServingChange: (ServingOption) -> Unit,
-    onQuantityChange: (Double) -> Unit,
-    onRemove: () -> Unit,
-) {
-    var menuOpen by remember { mutableStateOf(false) }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(selected.food.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Remove ${selected.food.name}")
-                }
-            }
-            Box {
-                TextButton(onClick = { menuOpen = true }) {
-                    Text("${formatDemoNumber(selected.serving.quantity)} ${selected.serving.unit}", color = JanuaryColors.Muted)
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    selected.food.servings.forEach { serving ->
-                        DropdownMenuItem(
-                            text = { Text("${formatDemoNumber(serving.quantity)} ${serving.unit}") },
-                            onClick = { onServingChange(serving); menuOpen = false },
-                        )
-                    }
-                }
-            }
-        }
-        DemoQuantityButton("−", false) { onQuantityChange(selected.quantity - 0.25) }
-        Text(
-            formatDemoNumber(selected.quantity),
-            modifier = Modifier.width(48.dp),
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = FontFamily.Monospace,
-            textAlign = TextAlign.Center,
-        )
-        DemoQuantityButton("+", true) { onQuantityChange(selected.quantity + 0.25) }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ConditionsSheet(
-    selected: Set<MedicalCondition>,
-    onChange: (Set<MedicalCondition>) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text("Health conditions", style = MaterialTheme.typography.headlineMedium)
-            Text("Select all that apply. Leave both unselected if neither condition applies.", color = JanuaryColors.Muted)
-            DemoCard {
-                ConditionRow("Type 2 diabetes", MedicalCondition.TYPE_2_DIABETES, selected, onChange)
-                HorizontalDivider(color = JanuaryColors.Divider)
-                ConditionRow("Prediabetes", MedicalCondition.PREDIABETES, selected, onChange)
-            }
-            DemoPrimaryButton("Done", onDismiss, Modifier.fillMaxWidth())
-        }
-    }
-}
-
-@Composable
-private fun ConditionRow(
-    label: String,
-    condition: MedicalCondition,
-    selected: Set<MedicalCondition>,
-    onChange: (Set<MedicalCondition>) -> Unit,
-) {
-    val isSelected = condition in selected
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable {
-            onChange(if (isSelected) selected - condition else selected + condition)
-        }.padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, modifier = Modifier.weight(1f))
-        Icon(
-            if (isSelected) Icons.Outlined.CheckCircle else Icons.Outlined.Circle,
-            contentDescription = if (isSelected) "Selected" else "Not selected",
-            tint = if (isSelected) JanuaryColors.Green else JanuaryColors.Border,
-        )
-    }
-}
-
-@Composable
-internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<DemoSelectedFood>) {
-    val peak = result.prediction.maxByOrNull { it.value }
-    val mealStart = result.prediction.minByOrNull { it.minutes }
-    val delta = ((peak?.value ?: 0.0) - (mealStart?.value ?: 0.0)).coerceAtLeast(0.0)
-    val impactColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
-    Text("Estimated response", style = MaterialTheme.typography.displaySmall)
-    Text(
-        "${result.impact.value.replaceFirstChar(Char::uppercase)} impact",
-        color = impactColor,
-        fontWeight = FontWeight.Bold,
-    )
-    DemoCard {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                SectionLabel("Likely peak")
-                Text(
-                    peak?.value?.toInt()?.toString() ?: "—",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
-            Text("mg/dL", fontWeight = FontWeight.SemiBold)
-        }
-        GlucoseChart(result)
-    }
-    DemoCard {
-        foods.forEachIndexed { index, food ->
-            if (index > 0) HorizontalDivider(color = JanuaryColors.Divider)
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(food.food.name, style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "${formatDemoNumber(food.serving.quantity)} ${food.serving.unit} · quantity ${formatDemoNumber(food.quantity)}",
-                        color = JanuaryColors.Muted,
-                    )
-                }
-                if (index == 0) {
-                    Text("+${delta.toInt()}", fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, color = impactColor)
-                }
-            }
-        }
-    }
-    androidx.compose.material3.Card(
-        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = JanuaryColors.GoldContainer),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SectionLabel("Worth knowing")
-            Text("This estimate reflects the foods, servings, and profile entered above. Adjusting the meal will generate a new prediction.")
-        }
-    }
-    Text(
-        "This is a prediction, not a medical recommendation.",
-        style = MaterialTheme.typography.bodySmall,
-        color = JanuaryColors.Muted,
-    )
-}
-
-@Composable
-internal fun GlucoseChart(result: GlucosePrediction) {
-    val lineColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
-    val bandColor = MaterialTheme.colorScheme.secondaryContainer
-    Column {
-        Canvas(Modifier.fillMaxWidth().height(230.dp)) {
-            val points = result.prediction
-            if (points.isEmpty()) return@Canvas
-            val minX = points.minOf { it.minutes }
-            val maxX = points.maxOf { it.minutes }.coerceAtLeast(minX + 1)
-            val minY = result.chart.min
-            val maxY = result.chart.max.coerceAtLeast(minY + 1)
-            drawRect(
-                bandColor,
-                topLeft = Offset(0f, size.height * .35f),
-                size = androidx.compose.ui.geometry.Size(size.width, size.height * .35f),
-            )
-            val path = Path()
-            points.forEachIndexed { index, point ->
-                val x = ((point.minutes - minX) / (maxX - minX) * size.width).toFloat()
-                val y = (size.height - ((point.value - minY) / (maxY - minY) * size.height)).toFloat()
-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-            }
-            drawPath(path, lineColor, style = Stroke(width = 3.5.dp.toPx(), cap = StrokeCap.Round))
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("0", "40", "80", "120 min").forEach {
-                Text(it, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
-            }
-        }
     }
 }

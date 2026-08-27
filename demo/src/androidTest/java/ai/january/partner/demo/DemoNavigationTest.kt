@@ -23,7 +23,10 @@ class DemoNavigationTest {
         composeRule.onNodeWithText("Scan a meal").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Food logs", useUnmergedTree = true).performClick()
-        composeRule.onNodeWithText("ONE THING FIRST").assertIsDisplayed()
+        composeRule.onNodeWithText(
+            "One food log represents one meal and can contain one or more foods.",
+            substring = true,
+        ).assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Glucose", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("ABOUT YOU").assertIsDisplayed()

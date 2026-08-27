@@ -52,4 +52,3 @@ internal fun categoryForStatus(status: Int): ErrorCategory = when (status) {
     in 500..599 -> ErrorCategory.SERVER
     else -> ErrorCategory.TRANSPORT
 }
-

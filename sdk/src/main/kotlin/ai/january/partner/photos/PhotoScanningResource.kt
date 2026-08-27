@@ -9,12 +9,12 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 public class PhotoScanningResource internal constructor(private val api: PhotoScanningApi) {
-    public suspend fun scan(request: ScanFoodPhotoRequest): PhotoScan = executeApiCall(
+    public suspend fun scan(request: ScanFoodPhotoRequest): FoodScan = executeApiCall(
         operation = { api.scanFoodPhoto(ScanFoodPhotoBody(request.image), request.endUserId?.value) },
         transform = { bridgeModel(it) },
     )
 
-    public suspend fun correct(request: CorrectPhotoScanRequest): PhotoScan {
+    public suspend fun correct(request: CorrectPhotoScanRequest): FoodScan {
         val body: CorrectPhotoScanBody = bridgeModel(
             CorrectBody(request.mealName, request.detections, request.userInput),
         )
@@ -31,4 +31,3 @@ private data class CorrectBody(
     val detections: List<FoodDetection>,
     @Json(name = "user_input") val userInput: String,
 )
-

@@ -1,6 +1,5 @@
 package ai.january.partner.demo
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
@@ -27,6 +26,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -40,19 +42,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import ai.january.partner.foodlogs.DeleteFoodLogRequest
+import ai.january.partner.PartnerUserContext
 import ai.january.partner.foodlogs.FoodLog
-import ai.january.partner.foodlogs.FoodLogUserContext
-import ai.january.partner.foodlogs.ListFoodLogsRequest
 import ai.january.partner.foodlogs.LoggedFood
 import ai.january.partner.models.NutrientAmount
-import java.time.LocalDate
 import java.time.OffsetDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.launch
@@ -61,30 +58,30 @@ import kotlinx.coroutines.launch
 fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier = Modifier) {
     val client = state.client
     val coroutineScope = rememberCoroutineScope()
-    var from by remember { mutableStateOf(LocalDate.now().minusDays(7)) }
-    var to by remember { mutableStateOf(LocalDate.now()) }
+    var span by remember { mutableStateOf(FoodLogTimeSpan.TODAY) }
+    val range = span.dateRange()
     var logs by remember { mutableStateOf<List<FoodLog>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var showEditor by remember { mutableStateOf(false) }
     var selectedLog by remember { mutableStateOf<FoodLog?>(null) }
-    val userContext = state.partnerUserId?.let { FoodLogUserContext(it, state.timezone) }
+    val userContext = state.partnerContext
+    val userClient = state.userClient
 
     fun load() {
-        val user = userContext ?: return
-        val sdk = client ?: return
+        val sdk = userClient ?: return
         loading = true
         error = null
         coroutineScope.launch {
-            runCatching { sdk.foodLogs.list(ListFoodLogsRequest(from.toString(), to.toString(), user)).items }
+            runCatching { sdk.foodLogs.list(range.apiStart, range.apiEnd).items }
                 .onSuccess { logs = it }
                 .onFailure { error = it.message ?: "Food logs could not be loaded." }
             loading = false
         }
     }
 
-    LaunchedEffect(userContext, client) {
-        if (userContext != null && client != null) load()
+    LaunchedEffect(userContext, client, span) {
+        if (userClient != null) load()
     }
 
     if (selectedLog != null && userContext != null && client != null) {
@@ -105,12 +102,15 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                AppScreenHeader("Food logs", settingsAction) {
                     if (userContext != null && client != null) {
                         IconButton(onClick = { showEditor = true }) { Icon(Icons.Outlined.Add, "Add food log") }
                     }
-                    Text("Food logs", style = MaterialTheme.typography.displaySmall)
                 }
+                Text(
+                    "One food log represents one meal and can contain one or more foods. Add every food, choose its serving and quantity, then save the meal once.",
+                    color = JanuaryColors.Muted,
+                )
                 if (state.partnerUserId == null) {
                     val featureShape = RoundedCornerShape(22.dp)
                     androidx.compose.material3.Card(
@@ -124,14 +124,21 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                             DemoPrimaryButton("Open settings", settingsAction, Modifier.fillMaxWidth())
                         }
                     }
+                } else {
+                    UserContextCard(
+                        endUserId = state.endUserId,
+                        timezone = state.timezone,
+                        description = "The app persists this identity; the SDK only reuses the context for requests.",
+                        onEdit = settingsAction,
+                    )
                 }
                 SectionLabel("Date range")
                 DemoCard {
-                    EditableDateRow("From", from) { from = it; if (to < it) to = it }
-                    HorizontalDivider(color = JanuaryColors.Divider)
-                    EditableDateRow("To", to, minimum = from) { to = it }
+                    SegmentedControl(FoodLogTimeSpan.entries, span, { it.title }, { span = it })
+                    Text(range.displayText(), color = JanuaryColors.Muted, fontFamily = FontFamily.Monospace)
+                    Text("${range.apiStart} through ${range.apiEnd}, inclusive", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
                 }
-                DemoPrimaryButton("Load logs", ::load, Modifier.fillMaxWidth(), userContext != null && client != null, loading)
+                DemoPrimaryButton(if (logs.isEmpty()) "Load logs" else "Refresh logs", ::load, Modifier.fillMaxWidth(), userClient != null, loading)
                 if (userContext == null) {
                     Text("Available once a user ID is set.", Modifier.fillMaxWidth(), color = JanuaryColors.Muted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
@@ -158,33 +165,6 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
 }
 
 @Composable
-private fun EditableDateRow(label: String, value: LocalDate, minimum: LocalDate? = null, onChange: (LocalDate) -> Unit) {
-    val context = LocalContext.current
-    Row(
-        Modifier.fillMaxWidth().clickable {
-            DatePickerDialog(
-                context,
-                { _, year, month, day -> onChange(LocalDate.of(year, month + 1, day)) },
-                value.year,
-                value.monthValue - 1,
-                value.dayOfMonth,
-            ).apply { minimum?.let { datePicker.minDate = it.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() } }.show()
-        }.padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
-        Text(
-            value.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
-            modifier = Modifier.background(JanuaryColors.Control, RoundedCornerShape(12.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
-            fontFamily = FontFamily.Monospace,
-            fontWeight = FontWeight.SemiBold,
-            color = JanuaryColors.Ink,
-        )
-    }
-}
-
-@Composable
 private fun FoodLogRow(log: FoodLog, onClick: () -> Unit) {
     DemoCard(Modifier.clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -204,7 +184,7 @@ private fun FoodLogRow(log: FoodLog, onClick: () -> Unit) {
 private fun FoodLogDetailScreen(
     state: DemoState,
     log: FoodLog,
-    user: FoodLogUserContext,
+    user: PartnerUserContext,
     onDismiss: () -> Unit,
     onChanged: () -> Unit,
     modifier: Modifier,
@@ -217,10 +197,10 @@ private fun FoodLogDetailScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     Column(modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Food log") },
-            navigationIcon = { IconButton(onClick = onDismiss) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back") } },
-            actions = { TextButton(onClick = { editing = true }) { Text("Edit") } },
+        AppNavigationBar(
+            title = "Food log",
+            onBack = onDismiss,
+            action = { TextButton(onClick = { editing = true }) { Text("Edit") } },
         )
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -248,7 +228,7 @@ private fun FoodLogDetailScreen(
                     confirmingDelete = false
                     deleting = true
                     coroutineScope.launch {
-                        runCatching { client.foodLogs.delete(DeleteFoodLogRequest(log.id, user)) }
+                        runCatching { client.forUser(user).foodLogs.delete(log.id) }
                             .onSuccess { onChanged() }
                             .onFailure { error = it.message ?: "The food log could not be deleted." }
                         deleting = false

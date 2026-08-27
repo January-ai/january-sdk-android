@@ -55,7 +55,7 @@ import java.time.ZoneId
 private enum class Destination(val label: String, val icon: ImageVector) {
     SEARCH("Search", Icons.Filled.Search),
     SCAN("Scan", Icons.Filled.CenterFocusWeak),
-    FOOD_LOGS("Food Logs", Icons.Filled.ListAlt),
+    FOOD_LOGS("Food logs", Icons.Filled.ListAlt),
     GLUCOSE("Glucose", Icons.Filled.ShowChart),
 }
 
@@ -128,7 +128,7 @@ fun DemoTopBar(
     additionalActionDescription: String = "Add",
 ) {
     LargeTopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.displaySmall) },
+        title = { Text(title, style = MaterialTheme.typography.headlineLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
         actions = {
             additionalAction?.let { action ->
                 IconButton(onClick = action) {
@@ -151,12 +151,15 @@ private fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Text("Settings", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.padding(8.dp))
+            AppModalHeader(title = "Settings", onDismiss = onDismiss)
+            Spacer(Modifier.padding(4.dp))
             SectionLabel("Connection")
             DemoCard {
                 Text("Authentication", style = MaterialTheme.typography.titleMedium)
-                Text(if (state.client == null) "API key missing" else "API key configured", color = if (state.client == null) JanuaryColors.Rust else JanuaryColors.Green)
+                Text(
+                    state.authenticationDescription,
+                    color = if (state.client == null) JanuaryColors.Rust else JanuaryColors.Green,
+                )
             }
             Spacer(Modifier.padding(4.dp))
             SectionLabel("Request context")
@@ -177,16 +180,21 @@ private fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
                     supportingText = { Text("IANA timezone sent with user-scoped requests.") },
                     singleLine = true,
                 )
+                if (state.endUserId.isNotBlank()) {
+                    DemoOutlinedButton(
+                        text = "Clear active user",
+                        onClick = state::clearUser,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             Spacer(Modifier.padding(4.dp))
             SectionLabel("About")
             DemoCard {
                 Row(Modifier.fillMaxWidth()) { Text("App version"); Spacer(Modifier.weight(1f)); Text(BuildConfig.VERSION_NAME) }
                 HorizontalDivider(color = JanuaryColors.Divider)
-                Row(Modifier.fillMaxWidth()) { Text("Environment"); Spacer(Modifier.weight(1f)); Text("Development") }
+                Row(Modifier.fillMaxWidth()) { Text("January API"); Spacer(Modifier.weight(1f)); Text("Production") }
             }
-            Spacer(Modifier.padding(8.dp))
-            DemoPrimaryButton("Done", onDismiss, Modifier.fillMaxWidth())
             Spacer(Modifier.padding(12.dp))
         }
     }
