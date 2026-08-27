@@ -1,4 +1,4 @@
-# January Partner SDK for Android
+# January SDK for Android
 
 Controlled-preview Kotlin SDK for January food discovery, restaurants, meal
 scanning, food logs, and glucose prediction.
@@ -17,8 +17,8 @@ permissions, retries, errors, testing, and troubleshooting.
 ## Evaluate the repository
 
 ```bash
-git clone https://github.com/January-ai/partner-sdk-android.git
-cd partner-sdk-android
+git clone https://github.com/January-ai/january-sdk-android.git
+cd january-sdk-android
 git checkout a6c2dc225cb2908541e028ba9edcc588aaa151f2
 ./gradlew :sdk:testDebugUnitTest :sdk:assembleRelease
 ```

@@ -1,4 +1,4 @@
-# January Partner SDK for Android
+# January SDK for Android
 
 Build food discovery, meal scanning, food logging, and glucose-prediction
 experiences in native Android apps with Kotlin coroutines and typed models.

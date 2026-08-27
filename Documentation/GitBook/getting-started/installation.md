@@ -24,8 +24,8 @@ not have access. Then clone the repository next to your application and pin the
 exact revision approved by January:
 
 ```bash
-git clone https://github.com/January-ai/partner-sdk-android.git
-cd partner-sdk-android
+git clone https://github.com/January-ai/january-sdk-android.git
+cd january-sdk-android
 git checkout a6c2dc225cb2908541e028ba9edcc588aaa151f2
 ./gradlew :sdk:testDebugUnitTest
 ```
@@ -56,7 +56,7 @@ dependencyResolutionManagement {
     }
 }
 
-includeBuild("../partner-sdk-android") {
+includeBuild("../january-sdk-android") {
     dependencySubstitution {
         substitute(module("ai.january:partner-sdk"))
             .using(project(":sdk"))
@@ -64,7 +64,7 @@ includeBuild("../partner-sdk-android") {
 }
 ```
 
-Change `../partner-sdk-android` to the actual relative path from your app.
+Change `../january-sdk-android` to the actual relative path from your app.
 
 ## 3. Add the dependency
 

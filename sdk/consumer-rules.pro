@@ -1,1 +1,1 @@
-# January Partner SDK consumer rules.
+# January SDK consumer rules.
