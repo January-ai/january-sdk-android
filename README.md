@@ -153,7 +153,9 @@ the end user.
 
 ## Documentation
 
-See the [January Partner API documentation](https://docs.january.ai/nutrition/apis/v1.2/).
+Start with the [Android SDK GitBook](Documentation/GitBook/README.md), or see the
+[January Partner API documentation](https://docs.january.ai/nutrition/apis/v1.2/)
+for the underlying HTTP contract.
 
 ## Demo app
 
