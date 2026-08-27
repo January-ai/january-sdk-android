@@ -10,16 +10,13 @@ Add untracked values to the repository's `local.properties`:
 
 ```properties
 january.partnerTokenUrl=http://10.0.2.2:8787/january-token
-january.internalApiBaseUrl=https://partners.dev.january.ai
 ```
 
 `10.0.2.2` reaches localhost on the host machine from the Android emulator. Use
 your machine's LAN address for a physical device. The token endpoint URL has no
-default. The development API override exists only in the SDK's debug source set
-and is excluded from the release AAR.
+default. The public SDK targets January production and exposes no API-origin
+override.
 
-The demo also supports an approved development API key for isolated local work,
-but token mode is the production-shaped integration and should be preferred.
 Never commit `local.properties`.
 
 ## Build and run

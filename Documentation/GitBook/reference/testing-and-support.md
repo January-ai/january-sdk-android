@@ -37,4 +37,4 @@ the pin deliberately. Do not infer compatibility from the `0.1.0` source value.
 
 Include the pinned commit, Android/AGP/Java versions, failing operation,
 `JanuaryException.category`, HTTP status, and reproduction steps. Never include
-tokens, partner keys, meal images, nutrition records, or health profiles.
+tokens, server-side credentials, meal images, nutrition records, or health profiles.

@@ -31,6 +31,6 @@ The repository contains:
 
 ## Authentication rule
 
-Never ship a long-lived January partner key in an APK. A production app obtains
-a short-lived client token from its own authenticated backend and supplies a
+Public SDK authentication uses short-lived client tokens only. An app obtains
+its token from its own authenticated backend and supplies a
 `JanuaryTokenProvider`. Start with the [backend token endpoint](Documentation/GitBook/getting-started/backend-token-endpoint.md).

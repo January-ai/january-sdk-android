@@ -21,15 +21,15 @@ use a Maven-only snippet until January announces a published release.
 
 ## Security model
 
-Your long-lived `sk-` partner key stays on your server. The Android app calls
-your authenticated backend for a short-lived `ct-` token and sends that token
-directly to January. The SDK never knows your token endpoint URL and never
-accepts a public base-URL override.
+Public SDK authentication uses client tokens only. The Android app calls your
+authenticated backend for a short-lived token and sends that token directly to
+January. The SDK never knows your token endpoint URL and never accepts a public
+base-URL override.
 
 ```text
 Android app ── authenticated request ──▶ Partner backend
                                             │
-                                            │ long-lived partner key
+                                            │ private token issuance
                                             ▼
                                        January token exchange
                                             │

@@ -68,11 +68,5 @@ client token directly:
 val january = JanuaryPartnerClient.withClientToken(clientToken)
 ```
 
-## Development partner key
-
-`JanuaryPartnerClient(developmentApiKey = ...)` exists only for approved local,
-non-distributable development. Never use it in a shipped app. Prefer the demo's
-token-provider flow even during integration testing.
-
 See [Retries and token lifecycle](../reference/retries-and-lifecycle.md) for
 caching, refresh, backoff, and `token_expired` behavior.

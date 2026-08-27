@@ -7,11 +7,8 @@ constructor:
 | --- | --- |
 | App-managed refresh | `withClientTokenProvider(provider, tokenRetryPolicy)` |
 | Fixed short-lived token | `withClientToken(clientToken)` |
-| Local approved development | `JanuaryPartnerClient(developmentApiKey)` |
 
 ```kotlin
-JanuaryPartnerClient(developmentApiKey: String)
-
 JanuaryPartnerClient.withClientToken(clientToken: String): JanuaryPartnerClient
 
 JanuaryPartnerClient.withClientTokenProvider(

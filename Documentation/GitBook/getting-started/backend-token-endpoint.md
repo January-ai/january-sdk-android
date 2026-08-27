@@ -1,8 +1,8 @@
 # Backend token endpoint
 
 Every distributed Android app needs a partner-owned backend endpoint that
-returns a short-lived January client token. The app must never contain the
-long-lived January partner key.
+returns a short-lived January client token. January's private server-side
+token-issuance integration stays outside the app and public SDK.
 
 ## Stable app-facing contract
 
@@ -25,25 +25,23 @@ seconds because the SDK refreshes one minute early.
 1. Authenticate the signed-in partner user.
 2. Determine the stable end-user ID on the server; do not trust an arbitrary ID
    from an unauthenticated request.
-3. Exchange the server-held January partner key for a token bound to that user.
+3. Complete January's private server-side exchange for a token bound to that user.
 4. Return only `token` and its lifetime to the app.
 5. Apply normal server controls: TLS, authorization, rate limiting, audit events,
    and secret rotation.
 
-Do not log the partner key or returned client token. Do not put the partner key
-in Gradle properties, `BuildConfig`, app resources, remote configuration, or the
-APK.
+Do not log server-side credentials or returned client tokens. Do not put
+token-issuance credentials in Gradle properties, `BuildConfig`, app resources,
+remote configuration, or the APK.
 
 ## Local proof flow
 
-January may provide a local stand-in backend during onboarding. Configure its
-URL only in the demo's untracked `local.properties`; the emulator reaches a
-service on the host machine through `10.0.2.2`:
+During onboarding, configure the URL of your token endpoint only in the demo's
+untracked `local.properties`; the emulator reaches a service on the host machine
+through `10.0.2.2`:
 
 ```properties
 january.partnerTokenUrl=http://10.0.2.2:8787/january-token
-january.internalApiBaseUrl=https://partners.dev.january.ai
 ```
 
-The development API origin is debug-demo tooling. The public SDK always calls
-January production and exposes no environment switch.
+The public SDK always calls January production and exposes no environment switch.
