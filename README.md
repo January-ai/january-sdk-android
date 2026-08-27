@@ -1,193 +1,36 @@
 # January Partner SDK for Android
 
-Build personalized nutrition experiences with the January Partner API. The
-Android SDK provides idiomatic Kotlin models and coroutine-first APIs.
+Controlled-preview Kotlin SDK for January food discovery, restaurants, meal
+scanning, food logs, and glucose prediction.
 
-## Requirements
-
-- Android API 26 or later
-- Java 17 or later
-- Kotlin coroutines
-
-## Installation
-
-Ensure Maven Central is available:
-
-```kotlin
-// settings.gradle.kts
-dependencyResolutionManagement {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-```
-
-Add the SDK to your app module:
-
-```kotlin
-// app/build.gradle.kts
-dependencies {
-    implementation("ai.january:partner-sdk:0.1.0")
-}
-```
-
-## Quick start
-
-```kotlin
-import ai.january.partner.JanuaryPartnerClient
-import ai.january.partner.JanuaryException
-import ai.january.partner.PartnerUserId
-import ai.january.partner.foods.SearchFoodsRequest
-
-val january = JanuaryPartnerClient(developmentApiKey = apiKey)
-
-val results = january.foods.search(
-    SearchFoodsRequest(
-        query = "greek yogurt",
-        endUserId = PartnerUserId(userId),
-    ),
-)
-
-results.items.forEach { food ->
-    println(food.name)
-}
-```
-
-Network operations are exposed as `suspend` functions and should be called from
-a coroutine owned by your application, such as `viewModelScope`.
-
-## API resources
-
-- `foods` — autocomplete, food search, full food details, barcode lookup, natural-language search, and alternatives
-- `restaurants` — restaurant and menu search
-- `photoScanning` — meal-photo scanning and corrections
-- `foodLogs` — create, retrieve, update, and delete food logs
-- `glucose` — glucose prediction
-
-## Full food details and portions
-
-Search and autocomplete return lightweight discovery results. Fetch the selected
-food to get every serving, then let the SDK scale all nutrients and build the
-selection used by food-log and glucose-prediction requests:
-
-```kotlin
-import ai.january.partner.foods.GetFoodRequest
-import ai.january.partner.foods.portion
-
-val food = january.foods.getFood(GetFoodRequest(foodId = result.id))
-val portion = food.portion(
-    servingId = food.servings[1].id,
-    quantity = 1.5,
-)
-
-println(portion.nutrition.calories?.value)
-val selection = portion.selection
-```
-
-## Error handling
-
-SDK requests throw `JanuaryException`, which provides a category, message, and
-HTTP status when available.
-
-```kotlin
-try {
-    val results = january.foods.search(request)
-    // Use results
-} catch (error: JanuaryException) {
-    println("${error.category}: ${error.message}")
-}
-```
-
-## Authentication
-
-Keep API credentials out of source control and application logs. Do not embed a
-long-lived API key in a distributed application.
-
-If your app manages the short-lived credential itself, pass it directly and
-recreate the client when the token changes:
-
-```kotlin
-val january = JanuaryPartnerClient.withClientToken(accessToken)
-val user = january.forUser(PartnerUserId(partnerUserId))
-```
-
-For automatic refresh, implement `JanuaryTokenProvider`. The SDK keeps
-the result only in memory, refreshes 60 seconds before expiration, shares one
-refresh across concurrent requests, and refreshes once after an
-HTTP 401 whose JSON body has `code: "token_expired"`:
-
-```kotlin
-val january = JanuaryPartnerClient.withClientTokenProvider {
-    partnerBackend.createJanuaryToken()
-}
-```
-
-Failed provider fetches use bounded exponential backoff with jitter. The default
-makes nine total attempts: the initial fetch plus eight retries. Customize it
-when constructing the client:
-
-```kotlin
-val january = JanuaryPartnerClient.withClientTokenProvider(
-    provider = JanuaryTokenProvider { partnerBackend.createJanuaryToken() },
-    tokenRetryPolicy = JanuaryTokenRetryPolicy(
-        maximumAttempts = 9,
-        initialDelay = Duration.ofSeconds(1),
-        multiplier = 2.0,
-        maximumDelay = Duration.ofSeconds(8),
-        jitterRatio = 0.2,
-    ),
-)
-```
-
-Deserialize the backend response directly as `JanuaryClientToken`; its
-stable shape is `{ token, expiresIn }`. The decoder also accepts January's
-snake-case `{ token, expires_in }` response. The provider owns its endpoint URL,
-HTTP method, app authentication, and headers; the SDK never supplies or guesses
-that URL. A `token_expired` response invalidates the cached token and replays
-the January API operation at most once; the retry policy applies to obtaining
-that replacement token, not repeatedly replaying the API operation. Other
-authentication errors are surfaced without retrying, and
-client-token requests omit `x-end-user-id` because the token already identifies
-the end user.
+> **Distribution status:** `ai.january:partner-sdk:0.1.0` is not published to
+> Maven Central, and the source repository is private. January must grant your
+> GitHub account access before you can use the pinned composite-build workflow in the
+> [installation guide](Documentation/GitBook/getting-started/installation.md).
 
 ## Documentation
 
-Start with the [Android SDK GitBook](Documentation/GitBook/README.md), or see the
-[January Partner API documentation](https://docs.january.ai/nutrition/apis/v1.2/)
-for the underlying HTTP contract.
+The [Android SDK GitBook](Documentation/GitBook/README.md) covers installation,
+backend token exchange, a complete token provider, first request, every resource,
+permissions, retries, errors, testing, and troubleshooting.
 
-## Demo app
+## Evaluate the repository
 
-The repository includes a Jetpack Compose demo for food and restaurant search,
-meal-photo scanning, food logs, and glucose prediction.
+```bash
+git clone https://github.com/January-ai/partner-sdk-android.git
+cd partner-sdk-android
+git checkout a6c2dc225cb2908541e028ba9edcc588aaa151f2
+./gradlew :sdk:testDebugUnitTest :sdk:assembleRelease
+```
 
-1. Add your development key to the untracked `local.properties` file:
+The repository contains:
 
-   ```properties
-   january.apiKey=YOUR_API_KEY
-   ```
+* `sdk` — the Android library;
+* `demo` — the Jetpack Compose example app;
+* `Documentation/GitBook` — integration documentation.
 
-   To exercise the production-shaped token provider instead, run a partner
-   token endpoint and configure its URL. The Android emulator reaches the host
-   Mac through `10.0.2.2`:
+## Authentication rule
 
-   ```properties
-   january.partnerTokenUrl=http://10.0.2.2:8787/january-token
-   january.internalApiBaseUrl=https://partners.dev.january.ai
-   ```
-
-   There are deliberately no URL defaults. When these values are present, the demo ignores `january.apiKey`, calls the
-   partner endpoint using the active demo user ID, and lets the SDK cache and
-   refresh the returned token. The API URL override exists only in the debug
-   variant and is excluded from the published release AAR.
-
-2. Open the repository in Android Studio and run the `demo` configuration, or
-   install it from the command line:
-
-   ```bash
-   ./gradlew :demo:installDebug
-   ```
-
-The demo uses Material 3 navigation and controls, Android's system photo picker,
-and runtime location permission only when nearby restaurant search requests it.
+Never ship a long-lived January partner key in an APK. A production app obtains
+a short-lived client token from its own authenticated backend and supplies a
+`JanuaryTokenProvider`. Start with the [backend token endpoint](Documentation/GitBook/getting-started/backend-token-endpoint.md).

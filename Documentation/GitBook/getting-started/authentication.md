@@ -1,38 +1,78 @@
-# Authentication and security
+# Authentication
 
-Use one authentication mode per client:
+## Recommended: token provider
 
-1. `withClientTokenProvider` for production applications;
-2. `withClientToken` when the app owns the full short-lived-token lifecycle; or
-3. `developmentApiKey` for approved, non-distributable development only.
+Implement `JanuaryTokenProvider` around your own authenticated backend. This
+complete provider uses platform networking so the endpoint remains app-owned:
 
 ```kotlin
+import ai.january.partner.JanuaryClientToken
+import ai.january.partner.JanuaryTokenProvider
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+class PartnerBackendTokenProvider(
+    endpoint: String,
+    private val sessionToken: suspend () -> String,
+) : JanuaryTokenProvider {
+    private val endpointUrl = URL(endpoint)
+
+    override suspend fun fetchClientToken(): JanuaryClientToken =
+        withContext(Dispatchers.IO) {
+            val connection = (endpointUrl.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                setRequestProperty("Accept", "application/json")
+                setRequestProperty("Authorization", "Bearer ${sessionToken()}")
+            }
+
+            try {
+                val status = connection.responseCode
+                if (status !in 200..299) {
+                    throw IllegalStateException("Token endpoint returned HTTP $status")
+                }
+                val json = connection.inputStream.bufferedReader().use { it.readText() }
+                JanuaryClientToken.fromJson(json)
+            } finally {
+                connection.disconnect()
+            }
+        }
+}
+```
+
+Create one client in your application dependency graph:
+
+```kotlin
+import ai.january.partner.JanuaryPartnerClient
+
 val january = JanuaryPartnerClient.withClientTokenProvider(
-    provider = JanuaryTokenProvider {
-        JanuaryClientToken.fromJson(partnerBackend.fetchJanuaryToken())
-    },
+    provider = PartnerBackendTokenProvider(
+        endpoint = requireNotNull(appConfig.januaryTokenUrl),
+        sessionToken = { sessionRepository.requireAccessToken() },
+    ),
 )
 ```
 
-The partner backend response is `{ "token": "ct-…", "expiresIn": 1800 }`.
-`JanuaryClientToken.fromJson` also accepts `expires_in`. The provider owns its
-URL, method, app authentication, and headers; the SDK has no token-endpoint
-default and never receives the partner secret.
+There is intentionally no token-endpoint default. Missing endpoint configuration
+should fail during application setup, not silently fall back to localhost.
 
-The SDK caches tokens only in memory, refreshes 60 seconds before expiration,
-and coalesces concurrent refreshes. Provider failures get nine total attempts
-with ±20% jitter and nominal delays of 1, 2, 4, 8, 8, 8, 8, and 8 seconds.
+## Fixed short-lived token
+
+If the host application owns refresh and client recreation, pass a current
+client token directly:
 
 ```kotlin
-val policy = JanuaryTokenRetryPolicy(
-    maximumAttempts = 9,
-    initialDelay = Duration.ofSeconds(1),
-    multiplier = 2.0,
-    maximumDelay = Duration.ofSeconds(8),
-    jitterRatio = 0.2,
-)
+val january = JanuaryPartnerClient.withClientToken(clientToken)
 ```
 
-Only `401` with `code: "token_expired"` refreshes the token and replays the
-January request once. Other authentication failures stop immediately.
-Client-token requests omit `x-end-user-id` because the token identifies the user.
+## Development partner key
+
+`JanuaryPartnerClient(developmentApiKey = ...)` exists only for approved local,
+non-distributable development. Never use it in a shipped app. Prefer the demo's
+token-provider flow even during integration testing.
+
+See [Retries and token lifecycle](../reference/retries-and-lifecycle.md) for
+caching, refresh, backoff, and `token_expired` behavior.

@@ -1,22 +1,34 @@
 # Example app
 
-The `demo` module is a native Jetpack Compose application covering discovery,
-autocomplete, hydrated food details and servings, meal scanning, food logs,
-glucose prediction, user context, and imperial/metric measurements.
+The `demo` module is a Jetpack Compose application covering autocomplete,
+hydrated food servings, photo and barcode scanning, restaurants, food logs,
+glucose prediction, user context, and imperial/metric inputs.
 
-For local development, add untracked values to `local.properties`:
+## Configure token mode
+
+Add untracked values to the repository's `local.properties`:
 
 ```properties
-january.partnerTokenUrl=https://your-backend.example/january-token
-january.internalApiBaseUrl=https://your-january-development-origin.example
+january.partnerTokenUrl=http://10.0.2.2:8787/january-token
+january.internalApiBaseUrl=https://partners.dev.january.ai
 ```
 
-There are deliberately no URL defaults. These properties belong to the
-January-owned debug demo and are excluded from the release AAR. A production
-partner app implements `JanuaryTokenProvider` with its own authenticated backend.
+`10.0.2.2` reaches localhost on the host machine from the Android emulator. Use
+your machine's LAN address for a physical device. The token endpoint URL has no
+default. The development API override exists only in the SDK's debug source set
+and is excluded from the release AAR.
 
-Run with Android Studio or:
+The demo also supports an approved development API key for isolated local work,
+but token mode is the production-shaped integration and should be preferred.
+Never commit `local.properties`.
+
+## Build and run
 
 ```bash
+./gradlew :demo:testDebugUnitTest :demo:assembleDebug
 ./gradlew :demo:installDebug
 ```
+
+Launch the app, confirm the connection state, run a food search, select a result,
+change its serving, and exercise the scanner. If configuration is missing, the
+demo should fail clearly instead of selecting a hidden URL.

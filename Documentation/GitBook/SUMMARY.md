@@ -1,13 +1,19 @@
 # Table of contents
 
-* [January Partner SDK for Android](README.md)
+* [Android SDK](README.md)
 
 ## Getting started
 
 * [Installation](getting-started/installation.md)
-* [Authentication and security](getting-started/authentication.md)
-* [Quick start](getting-started/quick-start.md)
+* [Backend token endpoint](getting-started/backend-token-endpoint.md)
+* [Authentication](getting-started/authentication.md)
+* [First request](getting-started/quick-start.md)
 * [Example app](getting-started/example-app.md)
+
+## Core concepts
+
+* [User identity and timezone](concepts/user-context.md)
+* [Food discovery and servings](concepts/food-lifecycle.md)
 
 ## Guides
 
@@ -19,7 +25,14 @@
 
 ## Reference
 
-* [Client and resources](reference/client-and-resources.md)
+* [Client and authentication API](reference/client-and-resources.md)
+* [Foods API](reference/foods-api.md)
+* [Restaurants and scanning API](reference/discovery-and-scanning-api.md)
+* [Food Logs and Glucose API](reference/user-resources-api.md)
+* [Models and enums](reference/models-and-enums.md)
+* [Retries and token lifecycle](reference/retries-and-lifecycle.md)
 * [Error handling](reference/error-handling.md)
+* [Compatibility and permissions](reference/compatibility.md)
+* [Testing and support](reference/testing-and-support.md)
 * [Troubleshooting](reference/troubleshooting.md)
 * [Changelog](reference/changelog.md)
