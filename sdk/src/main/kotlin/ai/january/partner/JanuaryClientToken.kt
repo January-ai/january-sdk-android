@@ -57,6 +57,14 @@ public fun interface JanuaryTokenProvider {
     public suspend fun fetchClientToken(): JanuaryClientToken
 }
 
+/** A token-provider failure with an explicit retry decision. */
+public class JanuaryTokenProviderException(
+    message: String,
+    /** True only when repeating the partner-backend request can reasonably recover. */
+    public val retryable: Boolean = false,
+    cause: Throwable? = null,
+) : Exception(message, cause)
+
 @Deprecated("Use JanuaryTokenProvider", ReplaceWith("JanuaryTokenProvider"))
 public typealias JanuaryClientTokenProvider = JanuaryTokenProvider
 
@@ -118,6 +126,7 @@ internal class ClientTokenManager(
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Exception) {
+                if (error !is JanuaryTokenProviderException || !error.retryable) throw error
                 if (attempt >= retryPolicy.maximumAttempts) {
                     throw JanuaryException(
                         ErrorCategory.AUTHENTICATION,

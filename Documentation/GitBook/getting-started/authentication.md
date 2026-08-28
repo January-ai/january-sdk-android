@@ -8,6 +8,7 @@ complete provider uses platform networking so the endpoint remains app-owned:
 ```kotlin
 import ai.january.partner.JanuaryClientToken
 import ai.january.partner.JanuaryTokenProvider
+import ai.january.partner.JanuaryTokenProviderException
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +33,10 @@ class PartnerBackendTokenProvider(
             try {
                 val status = connection.responseCode
                 if (status !in 200..299) {
-                    throw IllegalStateException("Token endpoint returned HTTP $status")
+                    throw JanuaryTokenProviderException(
+                        message = "Token endpoint returned HTTP $status",
+                        retryable = status == 408 || status == 429 || status >= 500,
+                    )
                 }
                 val json = connection.inputStream.bufferedReader().use { it.readText() }
                 JanuaryClientToken.fromJson(json)
@@ -59,6 +63,10 @@ val january = JanuaryPartnerClient.withClientTokenProvider(
 There is intentionally no token-endpoint default. Missing endpoint configuration
 should fail during application setup, not silently fall back to localhost.
 
+Only mark timeouts, rate limits, and server failures as retryable. The SDK does
+not retry ordinary exceptions, authentication failures, or malformed token
+responses.
+
 ## Fixed short-lived token
 
 If the host application owns refresh and client recreation, pass a current
@@ -70,3 +78,10 @@ val january = JanuaryPartnerClient.withClientToken(clientToken)
 
 See [Retries and token lifecycle](../reference/retries-and-lifecycle.md) for
 caching, refresh, backoff, and `token_expired` behavior.
+
+## Local development API key
+
+For local testing only, `JanuaryPartnerClient(developmentApiKey)` remains
+available and prints a warning. Never ship a partner API key inside an Android
+application. Production apps must use `JanuaryTokenProvider` so the key stays
+on a trusted backend.

@@ -3,8 +3,21 @@ package ai.january.partner
 import ai.january.partner.glucose.GlucosePredictionProfile
 import ai.january.partner.glucose.PredictGlucoseRequest
 import ai.january.partner.glucose.Sex
+import ai.january.partner.foods.AutocompleteFoodsRequest
+import ai.january.partner.foods.DetectedFood
+import ai.january.partner.foods.DetectedServing
+import ai.january.partner.foods.GetFoodRequest
+import ai.january.partner.foods.LookupFoodByBarcodeRequest
+import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
+import ai.january.partner.foods.SearchFoodsRequest
+import ai.january.partner.foods.SuggestFoodAlternativesRequest
+import ai.january.partner.models.CompleteScanNutritionFacts
 import ai.january.partner.models.FoodSelection
 import ai.january.partner.models.ServingSelection
+import ai.january.partner.photos.CorrectPhotoScanRequest
+import ai.january.partner.photos.FoodDetection
+import ai.january.partner.photos.ScanFoodPhotoRequest
+import ai.january.partner.restaurants.SearchRestaurantsRequest
 import java.time.OffsetDateTime
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -86,12 +99,81 @@ public class UserScopedClientTest {
         assertTrue(requests[4].body.readUtf8().contains("\"foods\""))
     }
 
+    @Test
+    public fun scopedClientReusesIdentityAcrossDiscoveryResources(): Unit = runBlocking {
+        listOf(
+            """{"items":[]}""", FOOD_ITEM,
+            """{"total_count":0,"items":[]}""", """{"total_count":0,"items":[]}""",
+            """{"detections":[]}""", """{"alternatives":[]}""",
+            """{"total_count":0,"items":[]}""", """{"total_count":0,"items":[]}""",
+            """{"detections":[]}""", """{"detections":[]}""",
+        ).forEach { server.enqueue(jsonResponse(it)) }
+        val client = JanuaryPartnerClient.testing(
+            apiKey = "fixture-api-key",
+            baseUrl = server.url("/").toString(),
+            clientBuilder = OkHttpClient.Builder(),
+        )
+        val scoped = client.forUser(PartnerUserId("scoped-user"), "America/New_York")
+        val requestUser = PartnerUserId("request-user-is-replaced")
+
+        scoped.foods.autocomplete(AutocompleteFoodsRequest("ban", endUserId = requestUser))
+        scoped.foods.get(GetFoodRequest(FoodId(1), requestUser))
+        scoped.foods.search(SearchFoodsRequest("banana", endUserId = requestUser))
+        scoped.foods.lookupBarcode(LookupFoodByBarcodeRequest("049000006346", requestUser))
+        scoped.foodAnalysis.analyzeDescription(SearchFoodsByNaturalLanguageRequest("one banana", requestUser))
+        scoped.foods.suggestAlternatives(SuggestFoodAlternativesRequest(1, endUserId = requestUser))
+        scoped.restaurants.search(
+            SearchRestaurantsRequest("cafe", 40.0, -74.0, endUserId = requestUser),
+        )
+        scoped.restaurants.searchMenuItems(
+            SearchRestaurantsRequest("salad", 40.0, -74.0, endUserId = requestUser),
+        )
+        scoped.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg", requestUser))
+        scoped.foodAnalysis.correct(
+            CorrectPhotoScanRequest(
+                "Meal",
+                listOf(
+                    FoodDetection(
+                        DetectedFood(
+                            id = 1,
+                            name = "Banana",
+                            nutrients = CompleteScanNutritionFacts(),
+                            servings = listOf(DetectedServing(2, 1.0, "serving")),
+                        ),
+                    ),
+                ),
+                "Add banana",
+                requestUser,
+            ),
+        )
+
+        val requests = List(10) { server.takeRequest() }
+        requests.forEach { request ->
+            assertEquals("scoped-user", request.getHeader("x-end-user-id"))
+        }
+    }
+
+    @Test
+    public fun scopedClientDoesNotSendRedundantIdentityWithClientTokens(): Unit = runBlocking {
+        server.enqueue(jsonResponse("""{"total_count":0,"items":[]}"""))
+        val client = JanuaryPartnerClient.testing(
+            provider = JanuaryTokenProvider { JanuaryClientToken("ct-scoped", 1_800) },
+            baseUrl = server.url("/").toString(),
+        )
+
+        client.forUser(PartnerUserId("token-bound-user")).foods.search(SearchFoodsRequest("banana"))
+
+        assertEquals(null, server.takeRequest().getHeader("x-end-user-id"))
+    }
+
     private fun jsonResponse(body: String): MockResponse = MockResponse()
         .setResponseCode(200)
         .setHeader("Content-Type", "application/json")
         .setBody(body)
 
     private companion object {
+        const val FOOD_ITEM =
+            """{"id":1,"name":"Banana","nutrients":{},"servings":[{"id":2,"quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
         const val FOOD_LOG =
             """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"timestamp_utc":"2024-09-13T11:34:56Z","name":"Lunch"}"""
     }

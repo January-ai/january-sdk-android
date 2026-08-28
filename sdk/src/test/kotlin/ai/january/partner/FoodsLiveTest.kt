@@ -32,7 +32,7 @@ public class FoodsLiveTest {
         )
 
         assertTrue("Expected development food search to return at least one item.", result.items.isNotEmpty())
-        val food = foods.getFood(GetFoodRequest(result.items.first().id, endUserId))
+        val food = foods.get(GetFoodRequest(result.items.first().id, endUserId))
         assertTrue("Expected the full food record to include multiple servings.", food.servings.size >= 2)
         val primary = food.portion()
         val alternate = food.portion(food.servings[1].id, 1.5)

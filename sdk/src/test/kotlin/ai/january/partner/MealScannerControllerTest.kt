@@ -1,7 +1,7 @@
 package ai.january.partner
 
-import ai.january.partner.scanner.JanuaryMealScannerController
-import ai.january.partner.scanner.JanuaryMealScannerResult
+import ai.january.partner.scanner.JanuaryFoodScannerController
+import ai.january.partner.scanner.JanuaryFoodScannerResult
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -37,7 +37,7 @@ class MealScannerControllerTest {
             OkHttpClient.Builder(),
         )
 
-        val result = JanuaryMealScannerController(client, PartnerUserId("scanner-user"))
+        val result = JanuaryFoodScannerController(client, PartnerUserId("scanner-user"))
             .lookupBarcode("049000006346")
 
         assertEquals("049000006346", result.value)

@@ -3,7 +3,7 @@
 Controlled-preview Kotlin SDK for January food discovery, restaurants, meal
 scanning, food logs, and glucose prediction.
 
-> **Distribution status:** `ai.january:partner-sdk:0.1.0` is not published to
+> **Distribution status:** `ai.january:january-sdk-android:0.1.0` is not published to
 > Maven Central, and the source repository is private. January must grant your
 > GitHub account access before you can use the pinned composite-build workflow in the
 > [installation guide](Documentation/GitBook/getting-started/installation.md).
@@ -34,3 +34,21 @@ The repository contains:
 Public SDK authentication uses short-lived client tokens only. An app obtains
 its token from its own authenticated backend and supplies a
 `JanuaryTokenProvider`. Start with the [backend token endpoint](Documentation/GitBook/getting-started/backend-token-endpoint.md).
+
+## Set the active user once
+
+Create one lightweight scoped client after authentication and use it across
+every resource:
+
+```kotlin
+val user = january.forUser(
+    endUserId = PartnerUserId(account.stableId),
+    timezone = "America/New_York",
+)
+
+val foods = user.foods.search(SearchFoodsRequest(query = "banana"))
+val logs = user.foodLogs.list(start = "2026-08-01", end = "2026-08-31")
+```
+
+The scoped client exposes Foods, Restaurants, Photo Scanning, Food Logs, and
+Glucose. Recreate it when the signed-in account changes.

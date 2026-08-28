@@ -3,16 +3,17 @@
 All operations are `suspend`, execute against January production, and throw as
 described in [Error handling](error-handling.md).
 
+Prefer `client.forUser(...).foods`; it exposes the same operations and applies
+the configured identity automatically. The request fields below remain for
+source compatibility with direct `client.foods` calls.
+
 ## Operations
 
 ```kotlin
 suspend fun autocomplete(request: AutocompleteFoodsRequest): AutocompleteFoodsResponse
 suspend fun search(request: SearchFoodsRequest): FoodSearchResults
-suspend fun getFood(request: GetFoodRequest): FoodSearchItem
+suspend fun get(request: GetFoodRequest): FoodSearchItem
 suspend fun lookupBarcode(request: LookupFoodByBarcodeRequest): FoodSearchResults
-suspend fun searchNaturalLanguage(
-    request: SearchFoodsByNaturalLanguageRequest,
-): SearchFoodsByNaturalLanguageResponse
 suspend fun suggestAlternatives(
     request: SuggestFoodAlternativesRequest,
 ): SuggestFoodAlternativesResponse
@@ -26,7 +27,6 @@ suspend fun suggestAlternatives(
 | `SearchFoodsRequest` | `query: String`; `category: FoodCategory? = null`; `limit: Int = 10`; `endUserId: PartnerUserId? = null` |
 | `GetFoodRequest` | `foodId: FoodId`; `endUserId: PartnerUserId? = null` |
 | `LookupFoodByBarcodeRequest` | `upc: String`; `endUserId: PartnerUserId? = null` |
-| `SearchFoodsByNaturalLanguageRequest` | `query: String`; `endUserId: PartnerUserId? = null` |
 | `SuggestFoodAlternativesRequest` | `foodId: Long`; `dietRestrictions: List<DietRestriction> = emptyList()`; `dietPreferences: List<DietPreference> = emptyList()`; `endUserId: PartnerUserId? = null` |
 
 Autocomplete limits are 1–20 and its query may contain at most 64 characters.
@@ -44,8 +44,8 @@ macro conveniences, glycemic values, photo URL, and `servings`.
 `ServingOption` fields are `id: ServingId`, `quantity`, `unit`, `scalingFactor`,
 optional `weightGrams`, and `isPrimary`.
 
-Natural-language search returns total nutrients plus detected foods and their
-servings. Alternatives returns `alternatives: List<FoodAlternative>`.
+Alternatives returns `alternatives: List<FoodAlternative>`. Natural-language
+meal descriptions are handled by `foodAnalysis.analyzeDescription`.
 
 ## Portion helper
 

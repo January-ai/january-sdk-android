@@ -212,7 +212,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         FoodMode.NAME -> foodResults = client.foods.search(
                             SearchFoodsRequest(value, category, foodResultLimit, state.partnerUserId),
                         ).items
-                        FoodMode.DESCRIPTION -> naturalResult = client.foods.searchNaturalLanguage(
+                        FoodMode.DESCRIPTION -> naturalResult = client.foodAnalysis.analyzeDescription(
                             SearchFoodsByNaturalLanguageRequest(value, state.partnerUserId),
                         )
                         FoodMode.BARCODE -> foodResults = client.foods.lookupBarcode(

@@ -9,13 +9,13 @@
 | Java source/target | 17 |
 | Build system | Gradle Kotlin DSL |
 | Network API | Kotlin `suspend` functions |
-| Distribution | Pinned composite source build |
+| Distribution | Pinned composite source build; Maven publication prepared but not published |
 
 The SDK manifest declares `android.permission.INTERNET` and
 `android.permission.CAMERA`. The camera permission is needed by
-`JanuaryMealScanner`, which uses CameraX for photo capture and barcode analysis.
+`JanuaryFoodScanner`, which uses CameraX for photo capture and barcode analysis.
 The scanner requests runtime permission and provides denied/settings states.
 
 If an application does not expose the scanner, review the merged manifest and
-its permission disclosure before release. The controlled-preview AAR includes
+its permission disclosure before release. The Apache-2.0 AAR includes
 Compose, CameraX, ML Kit barcode scanning, Retrofit, Moshi, and coroutines.

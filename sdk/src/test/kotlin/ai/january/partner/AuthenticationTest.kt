@@ -1,6 +1,8 @@
 package ai.january.partner
 
 import ai.january.partner.foods.SearchFoodsRequest
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import java.time.Duration
 import java.time.Instant
 import java.util.Collections
@@ -21,6 +23,24 @@ import org.junit.Before
 import org.junit.Test
 
 public class AuthenticationTest {
+    @Suppress("DEPRECATION")
+    @Test
+    public fun developmentApiKeyWarnsAndBlankKeysFailValidation() {
+        val originalError = System.err
+        val output = ByteArrayOutputStream()
+        System.setErr(PrintStream(output))
+        try {
+            JanuaryPartnerClient("sk-local-only")
+        } finally {
+            System.setErr(originalError)
+        }
+
+        assertTrue(output.toString().contains("local testing only"))
+        assertTrue(output.toString().contains("Do not ship"))
+        runCatching { JanuaryPartnerClient("  ") }
+            .onSuccess { fail("Expected blank development key validation") }
+    }
+
     @Test
     public fun clientTokenUsesPartnerServerResponseShape() {
         val camelCase = JanuaryClientToken.fromJson("""{"token":"ct-direct","expiresIn":1800}""")
@@ -96,7 +116,9 @@ public class AuthenticationTest {
         val delays = mutableListOf<Duration>()
         val client = JanuaryPartnerClient.testing(
             provider = JanuaryTokenProvider {
-                if (calls.incrementAndGet() <= 2) error("temporary partner backend failure")
+                if (calls.incrementAndGet() <= 2) {
+                    throw JanuaryTokenProviderException("temporary partner backend failure", retryable = true)
+                }
                 JanuaryClientToken("ct-recovered", 1_800)
             },
             baseUrl = server.url("/").toString(),
@@ -124,7 +146,7 @@ public class AuthenticationTest {
         val manager = ClientTokenManager(
             provider = JanuaryTokenProvider {
                 calls.incrementAndGet()
-                error("partner backend unavailable")
+                throw JanuaryTokenProviderException("partner backend unavailable", retryable = true)
             },
             retryPolicy = JanuaryTokenRetryPolicy(
                 maximumAttempts = 9,
@@ -175,7 +197,10 @@ public class AuthenticationTest {
             provider = JanuaryTokenProvider {
                 when (calls.incrementAndGet()) {
                     1 -> JanuaryClientToken("ct-expired", 1_800)
-                    2, 3 -> error("temporary partner backend failure")
+                    2, 3 -> throw JanuaryTokenProviderException(
+                        "temporary partner backend failure",
+                        retryable = true,
+                    )
                     else -> JanuaryClientToken("ct-refreshed", 1_800)
                 }
             },
@@ -208,7 +233,9 @@ public class AuthenticationTest {
             provider = JanuaryTokenProvider {
                 val call = calls.incrementAndGet()
                 delay(25)
-                if (call == 1) error("temporary partner backend failure")
+                if (call == 1) {
+                    throw JanuaryTokenProviderException("temporary partner backend failure", retryable = true)
+                }
                 JanuaryClientToken("ct-shared", 1_800)
             },
             baseUrl = server.url("/").toString(),
@@ -249,6 +276,27 @@ public class AuthenticationTest {
         assertEquals(1, calls.get())
         assertTrue(delays.isEmpty())
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    public fun ordinaryProviderFailureDoesNotRetry(): Unit = runBlocking {
+        val calls = AtomicInteger()
+        val manager = ClientTokenManager(
+            provider = JanuaryTokenProvider {
+                calls.incrementAndGet()
+                error("invalid partner session")
+            },
+            retryPolicy = JanuaryTokenRetryPolicy(maximumAttempts = 9),
+            sleep = { fail("A permanent provider error must not sleep or retry") },
+        )
+
+        try {
+            manager.token()
+            fail("Expected provider failure")
+        } catch (error: IllegalStateException) {
+            assertEquals("invalid partner session", error.message)
+        }
+        assertEquals(1, calls.get())
     }
 
     @Test

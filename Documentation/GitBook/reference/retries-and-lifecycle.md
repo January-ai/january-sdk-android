@@ -26,7 +26,9 @@ val policy = JanuaryTokenRetryPolicy(
 )
 ```
 
-Pass it as `tokenRetryPolicy` to `withClientTokenProvider`. Set
+The policy applies only when the provider throws
+`JanuaryTokenProviderException(retryable = true)`. Ordinary exceptions stop
+immediately. Pass it as `tokenRetryPolicy` to `withClientTokenProvider`. Set
 `JanuaryTokenRetryPolicy.NONE` when an app-owned provider already applies its
 own retry policy.
 

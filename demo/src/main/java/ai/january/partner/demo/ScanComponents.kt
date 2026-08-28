@@ -67,10 +67,10 @@ import ai.january.partner.photos.FoodScan
 import ai.january.partner.photos.PhotoScanGlucoseImpact
 import ai.january.partner.photos.PhotoScanImage
 import ai.january.partner.photos.ScanFoodPhotoRequest
-import ai.january.partner.scanner.JanuaryMealScanner
-import ai.january.partner.scanner.JanuaryMealScannerConfiguration
-import ai.january.partner.scanner.JanuaryMealScannerMode
-import ai.january.partner.scanner.JanuaryMealScannerResult
+import ai.january.partner.scanner.JanuaryFoodScanner
+import ai.january.partner.scanner.JanuaryFoodScannerConfiguration
+import ai.january.partner.scanner.JanuaryFoodScannerMode
+import ai.january.partner.scanner.JanuaryFoodScannerResult
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 

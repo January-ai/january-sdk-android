@@ -6,7 +6,7 @@ experiences in native Android apps with Kotlin coroutines and typed models.
 {% hint style="warning" %}
 **Controlled preview:** no Android artifact is published yet, and the source
 repository is private. January must grant your GitHub account access. The coordinate
-`ai.january:partner-sdk:0.1.0` is not available from Maven Central. Follow the
+`ai.january:january-sdk-android:0.1.0` is not available from Maven Central. Follow the
 verified [source checkout installation](getting-started/installation.md); do not
 use a Maven-only snippet until January announces a published release.
 {% endhint %}

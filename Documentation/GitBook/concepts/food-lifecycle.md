@@ -3,7 +3,7 @@
 Food integration is a sequence, not one interchangeable response type:
 
 ```text
-autocomplete ── selection ──▶ search ── selected result ──▶ getFood
+autocomplete ── selection ──▶ search ── selected result ──▶ get
                                                            │
                                                            ▼
                                                    serving + quantity
@@ -15,7 +15,7 @@ autocomplete ── selection ──▶ search ── selected result ──▶ 
 * `autocomplete` returns text-entry suggestions.
 * Selecting a suggestion should populate the search box and run `search`.
 * `search` returns discovery rows.
-* Before showing servings, call `getFood` with the selected food ID.
+* Before showing servings, call `get` with the selected food ID.
 * Build a `FoodPortion` from the hydrated food to validate the serving and scale
   nutrition locally.
 
@@ -26,7 +26,7 @@ import ai.january.partner.foods.portion
 
 val results = january.foods.search(SearchFoodsRequest(query = "banana"))
 val selected = results.items.first()
-val food = january.foods.getFood(GetFoodRequest(foodId = selected.id))
+val food = january.foods.get(GetFoodRequest(foodId = selected.id))
 
 val serving = food.servings.firstOrNull { it.isPrimary }
     ?: food.servings.first()

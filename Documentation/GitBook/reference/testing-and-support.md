@@ -23,7 +23,7 @@ Test at least these partner-controlled conditions before shipping:
 3. concurrent cold-start requests produce one token fetch;
 4. a `token_expired` response fetches a replacement and replays once;
 5. cancellation stops waiting work;
-6. autocomplete → search → `getFood` exposes complete serving choices;
+6. autocomplete → search → `get` exposes complete serving choices;
 7. camera denied, camera granted, photo scan, and barcode lookup;
 8. account and timezone switching do not leak prior-user state.
 

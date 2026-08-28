@@ -9,17 +9,12 @@ import ai.january.partner.executeApiCall
 import ai.january.partner.models.NutrientAmount
 import ai.january.partner.models.NutritionFacts
 import ai.january.partner.transport.apis.FoodsApi
-import ai.january.partner.transport.apis.PhotoScanningApi
-import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
 import ai.january.partner.transport.models.SuggestFoodAlternativesBody
 import java.io.IOException
 import java.math.BigDecimal
 import kotlinx.coroutines.CancellationException
 
-public class FoodsResource internal constructor(
-    private val api: FoodsApi,
-    private val photoScanningApi: PhotoScanningApi,
-) {
+public class FoodsResource internal constructor(private val api: FoodsApi) {
     public suspend fun autocomplete(request: AutocompleteFoodsRequest): AutocompleteFoodsResponse {
         if (request.query.length > 64) {
             throw JanuaryException(
@@ -58,7 +53,7 @@ public class FoodsResource internal constructor(
         )
     }
 
-    public suspend fun getFood(request: GetFoodRequest): FoodSearchItem = executeApiCall(
+    public suspend fun get(request: GetFoodRequest): FoodSearchItem = executeApiCall(
         operation = { api.getFood(request.foodId.value, request.endUserId?.value) },
         transform = { it.toPublic() },
     )
@@ -115,18 +110,6 @@ public class FoodsResource internal constructor(
             operation = { api.lookupFoodByBarcode(request.upc, request.endUserId?.value) },
             transform = { it.toPublic() },
         )
-
-    public suspend fun searchNaturalLanguage(
-        request: SearchFoodsByNaturalLanguageRequest,
-    ): SearchFoodsByNaturalLanguageResponse = executeApiCall(
-        operation = {
-            photoScanningApi.searchFoodsByNaturalLanguage(
-                SearchFoodsByNaturalLanguageBody(request.query),
-                request.endUserId?.value,
-            )
-        },
-        transform = { bridgeModel(it) },
-    )
 
     public suspend fun suggestAlternatives(
         request: SuggestFoodAlternativesRequest,

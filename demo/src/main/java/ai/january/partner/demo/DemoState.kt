@@ -10,10 +10,11 @@ import ai.january.partner.JanuaryClientToken
 import ai.january.partner.PartnerUserId
 import ai.january.partner.PartnerUserContext
 import ai.january.partner.JanuaryPartnerUserClient
-import ai.january.partner.forJanuaryDevelopment
+import ai.january.partner.JanuaryTokenProviderException
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 
 class DemoState(context: Context) {
     private val preferences = context.getSharedPreferences("january_demo", Context.MODE_PRIVATE)
@@ -35,19 +36,18 @@ class DemoState(context: Context) {
 
     private val tokenHttpClient = OkHttpClient()
     private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
-    private val internalApiBaseUrl = BuildConfig.JANUARY_INTERNAL_API_BASE_URL.trim()
+    private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
     val authenticationDescription: String
     val client: JanuaryPartnerClient?
 
     init {
-        if (partnerTokenUrl.isNotEmpty() && internalApiBaseUrl.isEmpty()) {
-            authenticationDescription = "Missing january.internalApiBaseUrl"
+        if (partnerTokenUrl.isNotEmpty() && partnerSessionToken.isEmpty()) {
+            authenticationDescription = "Missing january.partnerSessionToken"
             client = null
         } else if (partnerTokenUrl.isNotEmpty()) {
-            authenticationDescription = "Short-lived token provider"
-            client = JanuaryPartnerClient.forJanuaryDevelopment(
-                provider = { fetchClientToken(partnerTokenUrl) },
-                apiBaseUrl = internalApiBaseUrl,
+            authenticationDescription = "Partner backend token provider"
+            client = JanuaryPartnerClient.withClientTokenProvider(
+                provider = { fetchClientToken(partnerTokenUrl, partnerSessionToken) },
             )
         } else {
             val apiKey = BuildConfig.JANUARY_API_KEY.trim()
@@ -75,16 +75,30 @@ class DemoState(context: Context) {
         timezone = java.time.ZoneId.systemDefault().id
     }
 
-    private fun fetchClientToken(url: String): JanuaryClientToken {
+    private fun fetchClientToken(url: String, sessionToken: String): JanuaryClientToken {
         val userId = endUserId.trim()
         require(userId.isNotEmpty()) { "Set an end user ID before making a January request." }
         val request = Request.Builder()
-            .url(url.toHttpUrl().newBuilder().addQueryParameter("user", userId).build())
-            .get()
+            .url(url.toHttpUrl())
+            .post(ByteArray(0).toRequestBody())
+            .header("Authorization", "Bearer $sessionToken")
+            .header("x-end-user-id", userId)
             .build()
-        tokenHttpClient.newCall(request).execute().use { response ->
+        val response = try {
+            tokenHttpClient.newCall(request).execute()
+        } catch (error: java.io.IOException) {
+            throw JanuaryTokenProviderException(
+                "The partner token endpoint is unavailable.",
+                retryable = true,
+                cause = error,
+            )
+        }
+        response.use {
             if (!response.isSuccessful) {
-                error("The partner token endpoint returned HTTP ${response.code}.")
+                throw JanuaryTokenProviderException(
+                    "The partner token endpoint rejected the request.",
+                    retryable = response.code == 408 || response.code == 429 || response.code >= 500,
+                )
             }
             val token = JanuaryClientToken.fromJson(requireNotNull(response.body).string())
             Log.i("JanuaryDemoAuth", "Fetched a short-lived token valid for ${token.expiresIn} seconds")

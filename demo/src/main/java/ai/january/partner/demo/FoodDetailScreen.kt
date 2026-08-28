@@ -138,7 +138,7 @@ internal fun FoodDetailScreen(
 
     LaunchedEffect(food.id, state.client, state.partnerUserId) {
         val sdk = state.client ?: return@LaunchedEffect
-        runCatching { sdk.foods.getFood(GetFoodRequest(food.id, state.partnerUserId)) }
+        runCatching { sdk.foods.get(GetFoodRequest(food.id, state.partnerUserId)) }
             .onSuccess { fullFood ->
                 detailFood = fullFood
                 val primary = fullFood.servings.firstOrNull { it.isPrimary } ?: fullFood.servings.firstOrNull()

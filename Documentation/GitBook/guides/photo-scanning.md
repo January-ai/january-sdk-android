@@ -10,7 +10,7 @@ import ai.january.partner.photos.PhotoScanImage
 import ai.january.partner.photos.ScanFoodPhotoRequest
 
 val imageDataUri = PhotoScanImage.dataUri(originalImageBytes)
-val scan = january.photoScanning.scan(
+val scan = january.foodAnalysis.analyzePhoto(
     ScanFoodPhotoRequest(image = imageDataUri),
 )
 ```
@@ -20,7 +20,7 @@ Correct a result using its current name and detections:
 ```kotlin
 import ai.january.partner.photos.CorrectPhotoScanRequest
 
-val corrected = january.photoScanning.correct(
+val corrected = january.foodAnalysis.correct(
     CorrectPhotoScanRequest(
         mealName = scan.mealName.orEmpty(),
         detections = scan.detections.orEmpty(),
@@ -31,11 +31,11 @@ val corrected = january.photoScanning.correct(
 
 ## Native scanner UI
 
-`JanuaryMealScanner` is a full-screen Compose camera experience with photo and
+`JanuaryFoodScanner` is a full-screen Compose camera experience with photo and
 barcode modes:
 
 ```kotlin
-JanuaryMealScanner(
+JanuaryFoodScanner(
     client = january,
     onResult = { result -> handleScannerResult(result) },
     onCancel = { navigator.popBackStack() },

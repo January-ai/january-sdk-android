@@ -1,6 +1,6 @@
 # Troubleshooting
 
-## Gradle cannot find `ai.january:partner-sdk:0.1.0`
+## Gradle cannot find `ai.january:january-sdk-android:0.1.0`
 
 That artifact is not on Maven Central. Confirm the SDK checkout exists at the
 path in `includeBuild`, and that `dependencySubstitution` maps the coordinate to
@@ -29,13 +29,13 @@ production API. Only `token_expired` is automatically refreshed and replayed.
 
 ## Food picker has incomplete servings
 
-Call `foods.getFood` after selecting a search result. Autocomplete and search
+Call `foods.get` after selecting a search result. Autocomplete and search
 objects are discovery data and are not guaranteed to contain all servings.
 
 ## Camera is blank or denied
 
 Inspect the merged manifest for `CAMERA`, test runtime permission, and use a
-device/emulator with a camera. `JanuaryMealScanner` uses CameraX; it is not the
+device/emulator with a camera. `JanuaryFoodScanner` uses CameraX; it is not the
 system photo picker.
 
 ## Photo scan is too large or rotated

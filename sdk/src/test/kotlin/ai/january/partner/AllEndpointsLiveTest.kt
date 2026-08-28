@@ -48,11 +48,11 @@ public class AllEndpointsLiveTest {
         val serving = food.servings.firstOrNull() ?: error("foods.search returned no serving.")
         pass("foods.search")
 
-        val natural = client.foods.searchNaturalLanguage(
+        val natural = client.foodAnalysis.analyzeDescription(
             SearchFoodsByNaturalLanguageRequest("one banana and a bowl of oatmeal", userId),
         )
         assertTrue(natural.detections.isNotEmpty())
-        pass("foods.searchNaturalLanguage")
+        pass("foodAnalysis.analyzeDescription")
 
         client.foods.suggestAlternatives(
             SuggestFoodAlternativesRequest(
@@ -77,33 +77,33 @@ public class AllEndpointsLiveTest {
         )
         pass("restaurants.searchMenuItems")
 
-        val scan = client.photoScanning.scan(
+        val scan = client.foodAnalysis.analyzePhoto(
             ScanFoodPhotoRequest(BURGER_IMAGE_URL, userId),
         )
-        val mealName = requireNotNull(scan.mealName) { "photoScanning.scan returned no meal name." }
+        val mealName = requireNotNull(scan.mealName) { "foodAnalysis.analyzePhoto returned no meal name." }
         val detections = requireNotNull(scan.detections).also { require(it.isNotEmpty()) }
-        pass("photoScanning.scan")
+        pass("foodAnalysis.analyzePhoto")
 
         val fixture = requireNotNull(
             javaClass.classLoader?.getResourceAsStream("fixtures/photo-scanning/burger-and-fries.png"),
         ).use { it.readBytes() }
-        val base64Scan = client.photoScanning.scan(
+        val base64Scan = client.foodAnalysis.analyzePhoto(
             ScanFoodPhotoRequest(
                 "data:image/png;base64,${Base64.getEncoder().encodeToString(fixture)}",
                 userId,
             ),
         )
         require(!base64Scan.mealName.isNullOrBlank() && !base64Scan.detections.isNullOrEmpty()) {
-            "photoScanning.scan returned no detections for the base64 fixture."
+            "foodAnalysis.analyzePhoto returned no detections for the base64 fixture."
         }
-        pass("photoScanning.scan base64")
+        pass("foodAnalysis.analyzePhoto base64")
 
-        client.photoScanning.correct(
+        client.foodAnalysis.correct(
             CorrectPhotoScanRequest(
                 mealName, detections, "Rename the meal to January Android SDK smoke test meal.", userId,
             ),
         )
-        pass("photoScanning.correct")
+        pass("foodAnalysis.correct")
 
         val selectedFood = FoodSelection(
             id = food.id.value,

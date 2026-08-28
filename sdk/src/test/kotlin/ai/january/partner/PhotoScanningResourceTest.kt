@@ -15,7 +15,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-public class PhotoScanningResourceTest {
+public class FoodAnalysisResourceTest {
     private lateinit var server: MockWebServer
 
     @Before
@@ -47,8 +47,8 @@ public class PhotoScanningResourceTest {
             clientBuilder = OkHttpClient.Builder(),
         )
 
-        client.photoScanning.scan(ScanFoodPhotoRequest(BURGER_IMAGE_URL))
-        client.photoScanning.scan(ScanFoodPhotoRequest(dataUri))
+        client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest(BURGER_IMAGE_URL))
+        client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest(dataUri))
 
         val adapter = Serializer.moshiBuilder.build().adapter(ScanPayload::class.java)
         val urlRequest = server.takeRequest()

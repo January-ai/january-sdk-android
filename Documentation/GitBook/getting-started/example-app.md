@@ -10,12 +10,15 @@ Add untracked values to the repository's `local.properties`:
 
 ```properties
 january.partnerTokenUrl=http://10.0.2.2:8787/january-token
+january.partnerSessionToken=your-local-app-session-or-relay-secret
 ```
 
 `10.0.2.2` reaches localhost on the host machine from the Android emulator. Use
 your machine's LAN address for a physical device. The token endpoint URL has no
-default. The public SDK targets January production and exposes no API-origin
-override.
+default. The demo sends a `POST` with your app session in `Authorization` and
+the selected stable user ID in `x-end-user-id`; adapt those request details to
+your own backend contract. The public SDK targets January production and
+exposes no API-origin override.
 
 Never commit `local.properties`.
 

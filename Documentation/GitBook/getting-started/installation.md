@@ -2,17 +2,17 @@
 
 ## Current availability
 
-The Android SDK is a controlled preview. Maven Central returns no artifact for
-`ai.january:partner-sdk:0.1.0`, and this repository does not yet define a Maven
-publication. Until January publishes a signed release, integrate a pinned source
-checkout as a Gradle composite build. The repository is private; ask January to
-grant your GitHub account access before starting.
+The Android SDK is a controlled preview. The repository defines an Apache-2.0
+Maven publication for release preparation, but January has not published that
+artifact to Maven Central. Until a signed release is announced, integrate a
+pinned source checkout as a Gradle composite build. The repository is private;
+ask January to grant your GitHub account access before starting.
 
 The verified preview toolchain is Gradle 9.5.1, Android Gradle Plugin 9.2.1,
 compile SDK 36, Java 17, and minimum Android API 26.
 
 {% hint style="danger" %}
-The expected line `implementation("ai.january:partner-sdk:0.1.0")` does **not**
+The expected line `implementation("ai.january:january-sdk-android:0.1.0")` does **not**
 work by itself from `mavenCentral()` today.
 {% endhint %}
 
@@ -58,7 +58,7 @@ dependencyResolutionManagement {
 
 includeBuild("../january-sdk-android") {
     dependencySubstitution {
-        substitute(module("ai.january:partner-sdk"))
+        substitute(module("ai.january:january-sdk-android"))
             .using(project(":sdk"))
     }
 }
@@ -71,7 +71,7 @@ Change `../january-sdk-android` to the actual relative path from your app.
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("ai.january:partner-sdk:0.1.0")
+    implementation("ai.january:january-sdk-android:0.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
 }
@@ -89,7 +89,7 @@ used by the complete token-provider example, and Lifecycle supplies
 ./gradlew :app:assembleDebug
 ```
 
-The dependency report should map `ai.january:partner-sdk:0.1.0` to the included
+The dependency report should map `ai.january:january-sdk-android:0.1.0` to the included
 `:sdk` project.
 
 ## Future Maven installation

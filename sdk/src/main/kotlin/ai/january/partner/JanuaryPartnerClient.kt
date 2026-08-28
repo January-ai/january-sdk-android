@@ -3,7 +3,7 @@ package ai.january.partner
 import ai.january.partner.foods.FoodsResource
 import ai.january.partner.foodlogs.FoodLogsResource
 import ai.january.partner.glucose.GlucoseResource
-import ai.january.partner.photos.PhotoScanningResource
+import ai.january.partner.photos.FoodAnalysisResource
 import ai.january.partner.restaurants.RestaurantsResource
 import ai.january.partner.transport.apis.FoodLogsApi
 import ai.january.partner.transport.apis.FoodsApi
@@ -26,15 +26,23 @@ public class JanuaryPartnerClient private constructor(
 ) {
     public val foods: FoodsResource
     public val restaurants: RestaurantsResource
-    public val photoScanning: PhotoScanningResource
+    public val foodAnalysis: FoodAnalysisResource
     public val foodLogs: FoodLogsResource
     public val glucose: GlucoseResource
 
+    @Deprecated(
+        message = "Local development only. Use withClientTokenProvider in production.",
+    )
     public constructor(developmentApiKey: String) : this(
         authentication = Authentication.DevelopmentApiKey(developmentApiKey),
         baseUrl = PRODUCTION_BASE_URL,
         clientBuilder = OkHttpClient.Builder(),
-    )
+    ) {
+        System.err.println(
+            "WARNING: January development API-key authentication is for local testing only. " +
+                "Do not ship this key; use JanuaryTokenProvider in production.",
+        )
+    }
 
     init {
         clientBuilder.addInterceptor(authentication.interceptor())
@@ -48,10 +56,10 @@ public class JanuaryPartnerClient private constructor(
             baseUrl = baseUrl,
             okHttpClientBuilder = clientBuilder,
         )
-        val photoScanningApi = apiClient.createService(PhotoScanningApi::class.java)
-        foods = FoodsResource(apiClient.createService(FoodsApi::class.java), photoScanningApi)
+        val foodAnalysisApi = apiClient.createService(PhotoScanningApi::class.java)
+        foods = FoodsResource(apiClient.createService(FoodsApi::class.java))
         restaurants = RestaurantsResource(apiClient.createService(RestaurantsApi::class.java))
-        photoScanning = PhotoScanningResource(photoScanningApi)
+        foodAnalysis = FoodAnalysisResource(foodAnalysisApi)
         foodLogs = FoodLogsResource(apiClient.createService(FoodLogsApi::class.java))
         glucose = GlucoseResource(apiClient.createService(GlucoseApi::class.java))
     }

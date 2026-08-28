@@ -17,6 +17,7 @@ plugins {
 
 val januaryTokenUrl = providers.gradleProperty("januaryTokenUrl").orNull ?: ""
 val partnerSessionToken = providers.gradleProperty("partnerSessionToken").orNull ?: ""
+val januaryEndUserId = providers.gradleProperty("januaryEndUserId").orNull ?: ""
 
 android {
     namespace = "com.example.januaryquickstart"
@@ -30,6 +31,7 @@ android {
         versionName = "1.0"
         buildConfigField("String", "JANUARY_TOKEN_URL", "\"$januaryTokenUrl\"")
         buildConfigField("String", "PARTNER_SESSION_TOKEN", "\"$partnerSessionToken\"")
+        buildConfigField("String", "JANUARY_END_USER_ID", "\"$januaryEndUserId\"")
     }
 
     buildFeatures { buildConfig = true }
@@ -41,7 +43,7 @@ android {
 }
 
 dependencies {
-    implementation("ai.january:partner-sdk:0.1.0")
+    implementation("ai.january:january-sdk-android:0.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
 ```
@@ -83,6 +85,8 @@ import ai.january.partner.JanuaryClientToken
 import ai.january.partner.JanuaryException
 import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.JanuaryTokenProvider
+import ai.january.partner.JanuaryTokenProviderException
+import ai.january.partner.PartnerUserId
 import ai.january.partner.foods.SearchFoodsRequest
 import android.app.Activity
 import android.os.Bundle
@@ -113,7 +117,12 @@ private class PartnerBackendTokenProvider(
             }
             try {
                 val status = connection.responseCode
-                if (status !in 200..299) error("Token endpoint returned HTTP $status")
+                if (status !in 200..299) {
+                    throw JanuaryTokenProviderException(
+                        "Token endpoint returned HTTP $status",
+                        retryable = status == 408 || status == 429 || status >= 500,
+                    )
+                }
                 val json = connection.inputStream.bufferedReader().use { it.readText() }
                 JanuaryClientToken.fromJson(json)
             } finally {
@@ -140,6 +149,9 @@ class MainActivity : Activity() {
         require(BuildConfig.PARTNER_SESSION_TOKEN.isNotBlank()) {
             "Pass -PpartnerSessionToken=<your-app-session-token>"
         }
+        require(BuildConfig.JANUARY_END_USER_ID.isNotBlank()) {
+            "Pass -PjanuaryEndUserId=<your-stable-user-id>"
+        }
 
         val january = JanuaryPartnerClient.withClientTokenProvider(
             PartnerBackendTokenProvider(
@@ -147,10 +159,14 @@ class MainActivity : Activity() {
                 sessionToken = BuildConfig.PARTNER_SESSION_TOKEN,
             ),
         )
+        val user = january.forUser(
+            endUserId = PartnerUserId(BuildConfig.JANUARY_END_USER_ID),
+            timezone = java.util.TimeZone.getDefault().id,
+        )
 
         scope.launch {
             try {
-                val response = january.foods.search(
+                val response = user.foods.search(
                     SearchFoodsRequest(query = "greek yogurt", limit = 5),
                 )
                 output.text = buildString {
@@ -179,7 +195,8 @@ Use an HTTPS token endpoint that returns a production client token:
 ```bash
 ./gradlew :app:installDebug \
   -PjanuaryTokenUrl=https://your-backend.example/january-token \
-  -PpartnerSessionToken=YOUR_APP_SESSION_TOKEN
+  -PpartnerSessionToken=YOUR_APP_SESSION_TOKEN \
+  -PjanuaryEndUserId=YOUR_STABLE_USER_ID
 
 adb shell am start -n \
   com.example.januaryquickstart/.MainActivity

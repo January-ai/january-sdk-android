@@ -35,19 +35,21 @@ or token endpoint URL. The generated OpenAPI transport is internal.
 
 | Resource | Public operations |
 | --- | --- |
-| `foods` | `autocomplete`, `search`, `getFood`, `lookupBarcode`, `searchNaturalLanguage`, `suggestAlternatives` |
+| `foods` | `autocomplete`, `search`, `get`, `lookupBarcode`, `suggestAlternatives` |
 | `restaurants` | `search`, `searchMenuItems` |
-| `photoScanning` | `scan`, `correct` |
+| `foodAnalysis` | `analyzePhoto`, `analyzeDescription`, `correct` |
 | `foodLogs` | `create`, `list`, `update`, `delete` |
 | `glucose` | `predict` |
 
 `forUser(PartnerUserId, timezone)` returns a lightweight
-`JanuaryPartnerUserClient`. Its `foodLogs` and `glucose` wrappers apply one
-`PartnerUserContext`. All network operations are `suspend` functions.
+`JanuaryPartnerUserClient`. Its `foods`, `restaurants`, `foodAnalysis`,
+`foodLogs`, and `glucose` wrappers apply one `PartnerUserContext`. Set the user
+once, then use the scoped client for every operation. All network operations are
+`suspend` functions.
 
 Local food utilities include `FoodSearchItem.portion(...)` and
 `PhotoScanImage.dataUri(...)`. Compose scanner UI is exposed through
-`JanuaryMealScanner`.
+`JanuaryFoodScanner`.
 
 ```kotlin
 fun forUser(context: PartnerUserContext): JanuaryPartnerUserClient

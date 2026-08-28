@@ -1,6 +1,7 @@
 # Food Logs and Glucose API
 
-Prefer `client.forUser(...)` so one identity and timezone are reused.
+Prefer `client.forUser(...)` so one identity and timezone are reused across all
+SDK resources, including the Food Logs and Glucose operations documented here.
 
 ## Scoped Food Logs
 

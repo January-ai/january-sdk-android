@@ -56,6 +56,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import ai.january.partner.JanuaryPartnerClient
+import ai.january.partner.JanuaryPartnerUserClient
 import ai.january.partner.PartnerUserId
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -73,18 +74,37 @@ import kotlinx.coroutines.launch
  * capture/lookup work is serialized while [onResult] is pending.
  */
 @Composable
-public fun JanuaryMealScanner(
+public fun JanuaryFoodScanner(
+    userClient: JanuaryPartnerUserClient,
+    modifier: Modifier = Modifier,
+    configuration: JanuaryFoodScannerConfiguration = JanuaryFoodScannerConfiguration(),
+    onResult: (JanuaryFoodScannerResult) -> Unit,
+    onCancel: () -> Unit,
+) {
+    JanuaryFoodScanner(
+        client = userClient.client,
+        modifier = modifier,
+        endUserId = userClient.context.endUserId,
+        configuration = configuration,
+        onResult = onResult,
+        onCancel = onCancel,
+    )
+}
+
+/** Full-screen scanner for integrations that have not adopted a user-scoped client. */
+@Composable
+public fun JanuaryFoodScanner(
     client: JanuaryPartnerClient,
     modifier: Modifier = Modifier,
     endUserId: PartnerUserId? = null,
-    configuration: JanuaryMealScannerConfiguration = JanuaryMealScannerConfiguration(),
-    onResult: (JanuaryMealScannerResult) -> Unit,
+    configuration: JanuaryFoodScannerConfiguration = JanuaryFoodScannerConfiguration(),
+    onResult: (JanuaryFoodScannerResult) -> Unit,
     onCancel: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val controller = remember(client, endUserId, configuration) {
-        JanuaryMealScannerController(client, endUserId, configuration)
+        JanuaryFoodScannerController(client, endUserId, configuration)
     }
     var mode by rememberSaveable { mutableStateOf(configuration.initialMode) }
     var permissionRequested by rememberSaveable { mutableStateOf(false) }
@@ -162,11 +182,11 @@ public fun JanuaryMealScanner(
                     }
                 }
                 Text(
-                    if (mode == JanuaryMealScannerMode.PHOTO) "Frame the whole meal" else "Center the food barcode",
+                    if (mode == JanuaryFoodScannerMode.PHOTO) "Frame the whole meal" else "Center the food barcode",
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                 )
-                if (mode == JanuaryMealScannerMode.PHOTO) {
+                if (mode == JanuaryFoodScannerMode.PHOTO) {
                     Button(
                         onClick = {
                             val capture = imageCapture ?: return@Button
@@ -214,15 +234,15 @@ public fun JanuaryMealScanner(
 
 @Composable
 private fun ScannerModeControl(
-    selected: JanuaryMealScannerMode,
-    modes: Set<JanuaryMealScannerMode>,
-    onSelect: (JanuaryMealScannerMode) -> Unit,
+    selected: JanuaryFoodScannerMode,
+    modes: Set<JanuaryFoodScannerMode>,
+    onSelect: (JanuaryFoodScannerMode) -> Unit,
 ) {
     Row(
         modifier = Modifier.background(Color.Black.copy(alpha = .62f), RoundedCornerShape(14.dp)).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        JanuaryMealScannerMode.entries.filter { it in modes }.forEach { mode ->
+        JanuaryFoodScannerMode.entries.filter { it in modes }.forEach { mode ->
             val active = selected == mode
             Button(
                 onClick = { onSelect(mode) },
@@ -230,7 +250,7 @@ private fun ScannerModeControl(
                     containerColor = if (active) Color.White else Color.Transparent,
                     contentColor = if (active) Color.Black else Color.White,
                 ),
-            ) { Text(if (mode == JanuaryMealScannerMode.PHOTO) "Photo" else "Barcode") }
+            ) { Text(if (mode == JanuaryFoodScannerMode.PHOTO) "Photo" else "Barcode") }
         }
     }
 }
@@ -272,10 +292,10 @@ private fun ScannerErrorNotice(message: String, onRetry: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalGetImage::class)
+@androidx.annotation.OptIn(ExperimentalGetImage::class)
 @Composable
 private fun CameraXPreview(
-    mode: JanuaryMealScannerMode,
+    mode: JanuaryFoodScannerMode,
     active: Boolean,
     onReady: (ImageCapture, Camera) -> Unit,
     onBarcode: (String) -> Unit,
@@ -303,7 +323,7 @@ private fun CameraXPreview(
                     .setTargetRotation(previewView.display?.rotation ?: android.view.Surface.ROTATION_0)
                     .build()
                 val useCases = mutableListOf<androidx.camera.core.UseCase>(preview, capture)
-                if (mode == JanuaryMealScannerMode.BARCODE) {
+                if (mode == JanuaryFoodScannerMode.BARCODE) {
                     val options = BarcodeScannerOptions.Builder().setBarcodeFormats(
                         Barcode.FORMAT_UPC_A,
                         Barcode.FORMAT_UPC_E,

@@ -1,6 +1,39 @@
+import org.gradle.api.publish.maven.MavenPublication
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("maven-publish")
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                groupId = "ai.january"
+                artifactId = "january-sdk-android"
+                version = project.version.toString()
+                pom {
+                    name.set("January SDK for Android")
+                    description.set("The official January SDK for Android")
+                    url.set("https://github.com/January-ai/january-sdk-android")
+                    licenses {
+                        license {
+                            name.set("Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            distribution.set("repo")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/January-ai/january-sdk-android.git")
+                        developerConnection.set("scm:git:ssh://git@github.com/January-ai/january-sdk-android.git")
+                        url.set("https://github.com/January-ai/january-sdk-android")
+                    }
+                }
+            }
+        }
+    }
 }
 
 group = "ai.january"

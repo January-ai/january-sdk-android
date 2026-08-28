@@ -2,15 +2,30 @@ package ai.january.partner.photos
 
 import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
+import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
 import ai.january.partner.transport.apis.PhotoScanningApi
 import ai.january.partner.transport.models.CorrectPhotoScanBody
 import ai.january.partner.transport.models.ScanFoodPhotoBody
+import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-public class PhotoScanningResource internal constructor(private val api: PhotoScanningApi) {
-    public suspend fun scan(request: ScanFoodPhotoRequest): FoodScan = executeApiCall(
+/** Operations that analyze food from photos or natural-language descriptions. */
+public class FoodAnalysisResource internal constructor(private val api: PhotoScanningApi) {
+    public suspend fun analyzePhoto(request: ScanFoodPhotoRequest): FoodScan = executeApiCall(
         operation = { api.scanFoodPhoto(ScanFoodPhotoBody(request.image), request.endUserId?.value) },
+        transform = { bridgeModel(it) },
+    )
+
+    public suspend fun analyzeDescription(
+        request: ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest,
+    ): SearchFoodsByNaturalLanguageResponse = executeApiCall(
+        operation = {
+            api.searchFoodsByNaturalLanguage(
+                SearchFoodsByNaturalLanguageBody(request.query),
+                request.endUserId?.value,
+            )
+        },
         transform = { bridgeModel(it) },
     )
 

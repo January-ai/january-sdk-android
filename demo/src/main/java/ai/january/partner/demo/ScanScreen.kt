@@ -67,10 +67,10 @@ import ai.january.partner.photos.FoodScan
 import ai.january.partner.photos.PhotoScanGlucoseImpact
 import ai.january.partner.photos.PhotoScanImage
 import ai.january.partner.photos.ScanFoodPhotoRequest
-import ai.january.partner.scanner.JanuaryMealScanner
-import ai.january.partner.scanner.JanuaryMealScannerConfiguration
-import ai.january.partner.scanner.JanuaryMealScannerMode
-import ai.january.partner.scanner.JanuaryMealScannerResult
+import ai.january.partner.scanner.JanuaryFoodScanner
+import ai.january.partner.scanner.JanuaryFoodScannerConfiguration
+import ai.january.partner.scanner.JanuaryFoodScannerMode
+import ai.january.partner.scanner.JanuaryFoodScannerResult
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
@@ -87,7 +87,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
     var showUrlSheet by remember { mutableStateOf(false) }
     var showCorrection by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<FoodScan?>(null) }
-    var barcodeResult by remember { mutableStateOf<JanuaryMealScannerResult.Barcode?>(null) }
+    var barcodeResult by remember { mutableStateOf<JanuaryFoodScannerResult.Barcode?>(null) }
     var showCameraScanner by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -114,7 +114,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
         loading = true
         error = null
         coroutineScope.launch {
-            runCatching { client.photoScanning.scan(ScanFoodPhotoRequest(imageInput, state.partnerUserId)) }
+            runCatching { client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest(imageInput, state.partnerUserId)) }
                 .onSuccess { result = it }
                 .onFailure { error = it.message ?: "The scan failed." }
             loading = false
@@ -217,18 +217,18 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
             onDismissRequest = { showCameraScanner = false },
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
         ) {
-            JanuaryMealScanner(
+            JanuaryFoodScanner(
                 client = client,
                 endUserId = state.partnerUserId,
-                configuration = JanuaryMealScannerConfiguration(initialMode = JanuaryMealScannerMode.PHOTO),
+                configuration = JanuaryFoodScannerConfiguration(initialMode = JanuaryFoodScannerMode.PHOTO),
                 onResult = { scannerResult ->
                     showCameraScanner = false
                     when (scannerResult) {
-                        is JanuaryMealScannerResult.Meal -> {
+                        is JanuaryFoodScannerResult.Photo -> {
                             selectPreparedJpeg(scannerResult.image.jpegData)
                             result = scannerResult.analysis
                         }
-                        is JanuaryMealScannerResult.Barcode -> barcodeResult = scannerResult
+                        is JanuaryFoodScannerResult.Barcode -> barcodeResult = scannerResult
                     }
                 },
                 onCancel = { showCameraScanner = false },
@@ -266,7 +266,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
             onSubmit = { mealName, instruction, finished ->
                 coroutineScope.launch {
                     runCatching {
-                        client.photoScanning.correct(
+                        client.foodAnalysis.correct(
                             CorrectPhotoScanRequest(mealName, result!!.detections.orEmpty(), instruction, state.partnerUserId),
                         )
                     }.onSuccess { corrected -> result = corrected; showCorrection = false }

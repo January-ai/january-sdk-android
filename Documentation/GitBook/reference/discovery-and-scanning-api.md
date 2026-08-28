@@ -1,4 +1,8 @@
-# Restaurants and scanning API
+# Restaurants and food analysis API
+
+Prefer `client.forUser(...).restaurants` and
+`client.forUser(...).foodAnalysis` so the active user is configured once. The
+optional request identity fields below remain for direct-call compatibility.
 
 ## Restaurants
 
@@ -25,10 +29,13 @@ Restaurant fields are `type`, `id`, `name`, optional chain/distance/city/address
 metadata. Menu search returns `RestaurantMenuItem` values with restaurant name,
 optional nutrition/distance/photo data, and `servings`.
 
-## Photo scanning
+## Food analysis
 
 ```kotlin
-suspend fun scan(request: ScanFoodPhotoRequest): FoodScan
+suspend fun analyzePhoto(request: ScanFoodPhotoRequest): FoodScan
+suspend fun analyzeDescription(
+    request: SearchFoodsByNaturalLanguageRequest,
+): SearchFoodsByNaturalLanguageResponse
 suspend fun correct(request: CorrectPhotoScanRequest): FoodScan
 ```
 
@@ -47,18 +54,18 @@ score.
 
 ```kotlin
 @Composable
-fun JanuaryMealScanner(
+fun JanuaryFoodScanner(
     client: JanuaryPartnerClient,
     modifier: Modifier = Modifier,
     endUserId: PartnerUserId? = null,
-    configuration: JanuaryMealScannerConfiguration = JanuaryMealScannerConfiguration(),
-    onResult: (JanuaryMealScannerResult) -> Unit,
+    configuration: JanuaryFoodScannerConfiguration = JanuaryFoodScannerConfiguration(),
+    onResult: (JanuaryFoodScannerResult) -> Unit,
     onCancel: () -> Unit,
 )
 ```
 
 Configuration defaults to photo and barcode modes, photo initially, maximum
-dimension 1,000, and JPEG quality 70. Results are `Meal(image, analysis)` or
-`Barcode(value, food)`. `JanuaryMealScannerController` exposes
+dimension 1,000, and JPEG quality 70. Results are `Photo(image, analysis)` or
+`Barcode(value, food)`. `JanuaryFoodScannerController` exposes
 `analyzePhoto(ByteArray)` and `lookupBarcode(String)` for host-owned UIs;
 unmatched barcodes throw `NoBarcodeMatchException`.

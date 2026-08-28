@@ -23,10 +23,10 @@ android {
 
         val apiKey = localProperties.getProperty("january.apiKey", "")
         val partnerTokenUrl = localProperties.getProperty("january.partnerTokenUrl", "")
-        val internalApiBaseUrl = localProperties.getProperty("january.internalApiBaseUrl", "")
+        val partnerSessionToken = localProperties.getProperty("january.partnerSessionToken", "")
         buildConfigField("String", "JANUARY_API_KEY", "\"${apiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         buildConfigField("String", "JANUARY_PARTNER_TOKEN_URL", "\"${partnerTokenUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
-        buildConfigField("String", "JANUARY_INTERNAL_API_BASE_URL", "\"${internalApiBaseUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
+        buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", "\"${partnerSessionToken.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

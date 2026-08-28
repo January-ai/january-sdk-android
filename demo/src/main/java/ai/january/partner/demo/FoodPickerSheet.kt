@@ -125,7 +125,7 @@ internal fun FoodPickerSheet(
         failedFoodId = null
         coroutineScope.launch {
             runCatching {
-                client.foods.getFood(GetFoodRequest(foodId, state.partnerUserId))
+                client.foods.get(GetFoodRequest(foodId, state.partnerUserId))
             }
                 .onSuccess { chosenFood = it }
                 .onFailure {
