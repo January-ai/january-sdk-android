@@ -33,9 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -84,10 +82,11 @@ private val GoldText = androidx.compose.ui.graphics.Color(0xFF6E5613)
 internal fun numericText(value: String): String = value.filter { it.isDigit() || it == '.' }
 
 @Composable
-internal fun FormSection(title: String, content: @Composable () -> Unit) {
+internal fun FormSection(title: String, detail: String? = null, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionLabel(title, Modifier.padding(horizontal = 6.dp))
-        DemoCard { content() }
+        SectionLabel(title)
+        detail?.let { Text(it, fontSize = 15.sp, lineHeight = 20.sp, color = JanuaryColors.Body) }
+        DemoCard { Column { content() } }
     }
 }
 
@@ -105,7 +104,7 @@ internal fun MeasurementRow(label: String, value: String, onChange: (String) -> 
             modifier = Modifier.width(72.dp),
             textStyle = TextStyle(
                 color = JanuaryColors.Ink,
-                fontSize = 24.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
                 textAlign = TextAlign.End,
@@ -113,19 +112,19 @@ internal fun MeasurementRow(label: String, value: String, onChange: (String) -> 
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
         )
-        Text(unit, modifier = Modifier.padding(start = 10.dp), color = JanuaryColors.Muted)
+        Text(unit, modifier = Modifier.padding(start = 10.dp), fontSize = 14.sp, color = JanuaryColors.Muted)
     }
 }
 
 @Composable
-internal fun StartTimeRow(startTime: OffsetDateTime, onChange: (OffsetDateTime) -> Unit) {
+internal fun StartTimeRow(startTime: OffsetDateTime, label: String = "Start time", onChange: (OffsetDateTime) -> Unit) {
     val context = LocalContext.current
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("Start time", style = MaterialTheme.typography.bodyLarge)
+        Text(label, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.weight(1f))
         TextButton(
             contentPadding = PaddingValues(0.dp),
@@ -182,12 +181,7 @@ internal fun SelectedFoodRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(selected.food.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Remove ${selected.food.name}")
-                }
-            }
+            Text(selected.food.name, style = MaterialTheme.typography.titleMedium)
             Box {
                 TextButton(onClick = { menuOpen = true }) {
                     Text("${formatDemoNumber(selected.serving.quantity)} ${selected.serving.unit}", color = JanuaryColors.Muted)
@@ -214,20 +208,16 @@ internal fun SelectedFoodRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun ConditionsSheet(
-    selected: Set<MedicalCondition>,
-    onChange: (Set<MedicalCondition>) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            AppModalHeader(title = "Health conditions", onDismiss = onDismiss)
-            Text("Select all that apply. Leave both unselected if neither condition applies.", color = JanuaryColors.Muted)
+internal fun ConditionsScreen(selected: Set<MedicalCondition>, onChange: (Set<MedicalCondition>) -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
+    androidx.activity.compose.BackHandler(onBack = onDismiss)
+    AppScreenScaffold(
+        title = "Health conditions", modifier = modifier,
+        style = AppNavigationTitleStyle.Leading,
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Health conditions", onClick = onDismiss) },
+    ) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Select all that apply. Leave both unselected if neither condition applies.", fontSize = 15.sp, color = JanuaryColors.Muted)
             DemoCard {
                 ConditionRow("Type 2 diabetes", MedicalCondition.TYPE_2_DIABETES, selected, onChange)
                 HorizontalDivider(color = JanuaryColors.Divider)
@@ -266,26 +256,15 @@ internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<Demo
     val mealStart = result.prediction.minByOrNull { it.minutes }
     val delta = ((peak?.value ?: 0.0) - (mealStart?.value ?: 0.0)).coerceAtLeast(0.0)
     val impactColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
-    Text("Estimated response", style = MaterialTheme.typography.displaySmall)
-    Text(
-        "${result.impact.value.replaceFirstChar(Char::uppercase)} impact",
-        color = impactColor,
-        fontWeight = FontWeight.Bold,
+    val peakMinutes = peak?.minutes?.toInt()
+    val peakWindow = peakMinutes?.let { "${maxOf(0, it - 15)}–${it + 15} min" } ?: "estimated timing"
+    PredictionChart(
+        points = result.prediction.map { PredictionPoint(it.minutes, it.value) },
+        minimum = result.minimum, maximum = result.maximum, lineColor = impactColor,
+        summaryValue = peak?.value,
+        summaryDetail = "${glucoseImpactLabel(result.impact.value).lowercase()} · $peakWindow",
+        summaryDelta = "+${kotlin.math.round(delta).toInt()} above meal start",
     )
-    DemoCard {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
-                SectionLabel("Likely peak")
-                Text(
-                    peak?.value?.toInt()?.toString() ?: "—",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
-            Text("mg/dL", fontWeight = FontWeight.SemiBold)
-        }
-        GlucoseChart(result)
-    }
     DemoCard {
         foods.forEachIndexed { index, food ->
             if (index > 0) HorizontalDivider(color = JanuaryColors.Divider)
@@ -304,11 +283,13 @@ internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<Demo
         }
     }
     androidx.compose.material3.Card(
+        shape = RoundedCornerShape(24.dp),
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.ui.graphics.Color(0xFFD9C25F)),
         colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = JanuaryColors.GoldContainer),
     ) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionLabel("Worth knowing")
-            Text("This estimate reflects the foods, servings, and profile entered above. Adjusting the meal will generate a new prediction.")
+            Text("This estimate reflects the foods, servings, and profile entered above. Adjusting the meal will generate a new prediction. It does not create or update a food log.")
         }
     }
     Text(

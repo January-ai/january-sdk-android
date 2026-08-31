@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +29,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FilterList
@@ -46,9 +48,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -56,7 +56,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -70,6 +69,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -114,143 +114,43 @@ import kotlinx.coroutines.delay
 import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.PartnerUserId
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun FoodDetailScreen(
-    state: DemoState,
-    food: FoodSearchItem,
-    onBack: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val coroutineScope = rememberCoroutineScope()
+internal fun FoodDetailScreen(state: DemoState, food: FoodSearchItem, onBack: () -> Unit, modifier: Modifier = Modifier, isModal: Boolean = false) {
     var detailFood by remember(food) { mutableStateOf(food) }
-    val initialServing = remember(food) { food.servings.firstOrNull { it.isPrimary } ?: food.servings.firstOrNull() }
+    val initialServing = remember(food) { primaryServing(food) }
     var serving by remember(food) { mutableStateOf(initialServing) }
-    var quantity by remember(food) { mutableDoubleStateOf(initialServing?.quantity?.takeIf { it > 0 } ?: 1.0) }
-    var servingMenuExpanded by remember { mutableStateOf(false) }
-    var prediction by remember { mutableStateOf<GlucosePrediction?>(null) }
-    var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var quantity by remember(food) { mutableDoubleStateOf(initialServing?.quantity ?: 1.0) }
+    var detailLoadFailed by remember(food) { mutableStateOf(false) }
     var showAlternatives by remember { mutableStateOf(false) }
-    var showGlucoseSheet by remember { mutableStateOf(false) }
-
+    var showGlucose by remember { mutableStateOf(false) }
     val portion = serving?.let { runCatching { detailFood.portion(it.id, quantity) }.getOrNull() }
-
+    androidx.activity.compose.BackHandler(onBack = onBack)
     LaunchedEffect(food.id, state.client, state.partnerUserId) {
-        val sdk = state.client ?: return@LaunchedEffect
-        runCatching { sdk.foods.get(GetFoodRequest(food.id, state.partnerUserId)) }
-            .onSuccess { fullFood ->
-                detailFood = fullFood
-                val primary = fullFood.servings.firstOrNull { it.isPrimary } ?: fullFood.servings.firstOrNull()
-                serving = primary
-                quantity = primary?.quantity?.takeIf { it > 0 } ?: 1.0
-            }
-            .onFailure { error = it.message ?: "Complete serving details could not be loaded." }
+        val client = state.client ?: return@LaunchedEffect
+        runCatching { client.foods.get(GetFoodRequest(food.id, state.partnerUserId)) }
+            .onSuccess { detailFood = it; serving = primaryServing(it); quantity = serving?.quantity ?: 1.0; detailLoadFailed = false }
+            .onFailure { detailLoadFailed = true }
     }
-
-    fun predict() {
-        val sdk = state.client ?: return
-        val selectedPortion = portion ?: return
-        showGlucoseSheet = true
-        loading = true
-        error = null
-        coroutineScope.launch {
-            runCatching {
-                sdk.glucose.predict(
-                    PredictGlucoseRequest(
-                        userProfile = GlucosePredictionProfile(
-                            age = 42.0,
-                            sex = Sex.FEMALE,
-                            height = Height(66.0, HeightUnit.INCHES),
-                            weight = Weight(150.0, WeightUnit.POUNDS),
-                        ),
-                        foods = listOf(selectedPortion.selection),
-                        startTime = OffsetDateTime.now(),
-                        endUserId = state.partnerUserId,
-                        timezone = state.timezone,
-                    ),
-                )
-            }.onSuccess { prediction = it }
-                .onFailure { error = it.message ?: "The prediction failed." }
-            loading = false
-        }
-    }
-
-    Column(modifier.fillMaxSize()) {
-        AppNavigationBar(title = "Food details", onBack = onBack)
+    AppScreenScaffold(
+        title = "Food details", modifier = modifier,
+        leading = {
+            AppNavigationButton(
+                if (isModal) AppNavigationButtonKind.Close else AppNavigationButtonKind.Back,
+                title = if (isModal) "Close Food details" else "Back from Food details", onClick = onBack,
+            )
+        },
+    ) {
         DemoScreen {
-            Column(
-                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                NetworkImage(
-                    detailFood.photoUrl,
-                    detailFood.name,
-                    Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(28.dp)),
-                )
-                Text(detailFood.name, style = MaterialTheme.typography.headlineMedium)
-                detailFood.brandName?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-
-                DemoCard {
-                    if (detailFood.servings.isEmpty()) {
-                        Text("No serving options were returned.")
-                    } else {
-                        ExposedDropdownMenuBox(
-                            expanded = servingMenuExpanded,
-                            onExpandedChange = { servingMenuExpanded = it },
-                        ) {
-                            OutlinedTextField(
-                                value = serving?.let(::servingLabel).orEmpty(),
-                                onValueChange = {},
-                                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                                readOnly = true,
-                                label = { Text("Serving") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = servingMenuExpanded) },
-                            )
-                            ExposedDropdownMenu(
-                                expanded = servingMenuExpanded,
-                                onDismissRequest = { servingMenuExpanded = false },
-                            ) {
-                                detailFood.servings.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(servingLabel(option)) },
-                                        onClick = {
-                                            serving = option
-                                            quantity = option.quantity.takeIf { it > 0 } ?: 1.0
-                                            prediction = null
-                                            servingMenuExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text("Quantity: ${formatNumber(quantity)}", fontFamily = FontFamily.Monospace)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(onClick = { quantity = (quantity - .25).coerceAtLeast(.25); prediction = null }) {
-                                    Icon(Icons.Outlined.Remove, contentDescription = "Decrease quantity")
-                                }
-                                IconButton(onClick = { quantity = (quantity + .25).coerceAtMost(100.0); prediction = null }) {
-                                    Icon(Icons.Outlined.Add, contentDescription = "Increase quantity")
-                                }
-                            }
-                        }
-                    }
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(28.dp)).background(JanuaryColors.Control), contentAlignment = Alignment.Center) {
+                    NetworkImage(detailFood.photoUrl, detailFood.name, Modifier.fillMaxSize().padding(18.dp), contentScale = ContentScale.Fit)
                 }
-
-                DemoCard {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Metric("Calories", portion?.nutrition?.calories?.value, portion?.nutrition?.calories?.unit ?: "cal")
-                        Metric("Protein", portion?.nutrition?.protein?.value, portion?.nutrition?.protein?.unit ?: "g")
-                        Metric("Carbs", portion?.nutrition?.carbohydrates?.value, portion?.nutrition?.carbohydrates?.unit ?: "g")
-                        Metric("Fat", portion?.nutrition?.totalFat?.value, portion?.nutrition?.totalFat?.unit ?: "g")
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text(detailFood.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                    detailFood.brandName?.let { Text(it, color = JanuaryColors.Muted) }
                 }
-
+                ServingControls(detailFood.servings, serving, quantity, { serving = it; quantity = it.quantity }, { quantity = it })
+                DemoCard { ScanStyleMacroStrip(portion?.nutrition?.calories?.value, portion?.nutrition?.protein?.value, portion?.nutrition?.carbohydrates?.value, portion?.nutrition?.totalFat?.value) }
                 val facts = listOf(
                     "Net carbohydrates" to portion?.nutrition?.netCarbohydrates,
                     "Saturated fat" to portion?.nutrition?.saturatedFat,
@@ -260,79 +160,30 @@ internal fun FoodDetailScreen(
                     "Sodium" to portion?.nutrition?.sodium,
                     "Potassium" to portion?.nutrition?.potassium,
                     "Cholesterol" to portion?.nutrition?.cholesterol,
-                ).filter { it.second != null }
-                if (facts.isNotEmpty() || portion?.glycemicIndex != null || portion?.glycemicLoad != null) {
-                    SectionLabel("Nutrition facts")
-                    DemoCard {
-                        facts.forEachIndexed { index, (label, value) ->
-                            NutritionRow(label, value!!.value, value.unit)
-                            if (index < facts.lastIndex) HorizontalDivider()
-                        }
-                        portion?.glycemicIndex?.let { NutritionRow("Glycemic index", it, "") }
-                        portion?.glycemicLoad?.let { NutritionRow("Glycemic load", it, "") }
-                    }
-                }
-
-                DemoPrimaryButton(
-                    text = "Check glucose",
-                    onClick = ::predict,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = serving != null && state.client != null,
-                    loading = loading,
+                ).mapNotNull { (label, amount) -> amount?.let { NutritionValue(label, "${formatDemoNumber(it.value)} ${it.unit}") } } + listOfNotNull(
+                    portion?.glycemicIndex?.let { NutritionValue("Glycemic index", formatDemoNumber(it)) },
+                    portion?.glycemicLoad?.let { NutritionValue("Glycemic load", formatDemoNumber(it)) },
                 )
-                DemoPrimaryButton(
-                    text = "Find alternatives",
-                    onClick = { showAlternatives = true },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (state.client == null) ApiKeyRequiredCard()
-                error?.let { ErrorCard(it, ::predict) }
-                Spacer(Modifier.height(20.dp))
-            }
-        }
-    }
-
-    if (showAlternatives) {
-        AlternativesSheet(state, detailFood, onDismiss = { showAlternatives = false })
-    }
-    if (showGlucoseSheet && serving != null) {
-        val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        ModalBottomSheet(
-            onDismissRequest = { showGlucoseSheet = false },
-            sheetState = sheetState,
-            containerColor = JanuaryColors.Paper,
-        ) {
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                AppModalHeader(title = "Glucose response", onDismiss = { showGlucoseSheet = false })
-                Text(detailFood.name, style = MaterialTheme.typography.titleMedium)
-                Text("${formatNumber(quantity)} ${serving!!.unit}", color = JanuaryColors.Muted, fontFamily = FontFamily.Monospace)
-                if (loading) {
-                    DemoCard {
-                        Column(Modifier.fillMaxWidth().padding(vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            LoadingSpinner()
-                            Text("Predicting your glucose response…")
-                            Text("This usually takes a few seconds.", color = JanuaryColors.Muted)
-                        }
-                    }
-                } else {
-                    error?.let { ErrorCard(it, ::predict) }
-                    prediction?.let { GlucosePredictionResult(it, listOf(DemoSelectedFood(detailFood, serving!!, quantity))) }
+                if (facts.isNotEmpty()) DemoCard {
+                    Text("Nutrition facts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    NutritionList(facts)
                 }
-                DemoCard {
-                    Text("Demo profile", style = MaterialTheme.typography.titleMedium)
-                    Text("42 years · Female · 66 in · 150 lb · No reported condition", color = JanuaryColors.Muted)
+                DemoPrimaryButton("Check glucose", { showGlucose = true }, Modifier.fillMaxWidth(), enabled = serving != null && state.client != null,
+                    icon = { Icon(Icons.Outlined.MonitorHeart, null) })
+                DemoPrimaryButton("Find alternatives", { showAlternatives = true }, Modifier.fillMaxWidth())
+                DetailDisclosure {
+                    NutritionList(listOf(NutritionValue("Food ID", detailFood.id.value.toString()), NutritionValue("Serving ID", serving?.id?.value?.toString() ?: "—")))
                 }
-                Text("This is an estimate for demonstration purposes, not medical advice.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+                if (detailLoadFailed) Text("Complete serving details could not be loaded. Showing the serving returned by search.", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
                 Spacer(Modifier.height(24.dp))
             }
         }
     }
+    if (showAlternatives) AlternativesSheet(state, detailFood) { showAlternatives = false }
+    if (showGlucose && serving != null && state.client != null) FoodGlucoseSheet(state.client!!, detailFood.id, detailFood.name, serving!!, quantity, state.partnerUserId, state.timezone) { showGlucose = false }
 }
 internal fun servingLabel(serving: ServingOption): String = buildString {
-    append("${formatNumber(serving.quantity)} ${serving.unit}")
+    append(serving.unit)
     serving.weightGrams?.let { append(" · ${formatNumber(it)} g") }
 }
 

@@ -35,12 +35,40 @@ fun ApiKeyRequiredCard() {
 }
 
 @Composable
-fun ErrorCard(message: String, retry: (() -> Unit)? = null) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-            Text(message, color = MaterialTheme.colorScheme.onErrorContainer)
-            retry?.let { DemoPrimaryButton("Try again", it, Modifier.fillMaxWidth()) }
+fun ErrorCard(message: String, retry: (() -> Unit)? = null) = ErrorCard(IllegalStateException(message), retry)
+
+internal fun errorTitle(error: Throwable): String = when ((error as? ai.january.partner.JanuaryException)?.category) {
+    ai.january.partner.ErrorCategory.AUTHENTICATION, ai.january.partner.ErrorCategory.AUTHORIZATION -> "Couldn’t use the configured credentials"
+    ai.january.partner.ErrorCategory.VALIDATION -> "Check the information you entered"
+    ai.january.partner.ErrorCategory.NOT_FOUND -> "No matching result was found"
+    ai.january.partner.ErrorCategory.RATE_LIMITED -> "Too many requests"
+    ai.january.partner.ErrorCategory.TIMEOUT -> "The request took too long"
+    ai.january.partner.ErrorCategory.TRANSPORT -> "Check your connection"
+    ai.january.partner.ErrorCategory.SERVER, ai.january.partner.ErrorCategory.DECODING -> "January couldn’t complete the request"
+    null -> "Couldn’t complete that request"
+}
+
+@Composable
+fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null) {
+    DemoCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Outlined.ErrorOutline, null, tint = JanuaryColors.Rust)
+                Text(errorTitle(error), style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Rust)
+            }
+            Text(error.localizedMessage ?: "The request could not be completed.", color = JanuaryColors.Body)
+            (error as? ai.january.partner.JanuaryException)?.let { failure ->
+                if (failure.httpStatus != null || failure.requestId != null) {
+                    DetailDisclosure {
+                        NutritionList(listOfNotNull(
+                            failure.httpStatus?.let { NutritionValue("HTTP status", it.toString()) },
+                            failure.code?.let { NutritionValue("Error code", it) },
+                            failure.requestId?.let { NutritionValue("Request ID", it) },
+                        ))
+                    }
+                }
+            }
+            retry?.let { androidx.compose.material3.TextButton(onClick = it) { Text("Try again", style = MaterialTheme.typography.titleMedium) } }
         }
     }
 }

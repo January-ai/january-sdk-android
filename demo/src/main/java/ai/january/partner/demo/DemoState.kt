@@ -16,9 +16,11 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class DemoState(context: Context) {
+class DemoState(context: Context, private val clientOverride: JanuaryPartnerClient? = null) {
     private val preferences = context.getSharedPreferences("january_demo", Context.MODE_PRIVATE)
-    private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", "").orEmpty())
+    private val developmentApiKey = BuildConfig.JANUARY_API_KEY.trim()
+    private val defaultUserId = if (BuildConfig.DEBUG && developmentApiKey.isNotEmpty()) "your-android-user-id" else ""
+    private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", defaultUserId).orEmpty())
     var endUserId: String
         get() = endUserIdState.value
         set(value) {
@@ -37,28 +39,45 @@ class DemoState(context: Context) {
     private val tokenHttpClient = OkHttpClient()
     private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
     private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
+    val isDevelopmentAuthentication: Boolean get() = clientOverride == null && BuildConfig.DEBUG && developmentApiKey.isNotEmpty() && partnerTokenUrl.isEmpty()
     val authenticationDescription: String
+    private var cachedClientUserId: String? = null
+    private var cachedClient: JanuaryPartnerClient? = null
     val client: JanuaryPartnerClient?
+        get() {
+            clientOverride?.let { return it }
+            val userId = endUserId.trim()
+            if (cachedClientUserId != userId) {
+                cachedClient = createClient(userId)
+                cachedClientUserId = userId
+            }
+            return cachedClient
+        }
 
     init {
         if (partnerTokenUrl.isNotEmpty() && partnerSessionToken.isEmpty()) {
             authenticationDescription = "Missing january.partnerSessionToken"
-            client = null
         } else if (partnerTokenUrl.isNotEmpty()) {
             authenticationDescription = "Partner backend token provider"
-            client = JanuaryPartnerClient.withClientTokenProvider(
-                provider = { fetchClientToken(partnerTokenUrl, partnerSessionToken) },
-            )
         } else {
-            val apiKey = BuildConfig.JANUARY_API_KEY.trim()
-            authenticationDescription = if (apiKey.isEmpty()) {
+            authenticationDescription = if (developmentApiKey.isEmpty()) {
                 "Missing january.apiKey or january.partnerTokenUrl"
+            } else if (!BuildConfig.DEBUG) {
+                "Development authentication is disabled in Release builds. Configure a partner token endpoint."
             } else {
                 "Development API key"
             }
-            client = apiKey.takeIf(String::isNotEmpty)
-                ?.let { runCatching { JanuaryPartnerClient(it) }.getOrNull() }
         }
+    }
+
+    private fun createClient(userId: String): JanuaryPartnerClient? = when {
+        partnerTokenUrl.isNotEmpty() && partnerSessionToken.isNotEmpty() ->
+            JanuaryPartnerClient.withClientTokenProvider(
+                provider = { fetchClientToken(partnerTokenUrl, partnerSessionToken, userId) },
+            )
+        partnerTokenUrl.isEmpty() && BuildConfig.DEBUG && developmentApiKey.isNotEmpty() ->
+            JanuaryPartnerClient(developmentApiKey)
+        else -> null
     }
 
     val partnerUserId: PartnerUserId?
@@ -75,8 +94,7 @@ class DemoState(context: Context) {
         timezone = java.time.ZoneId.systemDefault().id
     }
 
-    private fun fetchClientToken(url: String, sessionToken: String): JanuaryClientToken {
-        val userId = endUserId.trim()
+    private fun fetchClientToken(url: String, sessionToken: String, userId: String): JanuaryClientToken {
         require(userId.isNotEmpty()) { "Set an end user ID before making a January request." }
         val request = Request.Builder()
             .url(url.toHttpUrl())

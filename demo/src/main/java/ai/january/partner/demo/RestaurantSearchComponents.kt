@@ -9,6 +9,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.UnfoldMore
+import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FilterList
@@ -46,9 +49,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -56,7 +57,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -112,122 +112,144 @@ import java.time.ZoneId
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import ai.january.partner.JanuaryPartnerClient
+import ai.january.partner.JanuaryException
 import ai.january.partner.PartnerUserId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun RestaurantFiltersSheet(
-    selectedCity: SearchCity,
-    onCity: (SearchCity) -> Unit,
-    radius: Double,
-    onRadius: (Double) -> Unit,
-    limit: Int,
-    onLimit: (Int) -> Unit,
-    locationLabel: String,
-    onCurrentLocation: () -> Unit,
-    onDismiss: () -> Unit,
-) {
+internal fun RestaurantFiltersSheet(selectedCity: SearchCity, onCity: (SearchCity) -> Unit, radius: Double, onRadius: (Double) -> Unit, limit: Int, onLimit: (Int) -> Unit, locationLabel: String, onCurrentLocation: () -> Unit, onDismiss: () -> Unit, latitude: Double, longitude: Double) {
     var cityMenu by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            AppModalHeader(title = "Search filters", onDismiss = onDismiss)
+    val context = LocalContext.current
+    val hasLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    AppModalSheet(title = "Search filters", onDismiss = onDismiss) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(top = 28.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             SectionLabel("Location")
             DemoCard {
-                ExposedDropdownMenuBox(cityMenu, { cityMenu = it }) {
-                    OutlinedTextField(
-                        selectedCity.name,
-                        {},
-                        Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
-                        readOnly = true,
-                        label = { Text("City") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(cityMenu) },
-                    )
-                    ExposedDropdownMenu(cityMenu, { cityMenu = false }) {
-                        searchCities.forEach { city -> DropdownMenuItem({ Text(city.name) }, { onCity(city); cityMenu = false }) }
+                Column {
+                    Row(Modifier.padding(vertical = 14.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Icon(Icons.Outlined.LocationOn, null, tint = JanuaryColors.Green)
+                        Column { Text("Location access", style = MaterialTheme.typography.titleMedium); Text(if (hasLocation) "Location access allowed" else "Location access not granted", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted) }
+                    }
+                    HorizontalDivider(color = JanuaryColors.Divider)
+                    Box {
+                        Row(Modifier.fillMaxWidth().clickable { cityMenu = true }.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("Search city", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            Text(if (locationLabel.startsWith("Current")) "Current location" else selectedCity.name, style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Green)
+                            Icon(Icons.Outlined.UnfoldMore, "Choose search city", Modifier.size(18.dp), tint = JanuaryColors.Green)
+                        }
+                        androidx.compose.material3.DropdownMenu(cityMenu, { cityMenu = false }) { searchCities.forEach { city -> DropdownMenuItem({ Text(city.name) }, { onCity(city); cityMenu = false }) } }
+                    }
+                    HorizontalDivider(color = JanuaryColors.Divider)
+                    Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Coordinates", style = MaterialTheme.typography.titleMedium)
+                        Text("%.3f, %.3f".format(latitude, longitude), style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
                     }
                 }
-                DemoOutlinedButton(
-                    "Use my current location",
-                    onCurrentLocation,
-                    Modifier.fillMaxWidth(),
-                    icon = { Icon(Icons.Outlined.LocationOn, null) },
-                )
-                Text(locationLabel, color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
             }
-            SectionLabel("Radius")
+            DemoOutlinedButton("Use my current location", onCurrentLocation, Modifier.fillMaxWidth(), icon = { Icon(Icons.Outlined.LocationOn, null) })
+            if (locationLabel.startsWith("Location denied") || locationLabel.startsWith("Location unavailable")) {
+                ErrorCard(locationLabel, onCurrentLocation)
+                DemoOutlinedButton("Open location settings", { context.startActivity(android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:${context.packageName}"))) }, Modifier.fillMaxWidth())
+            }
+            SectionLabel("Search radius")
             DemoCard {
-                Slider(radius.toFloat(), { onRadius(it.toDouble()) }, valueRange = 500f..17000f)
-                Text("${"%.1f".format(radius / 1609.344)} mi · ${radius.toInt()} m", fontFamily = FontFamily.Monospace)
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Nearby distance", style = MaterialTheme.typography.titleMedium)
+                        Text("${"%.1f".format(radius / 1609.344)} mi", color = JanuaryColors.Green, fontFamily = FontFamily.Monospace)
+                    }
+                    Slider(radius.toFloat(), { onRadius(it.toDouble()) }, valueRange = 500f..17000f, steps = 32,
+                        thumb = { androidx.compose.material3.Surface(Modifier.size(24.dp), shape = androidx.compose.foundation.shape.CircleShape, color = Color.White, shadowElevation = 3.dp) {} },
+                        track = {
+                            Box(Modifier.fillMaxWidth().height(4.dp).clip(androidx.compose.foundation.shape.CircleShape).background(JanuaryColors.ControlStrong)) {
+                                Box(Modifier.fillMaxWidth(((radius - 500.0) / 16500.0).toFloat().coerceIn(0f, 1f)).height(4.dp).background(JanuaryColors.Green))
+                            }
+                        })
+                    Text("Search within ${"%,d".format(radius.toInt())} meters of the selected location.", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
+                }
             }
             SectionLabel("Results")
             DemoCard {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Limit: $limit", Modifier.weight(1f))
-                    IconButton(onClick = { onLimit((limit - 1).coerceAtLeast(1)) }) { Icon(Icons.Outlined.Remove, "Decrease limit") }
-                    IconButton(onClick = { onLimit((limit + 1).coerceAtMost(100)) }) { Icon(Icons.Outlined.Add, "Increase limit") }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Maximum results", style = MaterialTheme.typography.titleMedium)
+                        Text("Up to $limit nearby matches", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
+                    }
+                    QuantityStepper(limit.toDouble(), { onLimit(it.toInt()) }, minimum = 1.0, maximum = 100.0, step = 1.0)
                 }
             }
+            DemoPrimaryButton("Apply filters", onDismiss, Modifier.fillMaxWidth())
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
-internal fun RestaurantDetailScreen(
-    client: JanuaryPartnerClient?,
-    restaurant: Restaurant,
-    latitude: Double,
-    longitude: Double,
-    radius: Double,
-    resultLimit: Int,
-    menuQuery: String,
-    endUserId: PartnerUserId?,
-    onBack: () -> Unit,
-    modifier: Modifier,
-) {
+internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, latitude: Double, longitude: Double, radius: Double, resultLimit: Int, endUserId: PartnerUserId?, onBack: () -> Unit, modifier: Modifier) {
+    val client = state.client
     var items by remember(restaurant.id) { mutableStateOf<List<RestaurantMenuItem>>(emptyList()) }
     var loading by remember(restaurant.id) { mutableStateOf(true) }
-    var error by remember(restaurant.id) { mutableStateOf<String?>(null) }
+    var error by remember(restaurant.id) { mutableStateOf<Throwable?>(null) }
     var selected by remember { mutableStateOf<RestaurantMenuItem?>(null) }
-    LaunchedEffect(restaurant.id) {
+    var attempt by remember { mutableStateOf(0) }
+    androidx.activity.compose.BackHandler(onBack = onBack)
+    LaunchedEffect(restaurant.id, attempt) {
         if (client == null) { loading = false; return@LaunchedEffect }
+        loading = true; error = null
         runCatching {
-            client.restaurants.searchMenuItems(
-                SearchRestaurantsRequest(menuQuery.ifBlank { restaurant.name }, latitude, longitude, radius, resultLimit, endUserId),
-            ).items.filter {
-                val a = it.restaurantName.normalizedRestaurantName()
-                val b = restaurant.name.normalizedRestaurantName()
-                a.contains(b) || b.contains(a)
+            try {
+                val menu = mutableListOf<RestaurantMenuItem>()
+                do {
+                    val page = client.restaurants.getMenuItems(ai.january.partner.restaurants.GetRestaurantMenuItemsRequest(restaurant.id, offset = menu.size, endUserId = endUserId))
+                    menu.addAll(page.items)
+                } while (page.items.isNotEmpty() && menu.size < page.totalCount)
+                menu.toList()
+            } catch (failure: JanuaryException) {
+                if (!failure.isMissingRestaurantMenuRoute()) throw failure
+                val page = client.restaurants.searchMenuItems(SearchRestaurantsRequest(
+                    query = restaurant.name,
+                    latitude = latitude,
+                    longitude = longitude,
+                    radius = radius,
+                    limit = resultLimit.coerceIn(1, 100),
+                    endUserId = endUserId,
+                ))
+                val selectedName = normalizedRestaurantName(restaurant.name)
+                page.items.filter { normalizedRestaurantName(it.restaurantName) == selectedName }
             }
-        }.onSuccess { items = it }.onFailure { error = it.message ?: "Menu items could not be loaded." }
+        }.onSuccess { items = it }.onFailure { error = it }
         loading = false
     }
-    selected?.let { MenuItemDetailScreen(it, { selected = null }, modifier); return }
-    Column(modifier.fillMaxSize()) {
-        AppNavigationBar(title = "Restaurant", onBack = onBack)
+    selected?.let { MenuItemDetailScreen(state, it, { selected = null }, modifier); return }
+    AppScreenScaffold(
+        title = "Restaurant", modifier = modifier,
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Restaurant", onClick = onBack) },
+    ) {
         DemoScreen {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(restaurant.name, style = MaterialTheme.typography.displaySmall)
-                SectionLabel("Location")
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                Text(restaurant.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 DemoCard {
-                    restaurant.city?.let {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("City")
-                            Text(it, color = JanuaryColors.Muted)
-                        }
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SectionLabel("Location")
+                        restaurant.city?.let { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("City"); Text(it, color = JanuaryColors.Muted) } }
+                        restaurant.address1?.let { Text(it) }; restaurant.address2?.let { Text(it) }
+                        restaurant.distance?.let { HorizontalDivider(color = JanuaryColors.Divider); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Distance"); Text("${"%.1f".format(it / 1609.344)} mi", color = JanuaryColors.Muted) } }
                     }
-                    restaurant.address1?.let { Text(it) }
-                    restaurant.address2?.let { Text(it) }
-                    restaurant.distance?.let { Text("${"%.1f".format(it / 1609.344)} mi", fontFamily = FontFamily.Monospace) }
                 }
                 SectionLabel("Menu items")
-                if (loading) DemoCard { Text("Loading menu…") }
-                error?.let { ErrorCard(it) }
-                if (!loading && error == null && items.isEmpty()) EmptySearchCard("No menu items found", "January did not return menu items for this restaurant.")
-                items.forEach { item ->
-                    MenuItemResultCard(item) { selected = item }
+                when {
+                    loading -> DemoCard { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { LoadingSpinner(color = JanuaryColors.Green); Text("Loading menu", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Muted) } }
+                    error != null -> ErrorCard(error!!) { attempt++ }
+                    items.isEmpty() -> EmptySearchCard("No menu items found", "January did not return menu items for this restaurant.")
+                    else -> DemoCard {
+                        items.forEachIndexed { index, item ->
+                            MenuItemRow(item, Modifier.clickable { selected = item }.padding(vertical = 12.dp))
+                            if (index < items.lastIndex) HorizontalDivider(color = JanuaryColors.Divider)
+                        }
+                    }
+                }
+                DetailDisclosure {
+                    restaurant.isChain?.let { Text("Type · ${if (it) "Chain" else "Independent"}") }
+                    Text("Restaurant ID · ${restaurant.id}", style = MaterialTheme.typography.bodySmall)
                 }
                 Spacer(Modifier.height(24.dp))
             }
@@ -235,32 +257,51 @@ internal fun RestaurantDetailScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+private fun JanuaryException.isMissingRestaurantMenuRoute(): Boolean =
+    httpStatus == 404 &&
+        message.orEmpty().contains("No v1.2 endpoint matches GET /v1.2/restaurants/") &&
+        message.orEmpty().contains("/menu-items")
+
+private fun normalizedRestaurantName(value: String): String = value
+    .substringBefore('(')
+    .lowercase()
+    .replace(Regex("[^a-z0-9]+"), " ")
+    .trim()
+
 @Composable
-internal fun MenuItemDetailScreen(item: RestaurantMenuItem, onBack: () -> Unit, modifier: Modifier) {
-    Column(modifier.fillMaxSize()) {
-        AppNavigationBar(title = "Menu item", onBack = onBack)
+internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, onBack: () -> Unit, modifier: Modifier) {
+    var serving by remember(item.id) { mutableStateOf(item.servings.firstOrNull { it.isPrimary } ?: item.servings.firstOrNull()) }
+    var quantity by remember(item.id) { mutableDoubleStateOf(serving?.quantity ?: 1.0) }
+    var showGlucose by remember { mutableStateOf(false) }
+    val foodId = item.id.toLongOrNull()?.let { ai.january.partner.FoodId(it) }
+    androidx.activity.compose.BackHandler(onBack = onBack)
+    AppScreenScaffold(
+        title = "Menu item", modifier = modifier,
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Menu item", onClick = onBack) },
+    ) {
         DemoScreen {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(item.name, style = MaterialTheme.typography.displaySmall)
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(28.dp)).background(JanuaryColors.Control), contentAlignment = Alignment.Center) {
+                    NetworkImage(item.photoUrl, item.name, Modifier.fillMaxSize().padding(18.dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit, placeholderSize = 44.dp)
+                }
+                Text(item.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 Text(item.restaurantName, color = JanuaryColors.Muted)
                 DemoCard { ScanStyleMacroStrip(item.calories, item.protein, item.carbohydrates, item.totalFat) }
-                DemoCard {
-                    listOfNotNull(
-                        item.netCarbohydrates?.let { "Net carbohydrates" to it },
-                        item.fiber?.let { "Fiber" to it },
-                        item.totalSugars?.let { "Total sugars" to it },
-                        item.addedSugars?.let { "Added sugars" to it },
-                        item.glycemicIndex?.let { "Glycemic index" to it },
-                        item.glycemicLoad?.let { "Glycemic load" to it },
-                    ).forEach { (name, value) -> NutritionRow(name, value, if (name.contains("index") || name.contains("load")) "" else "g") }
-                }
-                if (item.servings.isNotEmpty()) {
-                    SectionLabel("Servings")
-                    DemoCard { item.servings.forEach { Text("${formatNumber(it.quantity)} ${it.unit}") } }
-                }
+                DemoCard { NutritionList(listOfNotNull(
+                    item.netCarbohydrates?.let { NutritionValue("Net carbohydrates", "${formatNumber(it)} g") },
+                    item.fiber?.let { NutritionValue("Fiber", "${formatNumber(it)} g") },
+                    item.totalSugars?.let { NutritionValue("Total sugars", "${formatNumber(it)} g") },
+                    item.addedSugars?.let { NutritionValue("Added sugars", "${formatNumber(it)} g") },
+                    item.glycemicIndex?.let { NutritionValue("Glycemic index", formatNumber(it)) },
+                    item.glycemicLoad?.let { NutritionValue("Glycemic load", formatNumber(it)) },
+                )) }
+                ServingControls(item.servings, serving, quantity, { serving = it; quantity = it.quantity }, { quantity = it }, menuItem = true)
+                DemoPrimaryButton("See glucose impact", { showGlucose = true }, Modifier.fillMaxWidth(), enabled = serving != null && foodId != null && state.client != null,
+                    icon = { Icon(Icons.Outlined.MonitorHeart, null) })
+                DetailDisclosure { Text("Menu item ID · ${item.id}", style = MaterialTheme.typography.bodySmall) }
                 Spacer(Modifier.height(24.dp))
             }
         }
     }
+    if (showGlucose && serving != null && foodId != null && state.client != null) FoodGlucoseSheet(state.client!!, foodId, item.name, serving!!, quantity, state.partnerUserId, state.timezone) { showGlucose = false }
 }

@@ -1,7 +1,9 @@
 package ai.january.partner.demo
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,13 +24,21 @@ class DemoNavigationTest {
         composeRule.onNodeWithContentDescription("Scan", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Scan a meal").assertIsDisplayed()
 
-        composeRule.onNodeWithContentDescription("Food logs", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Food Logs", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText(
-            "One food log represents one meal and can contain one or more foods.",
+            "Build one complete meal",
             substring = true,
         ).assertIsDisplayed()
 
+        composeRule.onNodeWithContentDescription("Add food log").performClick()
+        composeRule.onNodeWithText("Build this meal").assertIsDisplayed()
+        composeRule.onNodeWithText("Save food log").performScrollTo().assertIsNotEnabled()
+        composeRule.onNodeWithText("Add first food").performScrollTo().performClick()
+        composeRule.onNodeWithText("Search foods").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Close Add food").performClick()
+        composeRule.onNodeWithContentDescription("Close New food log").performClick()
+
         composeRule.onNodeWithContentDescription("Glucose", useUnmergedTree = true).performClick()
-        composeRule.onNodeWithText("ABOUT YOU").assertIsDisplayed()
+        composeRule.onNodeWithText("Estimate this meal’s response").assertIsDisplayed()
     }
 }

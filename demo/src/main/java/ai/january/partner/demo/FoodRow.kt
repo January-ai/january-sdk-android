@@ -37,10 +37,10 @@ fun FoodRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         NetworkImage(imageUrl, null, Modifier.size(58.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(name, style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Ink)
             subtitle?.takeIf(String::isNotBlank)?.let { Text(it, color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall) }
-            meta?.takeIf(String::isNotBlank)?.let { Text(it, color = JanuaryColors.Body, style = MaterialTheme.typography.bodySmall) }
+            meta?.takeIf(String::isNotBlank)?.let { Text(it, color = JanuaryColors.Muted, style = MaterialTheme.typography.labelSmall) }
         }
         if (loading) {
             LoadingSpinner(Modifier.size(22.dp), JanuaryColors.Subdued)

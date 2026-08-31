@@ -5,6 +5,13 @@ import ai.january.partner.foods.ServingOption
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
+public data class GetRestaurantMenuItemsRequest(
+    public val restaurantId: String,
+    public val limit: Int = 100,
+    public val offset: Int = 0,
+    public val endUserId: PartnerUserId? = null,
+)
+
 public data class SearchRestaurantsRequest(
     public val query: String, public val latitude: Double, public val longitude: Double,
     public val radius: Double = 8000.0, public val limit: Int = 10,

@@ -18,8 +18,8 @@ data class NutritionValue(val label: String, val value: String)
 fun NutritionList(values: List<NutritionValue>, modifier: Modifier = Modifier) {
     androidx.compose.foundation.layout.Column(modifier.fillMaxWidth()) {
         values.forEachIndexed { index, item ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(item.label)
+            Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(item.label, modifier = Modifier.weight(1f))
                 Text(item.value, fontFamily = FontFamily.Monospace)
             }
             if (index < values.lastIndex) HorizontalDivider(color = JanuaryColors.Divider)

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 object JanuaryColors {
-    val Canvas = Color(0xFFEFEDE2)
+    val Canvas = Color(0xFFEFEBE2)
     val Paper = Color(0xFFFAF8F2)
     val Surface = Color(0xFFFFFFFF)
     val Ink = Color(0xFF1D1A14)

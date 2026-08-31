@@ -10,9 +10,7 @@ import ai.january.partner.models.NutrientAmount
 import ai.january.partner.models.NutritionFacts
 import ai.january.partner.transport.apis.FoodsApi
 import ai.january.partner.transport.models.SuggestFoodAlternativesBody
-import java.io.IOException
 import java.math.BigDecimal
-import kotlinx.coroutines.CancellationException
 
 public class FoodsResource internal constructor(private val api: FoodsApi) {
     public suspend fun autocomplete(request: AutocompleteFoodsRequest): AutocompleteFoodsResponse {
@@ -72,37 +70,17 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
             )
         }
 
-        try {
-            val response = api.searchFoods(
-                query = request.query,
-                xEndUserId = request.endUserId?.value,
-                category = request.category?.toTransport(),
-                limit = BigDecimal.valueOf(request.limit.toLong()),
-            )
-            if (!response.isSuccessful) {
-                throw JanuaryException(
-                    category = categoryFor(response.code()),
-                    message = "The January API returned HTTP ${response.code()}.",
-                    httpStatus = response.code(),
+        return executeApiCall(
+            operation = {
+                api.searchFoods(
+                    query = request.query,
+                    xEndUserId = request.endUserId?.value,
+                    category = request.category?.toTransport(),
+                    limit = BigDecimal.valueOf(request.limit.toLong()),
                 )
-            }
-            val body = response.body()
-                ?: throw JanuaryException(
-                    ErrorCategory.DECODING,
-                    "The January API returned an empty response.",
-                )
-            return body.toPublic()
-        } catch (error: CancellationException) {
-            throw error
-        } catch (error: JanuaryException) {
-            throw error
-        } catch (error: IOException) {
-            throw JanuaryException(
-                ErrorCategory.TRANSPORT,
-                "The request to the January API failed.",
-                cause = error,
-            )
-        }
+            },
+            transform = { it.toPublic() },
+        )
     }
 
     public suspend fun lookupBarcode(request: LookupFoodByBarcodeRequest): FoodSearchResults =
@@ -181,15 +159,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
         },
     )
 
-    private fun categoryFor(status: Int): ErrorCategory = when (status) {
-        400 -> ErrorCategory.VALIDATION
-        401 -> ErrorCategory.AUTHENTICATION
-        403 -> ErrorCategory.AUTHORIZATION
-        404 -> ErrorCategory.NOT_FOUND
-        429 -> ErrorCategory.RATE_LIMITED
-        in 500..599 -> ErrorCategory.SERVER
-        else -> ErrorCategory.TRANSPORT
-    }
+
 }
 
 private fun ai.january.partner.transport.models.NutritionFacts.toPublicNutrition(): NutritionFacts {

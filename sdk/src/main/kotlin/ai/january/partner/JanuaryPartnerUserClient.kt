@@ -74,6 +74,9 @@ public class UserRestaurantsResource internal constructor(
     private val resource: RestaurantsResource,
     private val context: PartnerUserContext,
 ) {
+    public suspend fun getMenuItems(request: ai.january.partner.restaurants.GetRestaurantMenuItemsRequest): SearchRestaurantMenuItemsResponse =
+        resource.getMenuItems(request.copy(endUserId = context.endUserId))
+
     public suspend fun search(request: SearchRestaurantsRequest): SearchRestaurantsResponse =
         resource.search(request.copy(endUserId = context.endUserId))
 

@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.DownloadForOffline
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
@@ -33,7 +35,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -77,9 +78,9 @@ import kotlinx.coroutines.launch
 private const val SAMPLE_ASSET = "fixtures/photo-scanning/burger-and-fries.png"
 
 @Composable
-internal fun MealPreview(imageBytes: ByteArray?, imageInput: String) {
+internal fun MealPreview(imageBytes: ByteArray?, imageInput: String, square: Boolean = false) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(240.dp).clip(RoundedCornerShape(28.dp))
+        modifier = Modifier.fillMaxWidth().then(if (square) Modifier.aspectRatio(1f) else Modifier.height(240.dp)).clip(RoundedCornerShape(28.dp))
             .background(JanuaryColors.Control),
         contentAlignment = Alignment.Center,
     ) {
@@ -95,11 +96,13 @@ internal fun MealPreview(imageBytes: ByteArray?, imageInput: String) {
 @Composable
 internal fun ScanPhotoInstructions() {
     DemoCard {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Icon(Icons.Outlined.CameraAlt, null, tint = JanuaryColors.Green)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Start with the whole meal", style = MaterialTheme.typography.titleMedium)
-                Text("Use good light and keep every food visible.", color = JanuaryColors.Muted)
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Box(Modifier.size(44.dp).background(JanuaryColors.Green.copy(alpha = 0.1f), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.CameraAlt, null, Modifier.size(20.dp), tint = JanuaryColors.Green)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("Photograph the entire meal", style = MaterialTheme.typography.titleLarge)
+                Text("January identifies foods, servings, and nutrition — then estimates glucose impact.", color = JanuaryColors.Body)
             }
         }
     }
@@ -107,8 +110,8 @@ internal fun ScanPhotoInstructions() {
 
 @Composable
 internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: String) {
-    MealPreview(imageBytes, imageInput)
-    Text(result.mealName ?: "Meal analysis", style = MaterialTheme.typography.displaySmall)
+    if (imageBytes != null) MealPreview(imageBytes, imageInput, square = true)
+    Text(result.mealName ?: "Meal analysis", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
     result.totalNutrients?.let { nutrients ->
         DemoCard { ScanMacroStrip(nutrients) }
         val rows = scanNutritionRows(nutrients)
@@ -118,7 +121,7 @@ internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: St
             }
         }
     }
-    SectionLabel("Detected foods")
+    if (result.detections.orEmpty().isNotEmpty()) Text("Detected foods", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
     result.detections.orEmpty().forEach { detection ->
         DemoCard {
             Row(verticalAlignment = Alignment.Top) {
@@ -127,10 +130,11 @@ internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: St
                     detection.food.brandName?.takeIf(String::isNotBlank)?.let { Text(it, color = JanuaryColors.Muted) }
                 }
                 detection.confidenceScore?.let {
+                    val confidenceColor = when (it.lowercase()) { "high" -> JanuaryColors.Green; "medium" -> JanuaryColors.Gold; else -> JanuaryColors.Rust }
                     Text(
                         "${it.replaceFirstChar(Char::uppercase)} confidence",
-                        modifier = Modifier.clip(RoundedCornerShape(50)).background(JanuaryColors.Green.copy(alpha = .13f)).padding(horizontal = 10.dp, vertical = 5.dp),
-                        color = JanuaryColors.Green,
+                        modifier = Modifier.clip(RoundedCornerShape(50)).background(confidenceColor.copy(alpha = .13f)).padding(horizontal = 10.dp, vertical = 5.dp),
+                        color = confidenceColor,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.labelMedium,
                     )
@@ -139,16 +143,10 @@ internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: St
             ScanMacroStrip(detection.food.nutrients)
         }
     }
-    result.glucoseImpact?.let { impact ->
-        SectionLabel("Estimated glucose response")
-        DemoCard {
-            Text(
-                "${impact.impactScore.replaceFirstChar(Char::uppercase)} impact",
-                color = if (impact.impactScore.lowercase() == "low") JanuaryColors.Green else JanuaryColors.Rust,
-                fontWeight = FontWeight.Bold,
-            )
-            PhotoGlucoseChart(impact)
-        }
+    result.glucoseImpact?.takeIf { it.prediction.isNotEmpty() }?.let { impact ->
+        Text("Estimated glucose response", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+        Text(impact.impactScore.replace('_', ' ').replaceFirstChar(Char::uppercase), color = JanuaryColors.Rust, fontWeight = FontWeight.SemiBold)
+        PhotoGlucoseChart(impact)
     }
 }
 
@@ -178,8 +176,8 @@ internal fun PhotoGlucoseChart(impact: PhotoScanGlucoseImpact) {
     val points = impact.prediction.map { PredictionPoint(it.minutes.toDouble(), it.value) }
     PredictionChart(
         points = points,
-        minimum = points.minOfOrNull { it.value } ?: 0.0,
-        maximum = points.maxOfOrNull { it.value } ?: 1.0,
+        minimum = null,
+        maximum = null,
         showTargetBand = false,
     )
 }
@@ -188,19 +186,19 @@ internal fun PhotoGlucoseChart(impact: PhotoScanGlucoseImpact) {
 @Composable
 internal fun ImageUrlSheet(initialValue: String, onDismiss: () -> Unit, onUse: (String) -> Unit) {
     var value by remember { mutableStateOf(initialValue) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppModalHeader(
-                title = "Image URL",
-                onDismiss = onDismiss,
-                action = {
-                    TextButton(onClick = { onUse(value.trim()) }, enabled = value.trim().startsWith("http")) {
-                        Text("Use URL")
-                    }
-                },
-            )
-            OutlinedTextField(value, { value = it }, Modifier.fillMaxWidth(), label = { Text("Public image URL") }, singleLine = true)
-            Text("Paste a publicly accessible HTTPS image URL.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+    val valid = runCatching { java.net.URI(value.trim()) }.getOrNull()?.let { it.scheme?.lowercase() in listOf("http", "https") && !it.host.isNullOrBlank() } == true
+    AppModalSheet(title = "Use image URL", onDismiss = onDismiss, expanded = false) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(top = 28.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            DemoCard {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(Icons.Outlined.Link, null, tint = JanuaryColors.Green); Text("Public image", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Green) }
+                Text("Paste a direct HTTPS link to a meal photo.", color = JanuaryColors.Body)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                SectionLabel("Image address")
+                DemoInput(value, { value = it }, "https://example.com/meal.jpg")
+                Text("The server must be able to download the image without signing in.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            DemoPrimaryButton("Use image URL", { onUse(value.trim()) }, Modifier.fillMaxWidth(), enabled = valid, icon = { Icon(Icons.Outlined.DownloadForOffline, null) })
         }
     }
 }
@@ -210,41 +208,48 @@ internal fun ImageUrlSheet(initialValue: String, onDismiss: () -> Unit, onUse: (
 internal fun CorrectionSheet(
     initial: FoodScan,
     onDismiss: () -> Unit,
-    onSubmit: (String, String, (String) -> Unit) -> Unit,
+    onSubmit: (String, String, (Throwable) -> Unit) -> Unit,
 ) {
     var mealName by remember { mutableStateOf(initial.mealName.orEmpty()) }
     var instruction by remember { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = JanuaryColors.Paper) {
+    var error by remember { mutableStateOf<Throwable?>(null) }
+    fun submitCorrection() {
+        if (submitting || instruction.isBlank()) return
+        error = null
+        if (initial.detections.orEmpty().isEmpty()) {
+            error = IllegalStateException("There are no detections available to correct.")
+            return
+        }
+        submitting = true
+        onSubmit(mealName.trim().ifEmpty { "Meal" }, instruction.trim()) { failure ->
+            error = failure
+            submitting = false
+        }
+    }
+    AppModalSheet(title = "Correct result", onDismiss = onDismiss) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp).padding(bottom = 32.dp),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(top = 28.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            AppModalHeader(title = "Correct result", onDismiss = onDismiss)
-            OutlinedTextField(mealName, { mealName = it }, Modifier.fillMaxWidth(), label = { Text("Meal name") })
+            SectionLabel("Meal")
+            DemoInput(mealName, { mealName = it }, "Meal name")
             SectionLabel("Current detections")
-            initial.detections.orEmpty().forEach { Text("• ${it.food.name}") }
-            OutlinedTextField(
-                instruction,
-                { instruction = it },
-                Modifier.fillMaxWidth().height(140.dp),
-                label = { Text("What should change?") },
-                supportingText = { Text("For example: remove the fries and add a side salad.") },
-            )
-            error?.let { ErrorCard(it) }
+            DemoCard {
+                initial.detections.orEmpty().forEachIndexed { index, detection ->
+                    Text(detection.food.name, Modifier.padding(vertical = 14.dp), style = MaterialTheme.typography.titleMedium)
+                    if (index < initial.detections.orEmpty().lastIndex) HorizontalDivider(color = JanuaryColors.Divider)
+                }
+            }
+            SectionLabel("What should change?")
+            OutlinedTextField(instruction, { instruction = it }, Modifier.fillMaxWidth().height(150.dp), placeholder = { Text("Describe the correction") }, shape = RoundedCornerShape(24.dp))
+            Text("For example: The oatmeal was steel-cut, about 2 cups, and there was no honey.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+            error?.let { ErrorCard(it, ::submitCorrection) }
             DemoPrimaryButton(
                 "Submit correction",
-                {
-                    submitting = true
-                    onSubmit(mealName.trim().ifEmpty { "Meal" }, instruction.trim()) { message ->
-                        error = message
-                        submitting = false
-                    }
-                },
+                ::submitCorrection,
                 Modifier.fillMaxWidth(),
-                enabled = instruction.isNotBlank(),
+                enabled = instruction.trim().isNotEmpty(),
                 loading = submitting,
             )
         }
@@ -253,20 +258,14 @@ internal fun CorrectionSheet(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BarcodeResultSheet(value: String, food: FoodSearchItem, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = JanuaryColors.Paper) {
-        Column(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 36.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            AppModalHeader(title = "Barcode match", onDismiss = onDismiss)
-            SectionLabel("Barcode $value")
-            DemoCard {
-                Text(food.name, style = MaterialTheme.typography.titleLarge)
-                food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
-                Text("${food.servings.size} serving option${if (food.servings.size == 1) "" else "s"}", color = JanuaryColors.Muted)
-            }
-        }
+internal fun BarcodeResultSheet(state: DemoState, food: FoodSearchItem, onDismiss: () -> Unit) {
+    AppModalSheet(title = "Food details", onDismiss = onDismiss, showNavigationBar = false) {
+        FoodDetailScreen(
+            state = state,
+            food = food,
+            onBack = onDismiss,
+            isModal = true,
+        )
     }
 }
 

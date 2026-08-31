@@ -53,7 +53,7 @@ internal data class ServingOption (
 
     /* Multiplier applied to the food's nutrition values for this serving. */
     @Json(name = "scaling_factor")
-    val scalingFactor: java.math.BigDecimal,
+    val scalingFactor: java.math.BigDecimal = java.math.BigDecimal.ONE,
 
     @Json(name = "weight_grams")
     val weightGrams: java.math.BigDecimal?,

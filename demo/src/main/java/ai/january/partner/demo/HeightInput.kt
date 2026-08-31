@@ -68,7 +68,7 @@ internal fun HeightInput(
                 selected = displayUnit,
                 label = { it.label },
                 onSelect = { displayUnit = it },
-                modifier = Modifier.width(180.dp),
+                modifier = Modifier.width(170.dp),
             )
         }
 
@@ -76,17 +76,17 @@ internal fun HeightInput(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 HeightNumberField(
                     label = "Feet",
-                    value = imperial.feet,
+                    value = imperial.feet.toString(),
                     onValueChange = { feet ->
-                        onHeightInchesChange((feet * 12 + imperial.inches).toDouble().coerceIn(36.0, 96.0))
+                        onHeightInchesChange((feet.toInt() * 12 + imperial.inches).toDouble().coerceIn(36.0, 96.0))
                     },
                     modifier = Modifier.weight(1f),
                 )
                 HeightNumberField(
                     label = "Inches",
-                    value = imperial.inches,
+                    value = imperial.inches.toString(),
                     onValueChange = { inches ->
-                        onHeightInchesChange((imperial.feet * 12 + inches).toDouble().coerceIn(36.0, 96.0))
+                        onHeightInchesChange((imperial.feet * 12 + inches.toInt()).toDouble().coerceIn(36.0, 96.0))
                     },
                     modifier = Modifier.weight(1f),
                 )
@@ -94,9 +94,10 @@ internal fun HeightInput(
         } else {
             HeightNumberField(
                 label = "Centimeters",
-                value = inchesToCentimeters(heightInches).roundToInt(),
+                value = formatMetricNumber(inchesToCentimeters(heightInches)),
+                allowsDecimal = true,
                 onValueChange = { centimeters ->
-                    onHeightInchesChange(centimetersToInches(centimeters.toDouble()).coerceIn(36.0, 96.0))
+                    onHeightInchesChange(centimetersToInches(centimeters).coerceIn(36.0, 96.0))
                 },
             )
         }
@@ -106,8 +107,9 @@ internal fun HeightInput(
 @Composable
 private fun HeightNumberField(
     label: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
+    value: String,
+    onValueChange: (Double) -> Unit,
+    allowsDecimal: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     var text by rememberSaveable { mutableStateOf(value.toString()) }
@@ -122,9 +124,9 @@ private fun HeightNumberField(
         BasicTextField(
             value = text,
             onValueChange = { candidate ->
-                if (candidate.length <= 3 && candidate.all(Char::isDigit)) {
+                if (candidate.length <= 6 && candidate.all { it.isDigit() || (allowsDecimal && it == '.') } && candidate.count { it == '.' } <= 1) {
                     text = candidate
-                    candidate.toIntOrNull()?.let(onValueChange)
+                    candidate.toDoubleOrNull()?.let(onValueChange)
                 }
             },
             modifier = Modifier
@@ -134,15 +136,15 @@ private fun HeightNumberField(
                     isFocused = it.isFocused
                     if (!it.isFocused) text = value.toString()
                 }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             textStyle = TextStyle(
                 color = JanuaryColors.Ink,
-                fontSize = 24.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
                 textAlign = TextAlign.End,
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = if (allowsDecimal) KeyboardType.Decimal else KeyboardType.Number),
             singleLine = true,
         )
     }

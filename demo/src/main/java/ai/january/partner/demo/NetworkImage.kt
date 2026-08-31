@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 
@@ -23,13 +24,14 @@ fun NetworkImage(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    placeholderSize: Dp = 24.dp,
 ) {
     Box(
         modifier.clip(RoundedCornerShape(14.dp)).background(JanuaryColors.Control),
         contentAlignment = Alignment.Center,
     ) {
         if (imageUrl.isNullOrBlank()) {
-            Icon(Icons.Outlined.Restaurant, contentDescription = null, tint = JanuaryColors.Green)
+            Icon(Icons.Outlined.Restaurant, contentDescription = null, modifier = Modifier.size(placeholderSize), tint = JanuaryColors.Green)
         } else {
             AsyncImage(
                 model = imageUrl,

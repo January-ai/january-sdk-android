@@ -18,6 +18,11 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,8 +30,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,12 +49,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -102,6 +109,7 @@ public fun JanuaryFoodScanner(
     onCancel: () -> Unit,
 ) {
     val context = LocalContext.current
+    ScannerSystemBars()
     val scope = rememberCoroutineScope()
     val controller = remember(client, endUserId, configuration) {
         JanuaryFoodScannerController(client, endUserId, configuration)
@@ -116,6 +124,7 @@ public fun JanuaryFoodScanner(
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var camera by remember { mutableStateOf<Camera?>(null) }
     var torchEnabled by rememberSaveable { mutableStateOf(false) }
+    var cameraAttempt by remember { mutableStateOf(0) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionRequested = true
@@ -132,11 +141,16 @@ public fun JanuaryFoodScanner(
         if (hasPermission) {
             CameraXPreview(
                 mode = mode,
-                active = processingLabel == null,
+                active = processingLabel == null && error == null,
+                cameraAttempt = cameraAttempt,
                 onReady = { capture, boundCamera ->
                     imageCapture = capture
                     camera = boundCamera
                     if (!boundCamera.cameraInfo.hasFlashUnit()) torchEnabled = false
+                },
+                onStopped = {
+                    imageCapture = null
+                    camera = null
                 },
                 onBarcode = { barcode ->
                     if (processingLabel != null) return@CameraXPreview
@@ -161,31 +175,38 @@ public fun JanuaryFoodScanner(
         }
 
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 22.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onCancel) { Text("Cancel", color = Color.White) }
+                ScannerCircleButton("Close scanner", processingLabel == null, onCancel)
                 Spacer(Modifier.weight(1f))
-                if (hasPermission && camera?.cameraInfo?.hasFlashUnit() == true) {
-                    TextButton(onClick = { torchEnabled = !torchEnabled }) {
-                        Text(if (torchEnabled) "Torch on" else "Torch", color = Color.White)
-                    }
+                if (mode == JanuaryFoodScannerMode.PHOTO && hasPermission && camera?.cameraInfo?.hasFlashUnit() == true) {
+                    ScannerCircleButton("Toggle torch", processingLabel == null, { torchEnabled = !torchEnabled }, torch = true, torchOn = torchEnabled)
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    if (mode == JanuaryFoodScannerMode.PHOTO) "Fit the whole meal in the frame" else "Hold a food barcode in view",
+                    color = Color.White, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center,
+                )
+                Spacer(Modifier.height(18.dp))
                 if (configuration.enabledModes.size > 1) {
-                    ScannerModeControl(mode, configuration.enabledModes) { selected ->
+                    ScannerModeControl(mode, configuration.enabledModes, enabled = processingLabel == null) { selected ->
                         mode = selected
+                        if (selected == JanuaryFoodScannerMode.BARCODE) torchEnabled = false
                         error = null
                     }
                 }
-                Text(
-                    if (mode == JanuaryFoodScannerMode.PHOTO) "Frame the whole meal" else "Center the food barcode",
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Spacer(Modifier.height(24.dp))
                 if (mode == JanuaryFoodScannerMode.PHOTO) {
                     Button(
                         onClick = {
@@ -208,19 +229,22 @@ public fun JanuaryFoodScanner(
                                 }
                             }
                         },
-                        enabled = imageCapture != null && processingLabel == null,
-                        modifier = Modifier.size(76.dp),
+                        enabled = imageCapture != null && processingLabel == null && error == null,
+                        modifier = Modifier.size(76.dp).semantics { contentDescription = "Take meal photo" },
                         shape = CircleShape,
                         colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
-                    ) { Text("●", fontSize = 30.sp, maxLines = 1) }
+                    ) {}
+                } else {
+                    Spacer(Modifier.size(76.dp))
                 }
-                error?.let { ScannerErrorNotice(it) { error = null } }
+
             }
         }
 
         processingLabel?.let { label ->
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.42f)))
             Column(
-                modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = .78f), RoundedCornerShape(20.dp))
+                modifier = Modifier.align(Alignment.Center).background(Color.Black.copy(alpha = .72f), RoundedCornerShape(20.dp))
                     .padding(horizontal = 28.dp, vertical = 22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -229,6 +253,16 @@ public fun JanuaryFoodScanner(
                 Text(label, color = Color.White)
             }
         }
+        error?.let { message ->
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = onCancel,
+                title = { Text(if (mode == JanuaryFoodScannerMode.PHOTO) "Meal scan failed" else "Barcode lookup failed") },
+                text = { Text(message) },
+                confirmButton = { TextButton(onClick = { error = null; cameraAttempt++ }) { Text("Try Again") } },
+                dismissButton = { TextButton(onClick = onCancel) { Text("Close") } },
+            )
+        }
+
     }
 }
 
@@ -236,21 +270,26 @@ public fun JanuaryFoodScanner(
 private fun ScannerModeControl(
     selected: JanuaryFoodScannerMode,
     modes: Set<JanuaryFoodScannerMode>,
+    enabled: Boolean,
     onSelect: (JanuaryFoodScannerMode) -> Unit,
 ) {
     Row(
-        modifier = Modifier.background(Color.Black.copy(alpha = .62f), RoundedCornerShape(14.dp)).padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.width(220.dp).height(40.dp).background(Color.Black.copy(alpha = .55f), RoundedCornerShape(10.dp)).padding(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         JanuaryFoodScannerMode.entries.filter { it in modes }.forEach { mode ->
             val active = selected == mode
             Button(
                 onClick = { onSelect(mode) },
+                enabled = enabled,
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (active) Color.White else Color.Transparent,
                     contentColor = if (active) Color.Black else Color.White,
                 ),
-            ) { Text(if (mode == JanuaryFoodScannerMode.PHOTO) "Photo" else "Barcode") }
+            ) { Text(if (mode == JanuaryFoodScannerMode.PHOTO) "Photo" else "Barcode", fontSize = 14.sp) }
         }
     }
 }
@@ -282,13 +321,18 @@ private fun CameraPermissionCard(
 }
 
 @Composable
-private fun ScannerErrorNotice(message: String, onRetry: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().background(Color(0xDD3B1717), RoundedCornerShape(14.dp)).padding(14.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(message, color = Color.White)
-        TextButton(onClick = onRetry) { Text("Try again", color = Color.White) }
+private fun ScannerCircleButton(label: String, enabled: Boolean, onClick: () -> Unit, torch: Boolean = false, torchOn: Boolean = false) {
+    androidx.compose.material3.IconButton(onClick = onClick, enabled = enabled, modifier = Modifier.size(52.dp).background(Color.Black.copy(alpha = 0.55f), CircleShape).semantics { contentDescription = label }) {
+        androidx.compose.foundation.Canvas(Modifier.size(20.dp)) {
+            if (!torch) {
+                drawLine(Color.White, androidx.compose.ui.geometry.Offset(size.width * .2f, size.height * .2f), androidx.compose.ui.geometry.Offset(size.width * .8f, size.height * .8f), 2.dp.toPx())
+                drawLine(Color.White, androidx.compose.ui.geometry.Offset(size.width * .8f, size.height * .2f), androidx.compose.ui.geometry.Offset(size.width * .2f, size.height * .8f), 2.dp.toPx())
+            } else {
+                val bolt = androidx.compose.ui.graphics.Path().apply { moveTo(size.width * .6f, 0f); lineTo(size.width * .15f, size.height * .55f); lineTo(size.width * .48f, size.height * .55f); lineTo(size.width * .4f, size.height); lineTo(size.width * .85f, size.height * .4f); lineTo(size.width * .55f, size.height * .4f); close() }
+                drawPath(bolt, Color.White)
+                if (!torchOn) drawLine(Color.White, androidx.compose.ui.geometry.Offset(0f, 0f), androidx.compose.ui.geometry.Offset(size.width, size.height), 2.dp.toPx())
+            }
+        }
     }
 }
 
@@ -297,24 +341,36 @@ private fun ScannerErrorNotice(message: String, onRetry: () -> Unit) {
 private fun CameraXPreview(
     mode: JanuaryFoodScannerMode,
     active: Boolean,
+    cameraAttempt: Int,
     onReady: (ImageCapture, Camera) -> Unit,
+    onStopped: () -> Unit,
     onBarcode: (String) -> Unit,
     onFailure: (Throwable) -> Unit,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val previewView = remember { PreviewView(context).apply { scaleType = PreviewView.ScaleType.FILL_CENTER } }
+    val currentActive by rememberUpdatedState(active)
+    val currentOnReady by rememberUpdatedState(onReady)
+    val currentOnStopped by rememberUpdatedState(onStopped)
+    val currentOnBarcode by rememberUpdatedState(onBarcode)
+    val currentOnFailure by rememberUpdatedState(onFailure)
 
     AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
 
-    DisposableEffect(lifecycleOwner, mode, active, previewView) {
-        if (!active) return@DisposableEffect onDispose { }
+    // Processing pauses input; it must not unbind an in-flight photo capture.
+    DisposableEffect(lifecycleOwner, mode, cameraAttempt, previewView) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         val executor = ContextCompat.getMainExecutor(context)
         var provider: ProcessCameraProvider? = null
         var barcodeScanner: BarcodeScanner? = null
+        var analysis: ImageAnalysis? = null
+        var ownedUseCases = emptyList<androidx.camera.core.UseCase>()
+        var disposed = false
+        var analysisInFlight = false
         val detected = AtomicBoolean(false)
         cameraProviderFuture.addListener({
+            if (disposed) return@addListener
             runCatching {
                 provider = cameraProviderFuture.get()
                 val preview = Preview.Builder().build().also { it.surfaceProvider = previewView.surfaceProvider }
@@ -336,39 +392,52 @@ private fun CameraXPreview(
                     ).build()
                     val scanner = BarcodeScanning.getClient(options)
                     barcodeScanner = scanner
-                    val analysis = ImageAnalysis.Builder()
+                    val barcodeAnalysis = ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build()
-                    analysis.setAnalyzer(executor) { proxy ->
+                    analysis = barcodeAnalysis
+                    barcodeAnalysis.setAnalyzer(executor) { proxy ->
                         val mediaImage = proxy.image
-                        if (mediaImage == null || detected.get()) {
+                        if (disposed || !currentActive || mediaImage == null || detected.get()) {
                             proxy.close()
                         } else {
+                            analysisInFlight = true
                             val image = InputImage.fromMediaImage(mediaImage, proxy.imageInfo.rotationDegrees)
                             scanner.process(image)
                                 .addOnSuccessListener { barcodes ->
                                     val value = barcodes.firstNotNullOfOrNull { it.rawValue?.takeIf(String::isNotBlank) }
-                                    if (value != null && detected.compareAndSet(false, true)) onBarcode(value)
+                                    if (!disposed && currentActive && value != null && detected.compareAndSet(false, true)) {
+                                        currentOnBarcode(value)
+                                    }
                                 }
-                                .addOnFailureListener(onFailure)
-                                .addOnCompleteListener { proxy.close() }
+                                .addOnFailureListener {
+                                    if (!disposed && currentActive) currentOnFailure(it)
+                                }
+                                .addOnCompleteListener {
+                                    proxy.close()
+                                    analysisInFlight = false
+                                    if (disposed) scanner.close()
+                                }
                         }
                     }
-                    useCases += analysis
+                    useCases += barcodeAnalysis
                 }
-                provider?.unbindAll()
+                ownedUseCases = useCases
                 val boundCamera = provider!!.bindToLifecycle(
                     lifecycleOwner,
                     CameraSelector.DEFAULT_BACK_CAMERA,
                     *useCases.toTypedArray(),
                 )
-                onReady(capture, boundCamera)
-            }.onFailure(onFailure)
+                currentOnReady(capture, boundCamera)
+            }.onFailure { if (!disposed) currentOnFailure(it) }
         }, executor)
 
         onDispose {
-            barcodeScanner?.close()
-            provider?.unbindAll()
+            disposed = true
+            analysis?.clearAnalyzer()
+            provider?.unbind(*ownedUseCases.toTypedArray())
+            if (!analysisInFlight) barcodeScanner?.close()
+            currentOnStopped()
         }
     }
 }
@@ -405,3 +474,24 @@ private fun scannerMessage(error: Throwable, fallback: String): String =
         error is NoBarcodeMatchException -> "No January food matched this barcode. Try another angle or enter it manually."
         else -> error.message?.takeIf(String::isNotBlank) ?: fallback
     }
+
+/** Keep camera chrome readable, then restore the embedding app's system-bar style. */
+@Composable
+private fun ScannerSystemBars() {
+    val view = androidx.compose.ui.platform.LocalView.current
+    DisposableEffect(view) {
+        val dialogWindow = (view.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        val activity = generateSequence(view.context) { (it as? android.content.ContextWrapper)?.baseContext }
+            .filterIsInstance<android.app.Activity>().firstOrNull()
+        val window = dialogWindow ?: activity?.window
+        val controller = window?.let { androidx.core.view.WindowCompat.getInsetsController(it, view) }
+        val lightStatus = controller?.isAppearanceLightStatusBars
+        val lightNavigation = controller?.isAppearanceLightNavigationBars
+        controller?.isAppearanceLightStatusBars = false
+        controller?.isAppearanceLightNavigationBars = false
+        onDispose {
+            if (lightStatus != null) controller.isAppearanceLightStatusBars = lightStatus
+            if (lightNavigation != null) controller.isAppearanceLightNavigationBars = lightNavigation
+        }
+    }
+}

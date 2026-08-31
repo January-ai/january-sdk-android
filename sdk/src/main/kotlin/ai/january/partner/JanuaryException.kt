@@ -15,6 +15,16 @@ public enum class ErrorCategory {
 public class JanuaryException(
     public val category: ErrorCategory,
     message: String,
-    public val httpStatus: Int? = null,
-    cause: Throwable? = null,
-) : Exception(message, cause)
+    public val httpStatus: Int?,
+    cause: Throwable?,
+    public val code: String?,
+    public val requestId: String?,
+) : Exception(message, cause) {
+    // Retain the original constructor (including Kotlin defaults) for existing SDK consumers.
+    public constructor(
+        category: ErrorCategory,
+        message: String,
+        httpStatus: Int? = null,
+        cause: Throwable? = null,
+    ) : this(category, message, httpStatus, cause, null, null)
+}

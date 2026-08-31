@@ -1,201 +1,54 @@
 package ai.january.partner.demo
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.CenterFocusWeak
-import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material.icons.filled.ShowChart
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import java.time.ZoneId
-
-private enum class Destination(val label: String, val icon: ImageVector) {
-    SEARCH("Search", Icons.Filled.Search),
-    SCAN("Scan", Icons.Filled.CenterFocusWeak),
-    FOOD_LOGS("Food logs", Icons.Filled.ListAlt),
-    GLUCOSE("Glucose", Icons.Filled.ShowChart),
-}
+import androidx.compose.ui.unit.sp
 
 @Composable
-fun JanuaryDemoApp() {
+fun JanuaryDemoApp(providedState: DemoState? = null) {
     val context = LocalContext.current
-    val state = remember { DemoState(context.applicationContext) }
-    var destination by rememberSaveable { mutableStateOf(Destination.SEARCH) }
+    val state = providedState ?: remember { DemoState(context.applicationContext) }
+    var destination by rememberSaveable { mutableStateOf(AppDestination.SEARCH) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+
+    if (state.client == null) { DemoSetupScreen(); return }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            Surface(
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 4.dp)
-                    .shadow(18.dp, RoundedCornerShape(38.dp))
-                    .clip(RoundedCornerShape(38.dp)),
-                shape = RoundedCornerShape(38.dp),
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                NavigationBar(
-                    modifier = Modifier.height(64.dp),
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                    tonalElevation = 0.dp,
-                ) {
-                    Destination.entries.forEach { item ->
-                        NavigationBarItem(
-                            selected = item == destination,
-                            onClick = { destination = item },
-                            icon = { Icon(item.icon, contentDescription = item.label, modifier = Modifier.size(24.dp)) },
-                            label = { Text(item.label, style = MaterialTheme.typography.labelSmall) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = JanuaryColors.Ink,
-                                selectedTextColor = JanuaryColors.Ink,
-                                indicatorColor = JanuaryColors.ControlStrong,
-                                unselectedIconColor = JanuaryColors.Subdued,
-                                unselectedTextColor = JanuaryColors.Muted,
-                            ),
-                        )
+        topBar = {
+            Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
+                if (state.isDevelopmentAuthentication) {
+                    Row(Modifier.fillMaxWidth().background(JanuaryColors.GoldContainer).padding(horizontal = 16.dp, vertical = 10.dp), horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Outlined.Warning, null, Modifier.size(18.dp), tint = androidx.compose.ui.graphics.Color(0xFF6E5613))
+                        Text("Local testing mode — do not distribute this build with a development API key.", fontSize = 13.sp, lineHeight = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = androidx.compose.ui.graphics.Color(0xFF6E5613))
                     }
                 }
             }
         },
+        bottomBar = { AppTabBar(selected = destination, onSelect = { destination = it }) },
     ) { innerPadding ->
         when (destination) {
-            Destination.SEARCH -> SearchScreen(state, { showSettings = true }, Modifier.padding(innerPadding).windowInsetsPadding(WindowInsets.statusBars))
-            Destination.SCAN -> ScanScreen(state, { showSettings = true }, Modifier.padding(innerPadding).windowInsetsPadding(WindowInsets.statusBars))
-            Destination.FOOD_LOGS -> FoodLogsScreen(state, { showSettings = true }, Modifier.padding(innerPadding).windowInsetsPadding(WindowInsets.statusBars))
-            Destination.GLUCOSE -> GlucoseScreen(state, { showSettings = true }, Modifier.padding(innerPadding).windowInsetsPadding(WindowInsets.statusBars))
+            AppDestination.SEARCH -> SearchScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
+            AppDestination.SCAN -> ScanScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
+            AppDestination.FOOD_LOGS -> FoodLogsScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
+            AppDestination.GLUCOSE -> GlucoseScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
         }
     }
 
     if (showSettings) {
         SettingsSheet(state = state, onDismiss = { showSettings = false })
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DemoTopBar(
-    title: String,
-    settingsAction: () -> Unit,
-    additionalAction: (() -> Unit)? = null,
-    additionalActionDescription: String = "Add",
-) {
-    LargeTopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.headlineLarge, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
-        actions = {
-            additionalAction?.let { action ->
-                IconButton(onClick = action) {
-                    Icon(Icons.Outlined.Add, contentDescription = additionalActionDescription)
-                }
-            }
-        },
-        colors = TopAppBarDefaults.largeTopAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            AppModalHeader(title = "Settings", onDismiss = onDismiss)
-            Spacer(Modifier.padding(4.dp))
-            SectionLabel("Connection")
-            DemoCard {
-                Text("Authentication", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    state.authenticationDescription,
-                    color = if (state.client == null) JanuaryColors.Rust else JanuaryColors.Green,
-                )
-            }
-            Spacer(Modifier.padding(4.dp))
-            SectionLabel("Request context")
-            DemoCard {
-                OutlinedTextField(
-                    value = state.endUserId,
-                    onValueChange = { state.endUserId = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("End user ID") },
-                    supportingText = { Text("Required for food logs; included on other requests when present.") },
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = state.timezone,
-                    onValueChange = { state.timezone = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Timezone") },
-                    supportingText = { Text("IANA timezone sent with user-scoped requests.") },
-                    singleLine = true,
-                )
-                if (state.endUserId.isNotBlank()) {
-                    DemoOutlinedButton(
-                        text = "Clear active user",
-                        onClick = state::clearUser,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            Spacer(Modifier.padding(4.dp))
-            SectionLabel("About")
-            DemoCard {
-                Row(Modifier.fillMaxWidth()) { Text("App version"); Spacer(Modifier.weight(1f)); Text(BuildConfig.VERSION_NAME) }
-                HorizontalDivider(color = JanuaryColors.Divider)
-                Row(Modifier.fillMaxWidth()) { Text("January API"); Spacer(Modifier.weight(1f)); Text("Production") }
-            }
-            Spacer(Modifier.padding(12.dp))
-        }
     }
 }

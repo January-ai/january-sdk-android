@@ -13,11 +13,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +25,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AddCircleOutline
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import ai.january.partner.PartnerUserContext
 import ai.january.partner.foodlogs.FoodLog
 import ai.january.partner.foods.FoodSearchItem
@@ -51,18 +59,17 @@ internal fun FoodLogEditorSheet(
     val client = state.client ?: return
     val userClient = remember(client, user) { client.forUser(user) }
     val coroutineScope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
     var timestamp by remember(existing) {
-        mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it) }.getOrNull() } ?: OffsetDateTime.now())
+        mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it).atZoneSameInstant(java.time.ZoneId.systemDefault()).toOffsetDateTime() }.getOrNull() } ?: OffsetDateTime.now())
     }
     var foods by remember(existing) { mutableStateOf(existing?.foods?.map(::selectedFood).orEmpty()) }
     var showFoodPicker by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<Throwable?>(null) }
 
     fun save() {
-        if (foods.isEmpty()) return
+        if (foods.isEmpty() || saving) return
         saving = true
         error = null
         coroutineScope.launch {
@@ -88,73 +95,58 @@ internal fun FoodLogEditorSheet(
             }.onSuccess {
                 onSaved()
                 onDismiss()
-            }.onFailure { error = it.message ?: "The food log could not be saved." }
+            }.onFailure { error = it }
             saving = false
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = JanuaryColors.Paper,
-        dragHandle = null,
-    ) {
+    AppModalSheet(title = if (existing == null) "New food log" else "Edit food log", onDismiss = onDismiss) {
         Column(Modifier.fillMaxSize()) {
-            AppModalHeader(
-                title = if (existing == null) "New food log" else "Edit food log",
-                onDismiss = onDismiss,
-                modifier = Modifier.padding(horizontal = DemoScreenPadding, vertical = 12.dp),
-                action = {
-                    TextButton(onClick = ::save, enabled = foods.isNotEmpty() && !saving) {
-                        Text(if (existing == null) "Save" else "Update")
-                    }
-                },
-            )
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                    .padding(horizontal = DemoScreenPadding),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = DemoScreenPadding).padding(top = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                SectionLabel("Meal")
-                DemoCard {
-                    OutlinedTextField(
+                MealWorkflowGuide(
+                    title = if (existing == null) "Build this meal" else "Update this meal",
+                    message = "A log is one meal. Add every food that belongs to it, then choose each serving and quantity before saving.",
+                    steps = listOf("Set the meal time", "Add one or more foods", "Review servings and save"),
+                    icon = Icons.Outlined.Restaurant,
+                )
+                SectionLabel("Meal details")
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Meal name", style = MaterialTheme.typography.titleMedium)
+                    TextField(
                         value = name,
                         onValueChange = { name = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Name (optional)") },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
+                        placeholder = { Text("Optional name") },
+                        shape = RoundedCornerShape(18.dp),
+                        colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Control, unfocusedContainerColor = JanuaryColors.Control, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         singleLine = true,
                     )
-                    HorizontalDivider(color = JanuaryColors.Divider)
-                    StartTimeRow(timestamp) { timestamp = it }
                 }
-
-                SectionLabel("Foods")
-                DemoCard {
-                    foods.forEachIndexed { index, selected ->
-                        if (index > 0) HorizontalDivider(color = JanuaryColors.Divider)
-                        SelectedFoodRow(
-                            selected = selected,
-                            onServingChange = { serving ->
-                                foods = foods.toMutableList().also { it[index] = selected.copy(serving = serving) }
-                            },
-                            onQuantityChange = { quantity ->
-                                foods = if (quantity < 0.25) {
-                                    foods.filterIndexed { itemIndex, _ -> itemIndex != index }
-                                } else {
-                                    foods.toMutableList().also { it[index] = selected.copy(quantity = quantity) }
-                                }
-                            },
-                            onRemove = { foods = foods.filterIndexed { itemIndex, _ -> itemIndex != index } },
-                        )
-                    }
-                    if (foods.isNotEmpty()) HorizontalDivider(color = JanuaryColors.Divider)
-                    TextButton(onClick = { showFoodPicker = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("＋  Add food", color = androidx.compose.ui.graphics.Color(0xFF6E5613), style = MaterialTheme.typography.titleMedium)
-                    }
+                FoodLogCard { StartTimeRow(timestamp, label = "Date and time") { timestamp = it } }
+                SectionLabel("Foods in this meal · ${foods.size}")
+                if (foods.isEmpty()) {
+                    EmptyStateCard(Icons.Outlined.AddCircleOutline, "No foods added", "Start with one food, then keep adding until the complete meal is represented.")
                 }
+                foods.forEachIndexed { index, selected ->
+                    FoodLogSelectedFoodCard(
+                        selected = selected,
+                        onServingChange = { serving -> foods = foods.toMutableList().also { it[index] = selected.copy(serving = serving) } },
+                        onQuantityChange = { quantity -> foods = foods.toMutableList().also { it[index] = selected.copy(quantity = quantity) } },
+                        onRemove = { foods = foods.filterIndexed { itemIndex, _ -> itemIndex != index } },
+                    )
+                }
+                DemoOutlinedButton(
+                    if (foods.isEmpty()) "Add first food" else "Add another food", { showFoodPicker = true }, Modifier.fillMaxWidth(),
+                    icon = { Icon(Icons.Outlined.Add, null) },
+                )
 
                 error?.let { ErrorCard(it, ::save) }
-                Spacer(Modifier.height(32.dp))
+                DemoPrimaryButton(if (existing == null) "Save food log" else "Update food log", ::save, Modifier.fillMaxWidth(), enabled = foods.isNotEmpty(), loading = saving)
+                Spacer(Modifier.height(88.dp))
             }
         }
     }
@@ -163,7 +155,7 @@ internal fun FoodLogEditorSheet(
         FoodPickerSheet(
             state = state,
             onDismiss = { showFoodPicker = false },
-            onSelect = { foods = foods + it },
+            onSelect = { foods = foods + it; showFoodPicker = false },
         )
     }
 }

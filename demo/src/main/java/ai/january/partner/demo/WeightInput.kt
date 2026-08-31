@@ -65,7 +65,7 @@ internal fun WeightInput(
                 selected = displayUnit,
                 label = { it.label },
                 onSelect = { displayUnit = it },
-                modifier = Modifier.width(180.dp),
+                modifier = Modifier.width(170.dp),
             )
         }
 
@@ -116,10 +116,10 @@ private fun WeightNumberField(
                     isFocused = it.isFocused
                     if (!it.isFocused) text = value
                 }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             textStyle = TextStyle(
                 color = JanuaryColors.Ink,
-                fontSize = 24.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
                 textAlign = TextAlign.End,

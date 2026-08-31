@@ -2,6 +2,9 @@ package ai.january.partner
 
 import ai.january.partner.transport.infrastructure.Serializer
 import java.io.IOException
+import java.net.SocketTimeoutException
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.JsonEncodingException
 import kotlinx.coroutines.CancellationException
 import retrofit2.Response
 
@@ -21,10 +24,16 @@ internal suspend fun <Transport, Public> executeApiCall(
     try {
         val response = operation()
         if (!response.isSuccessful) {
+            val details = runCatching {
+                response.errorBody()?.string()?.let { Serializer.moshiBuilder.build().adapter(Map::class.java).fromJson(it) }
+            }.getOrNull()
             throw JanuaryException(
                 category = categoryForStatus(response.code()),
-                message = "The January API returned HTTP ${response.code()}.",
+                message = details?.get("message") as? String ?: "The January API returned HTTP ${response.code()}.",
                 httpStatus = response.code(),
+                cause = null,
+                code = details?.get("code") as? String,
+                requestId = details?.get("request_id") as? String ?: response.headers()["x-request-id"],
             )
         }
         return transform(
@@ -37,6 +46,12 @@ internal suspend fun <Transport, Public> executeApiCall(
         throw error
     } catch (error: JanuaryException) {
         throw error
+    } catch (error: SocketTimeoutException) {
+        throw JanuaryException(ErrorCategory.TIMEOUT, "The request to the January API timed out.", cause = error)
+    } catch (error: JsonDataException) {
+        throw JanuaryException(ErrorCategory.DECODING, "The January API returned an unreadable response.", cause = error)
+    } catch (error: JsonEncodingException) {
+        throw JanuaryException(ErrorCategory.DECODING, "The January API returned an unreadable response.", cause = error)
     } catch (error: IOException) {
         throw JanuaryException(ErrorCategory.TRANSPORT, "The request to the January API failed.", cause = error)
     }

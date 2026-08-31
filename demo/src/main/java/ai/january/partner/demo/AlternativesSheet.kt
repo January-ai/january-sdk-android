@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Eco
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FilterList
@@ -46,9 +47,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -56,7 +55,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -109,6 +107,8 @@ import ai.january.partner.restaurants.SearchRestaurantsRequest
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import ai.january.partner.JanuaryPartnerClient
@@ -118,67 +118,104 @@ import ai.january.partner.PartnerUserId
 @Composable
 internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss: () -> Unit) {
     val client = state.client ?: return
-    val coroutineScope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     var restrictions by remember { mutableStateOf<Set<DietRestriction>>(emptySet()) }
     var preferences by remember { mutableStateOf<Set<DietPreference>>(emptySet()) }
-    var results by remember { mutableStateOf<ai.january.partner.foods.SuggestFoodAlternativesResponse?>(null) }
+    var result by remember { mutableStateOf<ai.january.partner.foods.SuggestFoodAlternativesResponse?>(null) }
+    var details by remember { mutableStateOf<Map<Long, FoodSearchItem>>(emptyMap()) }
+    var selected by remember { mutableStateOf<FoodSearchItem?>(null) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
+    var error by remember { mutableStateOf<Throwable?>(null) }
     fun load() {
         loading = true; error = null
-        coroutineScope.launch {
+        scope.launch {
             runCatching {
-                client.foods.suggestAlternatives(SuggestFoodAlternativesRequest(food.id.value, restrictions.toList(), preferences.toList(), state.partnerUserId))
-            }.onSuccess { results = it }.onFailure { error = it.message ?: "Alternatives could not be loaded." }
+                val response = client.foods.suggestAlternatives(SuggestFoodAlternativesRequest(food.id.value, restrictions.toList(), preferences.toList(), state.partnerUserId))
+                result = response; details = emptyMap()
+                details = kotlinx.coroutines.coroutineScope {
+                    response.alternatives.mapNotNull { it.food.id }.distinct().map { id -> async {
+                        runCatching { id to client.foods.get(GetFoodRequest(ai.january.partner.FoodId(id), state.partnerUserId)) }.getOrNull()
+                    } }.awaitAll().filterNotNull().toMap()
+                }
+            }.onFailure { error = it }
             loading = false
         }
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = JanuaryColors.Paper) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            AppModalHeader(title = "Alternatives", onDismiss = onDismiss)
-            SectionLabel("Dietary restrictions")
-            DietChoices(DietRestriction.entries, restrictions, { restrictions = it }, { it.value.replace('_', ' ').replaceFirstChar(Char::uppercase) })
-            SectionLabel("Dietary preferences")
-            DietChoices(DietPreference.entries, preferences, { preferences = it }, { it.value.replace('_', ' ').replaceFirstChar(Char::uppercase) })
-            DemoPrimaryButton("Find alternatives", ::load, Modifier.fillMaxWidth(), loading = loading)
-            error?.let { ErrorCard(it, ::load) }
-            results?.alternatives.orEmpty().forEach { alternative ->
+    AppModalSheet(title = "Food alternatives", onDismiss = onDismiss, showNavigationBar = selected == null) {
+        if (selected != null) {
+            FoodDetailScreen(state, selected!!, { selected = null })
+        } else {
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
                 DemoCard {
-                    Text(alternative.food.name, style = MaterialTheme.typography.titleMedium)
-                    alternative.food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
-                    ScanStyleMacroStrip(
-                        alternative.food.nutrients.calories?.value,
-                        alternative.food.nutrients.protein?.value,
-                        alternative.food.nutrients.carbohydrates?.value,
-                        alternative.food.nutrients.totalFat?.value,
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(Icons.Outlined.Eco, null, tint = JanuaryColors.Green); Text("Personalized suggestions", style = MaterialTheme.typography.labelMedium, color = JanuaryColors.Green) }
+                        Text(food.name, style = MaterialTheme.typography.headlineMedium)
+                        Text("Choose any dietary needs that should shape January’s recommendations.", color = JanuaryColors.Body)
+                    }
                 }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionLabel("Dietary restrictions")
+                    DietChoices(DietRestriction.entries, restrictions, { restrictions = it }) { it.value.dietLabel() }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionLabel("Dietary preferences")
+                    DietChoices(DietPreference.entries, preferences, { preferences = it }) { it.value.dietLabel() }
+                }
+                DemoPrimaryButton(if (result == null) "Find alternatives" else "Refresh alternatives", ::load, Modifier.fillMaxWidth(), enabled = !loading, loading = loading && result == null, icon = { Icon(Icons.Outlined.Eco, null) })
+                error?.let { ErrorCard(it, ::load) }
+                result?.let { response ->
+                    if (response.alternatives.isEmpty()) EmptyStateCard(Icons.Outlined.Eco, "No suitable alternatives", "No foods matched every selected dietary need.")
+                    else SectionLabel("Suggestions · ${response.alternatives.size}")
+                    response.alternatives.forEach { alternative ->
+                        val detail = details[alternative.food.id] ?: alternativeDetailFood(alternative.food)
+                        DemoCard(if (detail != null) Modifier.clickable { selected = detail } else Modifier) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                NetworkImage(detail?.photoUrl, null, Modifier.size(58.dp))
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                                    Text(alternative.food.name, style = MaterialTheme.typography.titleMedium)
+                                    alternative.food.brandName?.takeIf(String::isNotBlank)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted) }
+                                    alternative.food.servings?.firstOrNull()?.let { Text("${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit}", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted) }
+                                    val n = alternative.food.nutrients
+                                    Text(listOfNotNull(n.calories?.value?.let { "${it.toInt()} cal" }, n.protein?.value?.let { "P ${formatMetricNumber(it)}g" }, n.carbohydrates?.value?.let { "C ${formatMetricNumber(it)}g" }, n.totalFat?.value?.let { "F ${formatMetricNumber(it)}g" }).joinToString("  "), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = JanuaryColors.Muted)
+                                }
+                                if (detail != null) Icon(Icons.Outlined.ChevronRight, "Open food details", tint = JanuaryColors.Subdued)
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(24.dp))
         }
     }
 }
+
+internal fun alternativeDetailFood(food: ai.january.partner.foods.DetectedFood): FoodSearchItem? {
+    val id = food.id ?: return null
+    val servings = food.servings?.takeIf { it.isNotEmpty() } ?: return null
+    val n = food.nutrients
+    return FoodSearchItem(id = ai.january.partner.FoodId(id), name = food.name, brandName = food.brandName,
+        calories = n.calories?.value, protein = n.protein?.value, carbohydrates = n.carbohydrates?.value,
+        netCarbohydrates = n.netCarbohydrates?.value, totalFat = n.totalFat?.value, saturatedFat = n.saturatedFat?.value,
+        fiber = n.fiber?.value, totalSugars = n.totalSugars?.value, addedSugars = n.addedSugars?.value, sodium = n.sodium?.value,
+        potassium = null, cholesterol = null, glycemicIndex = null, glycemicLoad = null, photoUrl = null,
+        servings = servings.mapIndexed { index, serving -> ServingOption(ai.january.partner.ServingId(serving.id), serving.quantity ?: 1.0, serving.unit, 1.0, weightGrams = null, isPrimary = index == 0) })
+}
+
+private fun String.dietLabel(): String = replace('_', ' ').split(' ').joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
 
 @Composable
 internal fun <T> DietChoices(values: List<T>, selected: Set<T>, onChange: (Set<T>) -> Unit, label: (T) -> String) {
-    values.chunked(2).forEach { row ->
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            row.forEach { value ->
-                FilterChip(
-                    selected = value in selected,
-                    onClick = { onChange(if (value in selected) selected - value else selected + value) },
-                    label = { Text(label(value), maxLines = 1) },
-                    modifier = Modifier.weight(1f),
-                )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        values.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { value -> DemoChoiceChip(label(value), value in selected, { onChange(if (value in selected) selected - value else selected + value) }, Modifier.weight(1f)) }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
-            if (row.size == 1) Spacer(Modifier.weight(1f))
         }
     }
 }
 
-internal fun String.normalizedRestaurantName(): String = substringBefore("(").lowercase().filter { it.isLetterOrDigit() || it == ' ' }.trim()
+internal fun String.normalizedRestaurantName(): String = java.text.Normalizer.normalize(substringBefore("("), java.text.Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase().split(Regex("[^\\p{L}\\p{N}]+" )).filter(String::isNotBlank).joinToString(" ")
 
 @Composable
 internal fun Metric(label: String, value: Double?, unit: String) {
@@ -189,4 +226,4 @@ internal fun Metric(label: String, value: Double?, unit: String) {
     }
 }
 
-internal fun formatNumber(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString() else "%.1f".format(value)
+internal fun formatNumber(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(java.util.Locale.US, value).trimEnd('0').trimEnd('.')

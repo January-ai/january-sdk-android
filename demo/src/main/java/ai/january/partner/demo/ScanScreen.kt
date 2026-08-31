@@ -33,7 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -90,7 +89,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
     var barcodeResult by remember { mutableStateOf<JanuaryFoodScannerResult.Barcode?>(null) }
     var showCameraScanner by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<Throwable?>(null) }
 
     fun selectPreparedJpeg(jpeg: ByteArray) {
         imageBytes = jpeg
@@ -102,7 +101,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
     fun selectBytes(bytes: ByteArray) {
         runCatching { PhotoScanImage.jpegData(bytes) }
             .onSuccess(::selectPreparedJpeg)
-            .onFailure { error = "The selected image could not be prepared for upload." }
+            .onFailure { error = IllegalStateException("The selected image could not be prepared for upload.") }
     }
 
     val photoPicker = rememberLauncherForActivityResult(PickVisualMedia()) { uri ->
@@ -116,29 +115,27 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
         coroutineScope.launch {
             runCatching { client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest(imageInput, state.partnerUserId)) }
                 .onSuccess { result = it }
-                .onFailure { error = it.message ?: "The scan failed." }
+                .onFailure { error = it }
             loading = false
         }
     }
 
-    Column(modifier.fillMaxSize()) {
+    AppScreenScaffold(
+        title = "Scan a meal", modifier = modifier, style = AppNavigationTitleStyle.Leading,
+        trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, onClick = settingsAction) },
+    ) {
         DemoScreen {
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                AppScreenHeader("Scan a meal", settingsAction)
-                Text(
-                    "Add a clear photo of the whole meal. January will identify foods, servings, nutrition, and an estimated glucose response.",
-                    color = JanuaryColors.Muted,
-                )
                 if (imageInput.isBlank()) {
                     ScanPhotoInstructions()
                 } else {
                     MealPreview(imageBytes, imageInput)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         DemoSecondaryButton(
-                            text = "Change",
+                            text = "Change photo",
                             onClick = { photoPicker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
                             modifier = Modifier.weight(1f),
                         )
@@ -149,6 +146,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                         )
                     }
                 }
+                if (imageInput.isBlank()) {
                 DemoPrimaryButton(
                     text = "Take photo",
                     onClick = { showCameraScanner = true },
@@ -168,7 +166,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                         onClick = {
                             runCatching { context.assets.open(SAMPLE_ASSET).use { it.readBytes() } }
                                 .onSuccess(::selectBytes)
-                                .onFailure { error = "The sample meal could not be loaded." }
+                                .onFailure { error = IllegalStateException("The sample meal could not be loaded.") }
                         },
                         modifier = Modifier.weight(1f),
                         icon = { Icon(Icons.Outlined.Restaurant, null) },
@@ -180,6 +178,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                         icon = { Icon(Icons.Outlined.Link, null) },
                     )
                 }
+                }
                 if (imageInput.isNotBlank()) {
                     DemoPrimaryButton(
                         text = if (loading) "Analyzing this meal…" else "Analyze meal",
@@ -189,15 +188,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                         loading = loading,
                     )
                 }
-                Text(
-                    if (imageInput.isBlank()) "Analyze appears once a photo is added. Barcode scanning is available inside the camera."
-                    else if (loading) "Complex meals can take a little longer."
-                    else "Your analysis opens as a modal result and can be corrected before you continue.",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = JanuaryColors.Muted,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                )
+                if (loading) Text("Complex meals can take a little longer. You can leave this screen while the request completes.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
                 if (client == null) ApiKeyRequiredCard()
                 error?.let { ErrorCard(it, ::analyze) }
                 Spacer(Modifier.height(24.dp))
@@ -235,29 +226,25 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
             )
         }
     }
-    result?.takeUnless { showCorrection }?.let { analysis ->
-        ModalBottomSheet(
-            onDismissRequest = { result = null },
-            containerColor = JanuaryColors.Paper,
-        ) {
+    result?.let { analysis ->
+        AppModalSheet(title = "Meal analysis", onDismiss = { result = null }) {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp).padding(bottom = 36.dp),
+                    .padding(horizontal = DemoScreenPadding).padding(top = 16.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                AppModalHeader(title = "Meal analysis", onDismiss = { result = null })
                 ScanResult(analysis, imageBytes, imageInput)
                 DemoPrimaryButton(
                     "Correct result",
                     { showCorrection = true },
                     Modifier.fillMaxWidth(),
-                    icon = { Icon(Icons.Outlined.Edit, null) },
                 )
+                DemoSecondaryButton("Scan another meal", { result = null; imageInput = ""; imageBytes = null; error = null }, Modifier.fillMaxWidth())
             }
         }
     }
     barcodeResult?.let { barcode ->
-        BarcodeResultSheet(barcode.value, barcode.food) { barcodeResult = null }
+        BarcodeResultSheet(state, barcode.food) { barcodeResult = null }
     }
     if (showCorrection && result != null && client != null) {
         CorrectionSheet(
@@ -270,7 +257,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                             CorrectPhotoScanRequest(mealName, result!!.detections.orEmpty(), instruction, state.partnerUserId),
                         )
                     }.onSuccess { corrected -> result = corrected; showCorrection = false }
-                        .onFailure { correctionError -> finished(correctionError.message ?: "The correction failed.") }
+                        .onFailure { correctionError -> finished(correctionError) }
                 }
             },
         )

@@ -22,6 +22,13 @@ exposes no API-origin override.
 
 Never commit `local.properties`.
 
+For January-owned local Debug testing, `january.apiKey` uses API-key authentication
+directly, including for accounts that have not enabled client tokens. This mode defaults to
+`your-android-user-id`; change the active user in Settings as needed. Changing
+the user creates a new client so cached tokens cannot cross users. Development
+authentication is disabled in Release builds. A rejected key must be replaced
+in `local.properties`, then the demo rebuilt; rescanning cannot fix HTTP 401.
+
 ## Build and run
 
 ```bash

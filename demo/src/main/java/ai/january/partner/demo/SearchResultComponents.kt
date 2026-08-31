@@ -46,9 +46,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -56,7 +54,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -123,7 +120,7 @@ internal fun FoodResultCard(food: FoodSearchItem, onClick: () -> Unit) {
     FoodRow(
         name = food.name,
         subtitle = food.brandName,
-        meta = listOfNotNull(food.calories?.let { "${it.toInt()} cal" }, food.servings.firstOrNull()?.unit).joinToString(" · "),
+        meta = listOfNotNull(food.calories?.let { "${it.toInt()} cal" }, primaryServing(food)?.let { "${formatDemoNumber(it.quantity)} ${it.unit}" }).joinToString(" · "),
         imageUrl = food.photoUrl,
         onClick = onClick,
         contentPadding = PaddingValues(vertical = 12.dp),
@@ -133,7 +130,8 @@ internal fun FoodResultCard(food: FoodSearchItem, onClick: () -> Unit) {
 @Composable
 internal fun RestaurantResultCard(restaurant: Restaurant, onClick: () -> Unit) {
     DemoCard(modifier = Modifier.clickable(onClick = onClick)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FoodLogMealIcon()
             Column(Modifier.weight(1f)) {
                 Text(restaurant.name, style = MaterialTheme.typography.titleMedium)
                 Text(listOfNotNull(restaurant.city, restaurant.distance?.let { "%.1f mi".format(it / 1609.344) }).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -153,15 +151,18 @@ internal fun SimpleResultCard(title: String, subtitle: String) {
 
 @Composable
 internal fun MenuItemResultCard(item: RestaurantMenuItem, onClick: () -> Unit) {
-    DemoCard(Modifier.clickable(onClick = onClick)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            NetworkImage(item.photoUrl, item.name, Modifier.size(58.dp))
-            Column(Modifier.weight(1f)) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium)
-                Text(item.restaurantName, color = JanuaryColors.Muted)
-                item.calories?.let { Text("${it.toInt()} cal", style = MaterialTheme.typography.bodySmall) }
-            }
-            Icon(Icons.Outlined.ChevronRight, null, tint = JanuaryColors.Subdued)
+    DemoCard(Modifier.clickable(onClick = onClick)) { MenuItemRow(item) }
+}
+
+@Composable
+internal fun MenuItemRow(item: RestaurantMenuItem, modifier: Modifier = Modifier) {
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        NetworkImage(item.photoUrl, null, Modifier.size(56.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(item.name, style = MaterialTheme.typography.titleMedium)
+            Text(item.restaurantName, color = JanuaryColors.Muted)
+            item.calories?.let { Text("${it.toInt()} cal", style = MaterialTheme.typography.labelSmall) }
         }
+        Icon(Icons.Outlined.ChevronRight, null, tint = JanuaryColors.Subdued)
     }
 }

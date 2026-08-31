@@ -31,15 +31,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,7 +84,6 @@ internal fun FoodPickerSheet(
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var query by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf<List<FoodSuggestion>>(emptyList()) }
     var autocompleteSuppressedQuery by remember { mutableStateOf<String?>(null) }
@@ -96,7 +92,7 @@ internal fun FoodPickerSheet(
     var hydratingFoodId by remember { mutableStateOf<FoodId?>(null) }
     var failedFoodId by remember { mutableStateOf<FoodId?>(null) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<Throwable?>(null) }
 
     fun search(queryOverride: String? = null) {
         val value = (queryOverride ?: query).trim()
@@ -111,7 +107,7 @@ internal fun FoodPickerSheet(
         coroutineScope.launch {
             runCatching { client.foods.search(SearchFoodsRequest(value, endUserId = state.partnerUserId)).items }
                 .onSuccess { results = it }
-                .onFailure { error = it.message ?: "Food search could not be completed." }
+                .onFailure { error = it }
             loading = false
             focusManager.clearFocus(force = true)
             keyboardController?.hide()
@@ -129,7 +125,7 @@ internal fun FoodPickerSheet(
             }
                 .onSuccess { chosenFood = it }
                 .onFailure {
-                    error = it.message ?: "Complete serving options could not be loaded."
+                    error = it
                     failedFoodId = foodId
                 }
             hydratingFoodId = null
@@ -145,22 +141,16 @@ internal fun FoodPickerSheet(
         delay(300)
         suggestions = runCatching {
             client.foods.autocomplete(
-                AutocompleteFoodsRequest(query = value, limit = 5, endUserId = state.partnerUserId),
+                AutocompleteFoodsRequest(query = value, limit = 8, endUserId = state.partnerUserId),
             ).items
         }.getOrDefault(emptyList())
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = JanuaryColors.Paper,
-        dragHandle = null,
-    ) {
+    AppModalSheet(title = "Add food", onDismiss = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(top = 20.dp),
+            modifier = Modifier.fillMaxSize().padding(top = 28.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            PickerHeader(title = "Add food", onDismiss = onDismiss)
             FoodSearchField(
                 query = query,
                 onQueryChange = {
@@ -193,11 +183,9 @@ internal fun FoodPickerSheet(
             }
             when {
                 loading -> {
-                    androidx.compose.material3.LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding),
-                        color = JanuaryColors.Ink,
-                        trackColor = JanuaryColors.Control,
-                    )
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        LoadingSpinner(color = JanuaryColors.Green)
+                    }
                 }
                 error != null -> {
                     Box(Modifier.padding(horizontal = DemoScreenPadding)) {
@@ -205,16 +193,16 @@ internal fun FoodPickerSheet(
                     }
                 }
                 suggestions.isEmpty() && results.isEmpty() -> {
-                    DemoEmptyFoodState(Modifier.padding(horizontal = DemoScreenPadding))
+                    EmptyStateCard(Icons.Outlined.RestaurantMenu, "Find a food", "Start typing for suggestions, or search January’s food database.", Modifier.padding(horizontal = DemoScreenPadding))
                 }
                 results.isNotEmpty() -> {
-                    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         SectionLabel(
                             "Results · January food database",
                             Modifier.padding(horizontal = DemoScreenPadding + 6.dp),
                         )
                         Card(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding),
+                            modifier = Modifier.fillMaxWidth().weight(1f, fill = false).padding(horizontal = DemoScreenPadding),
                             shape = RoundedCornerShape(24.dp),
                             colors = CardDefaults.cardColors(containerColor = JanuaryColors.Surface),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -236,6 +224,7 @@ internal fun FoodPickerSheet(
                                 }
                             }
                         }
+                        Text("Photos load from January’s food database.", modifier = Modifier.padding(horizontal = DemoScreenPadding).padding(bottom = 20.dp), style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
                     }
                 }
             }

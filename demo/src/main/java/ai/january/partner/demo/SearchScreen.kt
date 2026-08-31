@@ -46,9 +46,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SegmentedButton
@@ -56,7 +54,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
@@ -154,7 +151,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var selectedRestaurant by remember { mutableStateOf<Restaurant?>(null) }
     var selectedMenuItem by remember { mutableStateOf<RestaurantMenuItem?>(null) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<Throwable?>(null) }
     var latitude by remember { mutableDoubleStateOf(37.7749) }
     var longitude by remember { mutableDoubleStateOf(-122.4194) }
     var selectedCity by remember { mutableStateOf(searchCities.first()) }
@@ -200,7 +197,8 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     fun submit(forcedRestaurantName: String? = null) {
         val value = (forcedRestaurantName ?: query).trim()
         if (value.isEmpty() || client == null) return
-        foodSuggestions = emptyList()
+        clearResults()
+        autocompleteSuppressedQuery = value
         focusManager.clearFocus(force = true)
         keyboardController?.hide()
         loading = true
@@ -228,7 +226,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         ).items
                     }
                 }
-            }.onFailure { error = it.message ?: "The request failed." }
+            }.onFailure { error = it }
             loading = false
             focusManager.clearFocus(force = true)
             keyboardController?.hide()
@@ -275,13 +273,12 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
 
     selectedRestaurant?.let { restaurant ->
         RestaurantDetailScreen(
-            client = client,
+            state = state,
             restaurant = restaurant,
             latitude = latitude,
             longitude = longitude,
             radius = radius,
             resultLimit = resultLimit,
-            menuQuery = query,
             endUserId = state.partnerUserId,
             onBack = { selectedRestaurant = null },
             modifier = modifier,
@@ -290,17 +287,19 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     }
 
     selectedMenuItem?.let { item ->
-        MenuItemDetailScreen(item, { selectedMenuItem = null }, modifier)
+        MenuItemDetailScreen(state, item, { selectedMenuItem = null }, modifier)
         return
     }
 
-    Column(modifier.fillMaxSize()) {
+    AppScreenScaffold(
+        title = "Search", modifier = modifier, style = AppNavigationTitleStyle.Leading,
+        trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, onClick = settingsAction) },
+    ) {
         DemoScreen {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(top = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                item { AppScreenHeader("Search", settingsAction) }
                 item {
                     SearchField(
                         value = query,
@@ -367,7 +366,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                                         .addOnSuccessListener { barcode ->
                                             barcode.rawValue?.let { value -> query = value; submit(value) }
                                         }
-                                        .addOnFailureListener { error = it.message ?: "Barcode scanning is unavailable." }
+                                        .addOnFailureListener { error = it }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 icon = { Icon(Icons.Outlined.QrCodeScanner, contentDescription = null) },
@@ -386,14 +385,15 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         )
                     }
                     item {
-                        DemoCard {
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text("Search location", fontWeight = FontWeight.SemiBold)
-                                    Text(if (isUsingCurrentLocation) "Current location" else selectedCity.name, color = JanuaryColors.Muted)
-                                    Text("${"%.1f".format(radius / 1609.344)} mi · $resultLimit results", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
+                        DemoCard(Modifier.clickable { showFilters = true }) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Outlined.LocationOn, null, tint = JanuaryColors.Green)
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text("Search location", style = MaterialTheme.typography.titleMedium)
+                                    Text(locationLabel, color = JanuaryColors.Muted, style = MaterialTheme.typography.labelSmall)
                                 }
-                                IconButton(onClick = { showFilters = true }) { Icon(Icons.Outlined.FilterList, "Search filters") }
+                                Text("${"%.1f".format(radius / 1609.344)} mi", style = MaterialTheme.typography.bodySmall)
+                                Icon(Icons.Outlined.ChevronRight, "Search filters", tint = JanuaryColors.Subdued)
                             }
                         }
                     }
@@ -451,11 +451,10 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 naturalResult?.let { natural ->
                     natural.totalNutrients?.let { nutrients ->
                         item {
-                            SectionLabel("Meal summary")
+                            Text("Meal nutrition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                             DemoCard { ScanStyleMacroStrip(nutrients.calories?.value, nutrients.protein?.value, nutrients.carbohydrates?.value, nutrients.totalFat?.value) }
                         }
                     }
-                    if (natural.detections.isNotEmpty()) item { SectionLabel("Foods detected") }
                     items(natural.detections) { detection ->
                         DemoCard {
                             Text(detection.food.name, style = MaterialTheme.typography.titleMedium)
@@ -470,13 +469,13 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     }
                 }
                 if (restaurants.isNotEmpty()) {
-                    item { SectionLabel("Nearby restaurants") }
+                    item { Text("Nearby restaurants", style = MaterialTheme.typography.titleLarge) }
                     items(restaurants, key = { it.id }) { restaurant ->
                         RestaurantResultCard(restaurant) { selectedRestaurant = restaurant }
                     }
                 }
                 if (menuItems.isNotEmpty()) {
-                    item { SectionLabel("Nearby menu items") }
+                    item { Text("Nearby menu items", style = MaterialTheme.typography.titleLarge) }
                     items(menuItems, key = { it.id }) { item ->
                         MenuItemResultCard(item) { selectedMenuItem = item }
                     }
@@ -485,7 +484,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     item {
                         EmptySearchCard(
                             if (scope == SearchScope.FOODS) "No foods found" else "No nearby matches",
-                            if (scope == SearchScope.FOODS) "Try a different search." else "Try another name, location, or radius.",
+                            if (scope == SearchScope.FOODS) "Try another name or broaden the selected food category." else "Try another name, location, or search radius.",
                         )
                     }
                 }
@@ -496,6 +495,8 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
 
     if (showFilters) {
         RestaurantFiltersSheet(
+            latitude = latitude,
+            longitude = longitude,
             selectedCity = selectedCity,
             onCity = { city ->
                 selectedCity = city; latitude = city.latitude; longitude = city.longitude

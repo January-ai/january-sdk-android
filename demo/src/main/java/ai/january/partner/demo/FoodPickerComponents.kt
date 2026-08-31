@@ -32,15 +32,12 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ai.january.partner.foods.FoodSearchItem
 import ai.january.partner.foods.FoodSuggestion
 import ai.january.partner.foods.SearchFoodsRequest
@@ -65,15 +63,6 @@ import ai.january.partner.foods.ServingOption
 import coil3.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
-
-@Composable
-internal fun PickerHeader(title: String, onDismiss: () -> Unit) {
-    AppModalHeader(
-        title = title,
-        onDismiss = onDismiss,
-        modifier = Modifier.padding(horizontal = DemoScreenPadding),
-    )
-}
 
 @Composable
 internal fun FoodSearchField(
@@ -184,15 +173,11 @@ internal fun ServingSelectionSheet(
     var servingMenuOpen by remember { mutableStateOf(false) }
     val scale = quantity * serving.scalingFactor / serving.quantity.takeUnless { it == 0.0 }.orEmptyOne()
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        containerColor = JanuaryColors.Paper,
-    ) {
+    AppModalSheet(title = "Choose serving", onDismiss = onDismiss, expanded = false) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(bottom = 28.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(top = 16.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            AppModalHeader(title = "Choose serving", onDismiss = onDismiss)
             Text(food.name, style = MaterialTheme.typography.headlineMedium, color = JanuaryColors.Ink)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
@@ -233,7 +218,7 @@ internal fun ServingSelectionSheet(
                         Text(
                             formatDemoNumber(quantity),
                             modifier = Modifier.padding(horizontal = 14.dp),
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
                             fontFamily = FontFamily.Monospace,
                         )
                         DemoQuantityButton(symbol = "+", primary = true) { quantity += 0.25 }
@@ -279,7 +264,7 @@ internal fun ServingMetric(label: String, value: Double?, unit: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted, fontWeight = FontWeight.Bold)
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(value?.let(::formatMetricNumber) ?: "—", style = MaterialTheme.typography.titleMedium, fontFamily = FontFamily.Monospace)
+            Text(value?.let(::formatMetricNumber) ?: "—", style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp), fontFamily = FontFamily.Monospace)
             Text(unit, style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted)
         }
     }
