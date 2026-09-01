@@ -19,9 +19,12 @@ permissions, retries, errors, testing, and troubleshooting.
 ```bash
 git clone https://github.com/January-ai/january-sdk-android.git
 cd january-sdk-android
-git checkout ca207c04d6f9dd9d8f1c206b5f421b035a955c0c
+git checkout <revision-supplied-by-january>
 ./gradlew :sdk:testDebugUnitTest :sdk:assembleRelease
 ```
+
+During Controlled Preview, pin the exact revision January approves for your
+integration. Do not depend on a moving branch.
 
 The repository contains:
 

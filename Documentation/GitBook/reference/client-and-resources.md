@@ -36,7 +36,7 @@ or token endpoint URL. The generated OpenAPI transport is internal.
 | Resource | Public operations |
 | --- | --- |
 | `foods` | `autocomplete`, `search`, `get`, `lookupBarcode`, `suggestAlternatives` |
-| `restaurants` | `search`, `searchMenuItems` |
+| `restaurants` | `search`, `searchMenuItems`, `getMenuItems` |
 | `foodAnalysis` | `analyzePhoto`, `analyzeDescription`, `correct` |
 | `foodLogs` | `create`, `list`, `update`, `delete` |
 | `glucose` | `predict` |
