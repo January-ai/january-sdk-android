@@ -10,5 +10,6 @@
 * Photo preparation and native photo/barcode scanner
 * Typed imperial and metric glucose-profile measurements
 * Shared, white-label-ready Jetpack Compose demo components
+* Paginated restaurant-menu lookup by restaurant ID, ready after backend deployment
 
 Pin pre-release integrations to the version or revision supplied by January.
