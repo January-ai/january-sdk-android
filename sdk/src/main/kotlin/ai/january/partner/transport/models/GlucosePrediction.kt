@@ -32,21 +32,21 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param prediction The predicted glucose curve at 15-minute intervals, starting at start_time.
- * @param impactScore The meal's overall glucose impact.
+ * @param points The points of the predicted glucose curve, at 15-minute intervals starting at start_time.
+ * @param impactScore The meal's overall glucose impact. Null when the model returned no grade, or one outside this list.
  * @param chart
  */
 
 
 internal data class GlucosePrediction (
 
-    /* The predicted glucose curve at 15-minute intervals, starting at start_time. */
-    @Json(name = "prediction")
-    val prediction: kotlin.collections.List<GlucosePredictionPoint>,
+    /* The points of the predicted glucose curve, at 15-minute intervals starting at start_time. */
+    @Json(name = "points")
+    val points: kotlin.collections.List<GlucosePredictionPoint>,
 
-    /* The meal's overall glucose impact. */
+    /* The meal's overall glucose impact. Null when the model returned no grade, or one outside this list. */
     @Json(name = "impact_score")
-    val impactScore: kotlin.String,
+    val impactScore: kotlin.String?,
 
     @Json(name = "chart")
     val chart: GlucoseChart

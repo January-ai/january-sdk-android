@@ -46,12 +46,12 @@ public class UserScopedClientTest {
     @Test
     public fun scopedClientReusesIdentityAndPreservesFoodLogRequestShapes(): Unit = runBlocking {
         server.enqueue(jsonResponse(FOOD_LOG))
-        server.enqueue(jsonResponse("""{"total_count":0,"items":[]}"""))
+        server.enqueue(jsonResponse("""{"items":[]}"""))
         server.enqueue(jsonResponse(FOOD_LOG))
-        server.enqueue(jsonResponse("""{"status":"deleted"}"""))
+        server.enqueue(MockResponse().setResponseCode(204))
         server.enqueue(
             jsonResponse(
-                """{"prediction":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
+                """{"points":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
             ),
         )
         val client = JanuaryPartnerClient.testing(
@@ -68,9 +68,10 @@ public class UserScopedClientTest {
         val timestamp = "2024-09-13T11:34:56Z"
 
         val created = scoped.foodLogs.create(foods, timestamp, "Lunch")
+        val createdId = requireNotNull(created.id)
         scoped.foodLogs.list("2023-09-12", "2024-09-15")
-        scoped.foodLogs.update(created.id, foods, timestamp, "Updated lunch")
-        scoped.foodLogs.delete(created.id)
+        scoped.foodLogs.update(createdId, foods, timestamp, "Updated lunch")
+        scoped.foodLogs.delete(createdId)
         scoped.glucose.predict(
             PredictGlucoseRequest(
                 userProfile = GlucosePredictionProfile(35.0, Sex.FEMALE, 65.0, 140.0),
@@ -83,19 +84,19 @@ public class UserScopedClientTest {
 
         assertEquals(context, scoped.context)
         val requests = List(5) { server.takeRequest() }
-        requests.forEach { request ->
-            assertEquals("scoped-user", request.getHeader("x-end-user-id"))
-            assertEquals("America/New_York", request.getHeader("x-end-user-timezone"))
+        requests.take(4).forEach { request ->
+            assertEquals("scoped-user", request.getHeader("January-End-User-ID"))
         }
+        assertEquals(null, requests[4].getHeader("January-End-User-ID"))
 
         val createBody = requests[0].body.readUtf8()
-        assertTrue(createBody.contains("\"timestamp_utc\":\"$timestamp\""))
-        assertEquals(2, "\"serving\"".toRegex().findAll(createBody).count())
-        assertEquals("2023-09-12", requests[1].requestUrl!!.queryParameter("start"))
-        assertEquals("2024-09-15", requests[1].requestUrl!!.queryParameter("end"))
+        assertTrue(createBody.contains("\"eaten_at\":\"$timestamp\""))
+        assertEquals(2, "\"serving_id\"".toRegex().findAll(createBody).count())
+        assertEquals("2023-09-12", requests[1].requestUrl!!.queryParameter("start_date"))
+        assertEquals("2024-09-15", requests[1].requestUrl!!.queryParameter("end_date"))
         val updateBody = requests[2].body.readUtf8()
-        assertTrue(updateBody.contains("\"timestamp_utc\":\"$timestamp\""))
-        assertEquals(2, "\"serving\"".toRegex().findAll(updateBody).count())
+        assertTrue(updateBody.contains("\"eaten_at\":\"$timestamp\""))
+        assertEquals(2, "\"serving_id\"".toRegex().findAll(updateBody).count())
         assertTrue(requests[4].body.readUtf8().contains("\"foods\""))
     }
 
@@ -103,10 +104,10 @@ public class UserScopedClientTest {
     public fun scopedClientReusesIdentityAcrossDiscoveryResources(): Unit = runBlocking {
         listOf(
             """{"items":[]}""", FOOD_ITEM,
-            """{"total_count":0,"items":[]}""", """{"total_count":0,"items":[]}""",
-            """{"detections":[]}""", """{"alternatives":[]}""",
-            """{"total_count":0,"items":[]}""", """{"total_count":0,"items":[]}""",
-            """{"detections":[]}""", """{"detections":[]}""",
+            """{"items":[]}""", FOOD_ITEM,
+            """{"meal_name":null,"total_nutrients":{},"detections":[]}""", """{"alternatives":[]}""",
+            """{"items":[]}""", """{"items":[]}""",
+            """{"meal_name":null,"total_nutrients":{},"detections":[]}""", """{"meal_name":null,"total_nutrients":{},"detections":[]}""",
         ).forEach { server.enqueue(jsonResponse(it)) }
         val client = JanuaryPartnerClient.testing(
             apiKey = "fixture-api-key",
@@ -148,9 +149,7 @@ public class UserScopedClientTest {
         )
 
         val requests = List(10) { server.takeRequest() }
-        requests.forEach { request ->
-            assertEquals("scoped-user", request.getHeader("x-end-user-id"))
-        }
+        requests.forEach { request -> assertEquals(null, request.getHeader("January-End-User-ID")) }
     }
 
     @Test
@@ -173,8 +172,8 @@ public class UserScopedClientTest {
 
     private companion object {
         const val FOOD_ITEM =
-            """{"id":1,"name":"Banana","nutrients":{},"servings":[{"id":2,"quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
+            """{"id":"1","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":null,"servings":[{"id":"2","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
         const val FOOD_LOG =
-            """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"timestamp_utc":"2024-09-13T11:34:56Z","name":"Lunch"}"""
+            """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"eaten_at":"2024-09-13T11:34:56Z","name":"Lunch"}"""
     }
 }

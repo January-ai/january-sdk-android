@@ -30,20 +30,20 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param min Suggested Y-axis lower bound (mg/dL). A fixed target-range bound, not the minimum of the curve.
- * @param max Suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. Not the maximum of the curve.
+ * @param min Suggested Y-axis lower bound (mg/dL). A fixed target-range bound, not the minimum of the curve. Null when the model sent none.
+ * @param max Suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. Not the maximum of the curve. Null when the model sent none.
  */
 
 
 internal data class GlucoseChart (
 
-    /* Suggested Y-axis lower bound (mg/dL). A fixed target-range bound, not the minimum of the curve. */
+    /* Suggested Y-axis lower bound (mg/dL). A fixed target-range bound, not the minimum of the curve. Null when the model sent none. */
     @Json(name = "min")
-    val min: java.math.BigDecimal,
+    val min: java.math.BigDecimal?,
 
-    /* Suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. Not the maximum of the curve. */
+    /* Suggested Y-axis upper bound (mg/dL): 180 with Type 2 diabetes in health_conditions, otherwise 140. Not the maximum of the curve. Null when the model sent none. */
     @Json(name = "max")
-    val max: java.math.BigDecimal
+    val max: java.math.BigDecimal?
 
 ) {
 

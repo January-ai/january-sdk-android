@@ -30,56 +30,58 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param type When coordinates are provided and the name matches no restaurant, results may be menu items instead.
+ * @param type Always `restaurant`: this endpoint answers places only. For dishes, use `GET /v1.2/menu-items`.
  * @param id
- * @param name
- * @param isChain
- * @param distance Distance from (latitude, longitude) in meters; present only when coordinates were provided.
+ * @param name Null only when the source has no name for the place.
+ * @param isChain Whether this location belongs to a chain; null when unknown.
+ * @param distanceMeters Distance from (latitude, longitude) in meters; null when the source cannot place this result.
  * @param city
  * @param address1
- * @param address2
+ * @param address2 Second address line; null when there is none.
  */
 
 
 internal data class Restaurant (
 
-    /* When coordinates are provided and the name matches no restaurant, results may be menu items instead. */
+    /* Always `restaurant`: this endpoint answers places only. For dishes, use `GET /v1.2/menu-items`. */
     @Json(name = "type")
     val type: Restaurant.Type,
 
     @Json(name = "id")
     val id: kotlin.String,
 
+    /* Null only when the source has no name for the place. */
     @Json(name = "name")
-    val name: kotlin.String,
+    val name: kotlin.String?,
 
+    /* Whether this location belongs to a chain; null when unknown. */
     @Json(name = "is_chain")
-    val isChain: kotlin.Boolean? = null,
+    val isChain: kotlin.Boolean?,
 
-    /* Distance from (latitude, longitude) in meters; present only when coordinates were provided. */
-    @Json(name = "distance")
-    val distance: java.math.BigDecimal? = null,
+    /* Distance from (latitude, longitude) in meters; null when the source cannot place this result. */
+    @Json(name = "distance_meters")
+    val distanceMeters: java.math.BigDecimal?,
 
     @Json(name = "city")
-    val city: kotlin.String? = null,
+    val city: kotlin.String?,
 
     @Json(name = "address1")
-    val address1: kotlin.String? = null,
+    val address1: kotlin.String?,
 
+    /* Second address line; null when there is none. */
     @Json(name = "address2")
-    val address2: kotlin.String? = null
+    val address2: kotlin.String?
 
 ) {
 
     /**
-     * When coordinates are provided and the name matches no restaurant, results may be menu items instead.
+     * Always `restaurant`: this endpoint answers places only. For dishes, use `GET /v1.2/menu-items`.
      *
-     * Values: RESTAURANT,MENU_ITEM
+     * Values: RESTAURANT
      */
     @JsonClass(generateAdapter = false)
     internal enum class Type(val value: kotlin.String) {
-        @Json(name = "restaurant") RESTAURANT("restaurant"),
-        @Json(name = "menu_item") MENU_ITEM("menu_item");
+        @Json(name = "restaurant") RESTAURANT("restaurant");
     }
 
 }

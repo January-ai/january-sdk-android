@@ -23,7 +23,6 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.FoodLogInputServing
 import ai.january.partner.transport.models.NutritionFacts
 import ai.january.partner.transport.models.ServingDetails
 
@@ -33,47 +32,50 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param name
- * @param nutrients
- * @param consumedServing
- * @param servingDetails
- * @param brandName
+ * @param foodId Food id from a search or food-analysis result. Null only when the upstream sent a food with no id.
+ * @param name Null only when the upstream sent none.
+ * @param brandName Null for generic (non-branded) foods.
  * @param imageUrl
  * @param glycemicIndex
  * @param glycemicLoad
+ * @param nutrients
+ * @param quantity How many of the serving below were consumed. Null only when the upstream sent no consumed quantity.
+ * @param serving
  */
 
 
 internal data class LoggedFood (
 
-    /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
-    @Json(name = "id")
-    val id: kotlin.Long,
+    /* Food id from a search or food-analysis result. Null only when the upstream sent a food with no id. */
+    @Json(name = "food_id")
+    val foodId: kotlin.String?,
 
+    /* Null only when the upstream sent none. */
     @Json(name = "name")
-    val name: kotlin.String,
+    val name: kotlin.String?,
+
+    /* Null for generic (non-branded) foods. */
+    @Json(name = "brand_name")
+    val brandName: kotlin.String?,
+
+    @Json(name = "image_url")
+    val imageUrl: kotlin.String?,
+
+    @Json(name = "glycemic_index")
+    val glycemicIndex: java.math.BigDecimal?,
+
+    @Json(name = "glycemic_load")
+    val glycemicLoad: java.math.BigDecimal?,
 
     @Json(name = "nutrients")
     val nutrients: NutritionFacts,
 
-    @Json(name = "consumed_serving")
-    val consumedServing: FoodLogInputServing,
+    /* How many of the serving below were consumed. Null only when the upstream sent no consumed quantity. */
+    @Json(name = "quantity")
+    val quantity: java.math.BigDecimal?,
 
-    @Json(name = "serving_details")
-    val servingDetails: ServingDetails,
-
-    @Json(name = "brand_name")
-    val brandName: kotlin.String? = null,
-
-    @Json(name = "image_url")
-    val imageUrl: kotlin.String? = null,
-
-    @Json(name = "glycemic_index")
-    val glycemicIndex: java.math.BigDecimal? = null,
-
-    @Json(name = "glycemic_load")
-    val glycemicLoad: java.math.BigDecimal? = null
+    @Json(name = "serving")
+    val serving: ServingDetails
 
 ) {
 

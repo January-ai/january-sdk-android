@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.AlternativeFood
+import ai.january.partner.transport.models.RestaurantMenuItem
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -31,14 +31,15 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param food
+ * @param items The menu items, by name. Empty when the restaurant has no menu on record.
  */
 
 
-internal data class FoodAlternative (
+internal data class GetRestaurantMenuItemsResponse (
 
-    @Json(name = "food")
-    val food: AlternativeFood
+    /* The menu items, by name. Empty when the restaurant has no menu on record. */
+    @Json(name = "items")
+    val items: kotlin.collections.List<RestaurantMenuItem>
 
 ) {
 

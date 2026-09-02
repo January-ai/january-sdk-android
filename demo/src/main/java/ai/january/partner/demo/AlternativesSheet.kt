@@ -122,7 +122,7 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
     var restrictions by remember { mutableStateOf<Set<DietRestriction>>(emptySet()) }
     var preferences by remember { mutableStateOf<Set<DietPreference>>(emptySet()) }
     var result by remember { mutableStateOf<ai.january.partner.foods.SuggestFoodAlternativesResponse?>(null) }
-    var details by remember { mutableStateOf<Map<Long, FoodSearchItem>>(emptyMap()) }
+    var details by remember { mutableStateOf<Map<String, FoodSearchItem>>(emptyMap()) }
     var selected by remember { mutableStateOf<FoodSearchItem?>(null) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Throwable?>(null) }
@@ -133,7 +133,7 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
                 val response = client.foods.suggestAlternatives(SuggestFoodAlternativesRequest(food.id.value, restrictions.toList(), preferences.toList(), state.partnerUserId))
                 result = response; details = emptyMap()
                 details = kotlinx.coroutines.coroutineScope {
-                    response.alternatives.mapNotNull { it.food.id }.distinct().map { id -> async {
+                    response.alternatives.mapNotNull { it.id }.distinct().map { id -> async {
                         runCatching { id to client.foods.get(GetFoodRequest(ai.january.partner.FoodId(id), state.partnerUserId)) }.getOrNull()
                     } }.awaitAll().filterNotNull().toMap()
                 }
@@ -149,7 +149,7 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
                 DemoCard {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { Icon(Icons.Outlined.Eco, null, tint = JanuaryColors.Green); Text("Personalized suggestions", style = MaterialTheme.typography.labelMedium, color = JanuaryColors.Green) }
-                        Text(food.name, style = MaterialTheme.typography.headlineMedium)
+                        Text(food.name ?: "Unnamed food", style = MaterialTheme.typography.headlineMedium)
                         Text("Choose any dietary needs that should shape January’s recommendations.", color = JanuaryColors.Body)
                     }
                 }
@@ -167,15 +167,15 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
                     if (response.alternatives.isEmpty()) EmptyStateCard(Icons.Outlined.Eco, "No suitable alternatives", "No foods matched every selected dietary need.")
                     else SectionLabel("Suggestions · ${response.alternatives.size}")
                     response.alternatives.forEach { alternative ->
-                        val detail = details[alternative.food.id] ?: alternativeDetailFood(alternative.food)
+                        val detail = alternative.id?.let(details::get) ?: alternativeDetailFood(alternative)
                         DemoCard(if (detail != null) Modifier.clickable { selected = detail } else Modifier) {
                             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 NetworkImage(detail?.photoUrl, null, Modifier.size(58.dp))
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                                    Text(alternative.food.name, style = MaterialTheme.typography.titleMedium)
-                                    alternative.food.brandName?.takeIf(String::isNotBlank)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted) }
-                                    alternative.food.servings?.firstOrNull()?.let { Text("${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit}", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted) }
-                                    val n = alternative.food.nutrients
+                                    Text(alternative.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
+                                    alternative.brandName?.takeIf(String::isNotBlank)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted) }
+                                    alternative.servings?.firstOrNull()?.let { Text("${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit.orEmpty()}", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted) }
+                                    val n = alternative.nutrients
                                     Text(listOfNotNull(n.calories?.value?.let { "${it.toInt()} cal" }, n.protein?.value?.let { "P ${formatMetricNumber(it)}g" }, n.carbohydrates?.value?.let { "C ${formatMetricNumber(it)}g" }, n.totalFat?.value?.let { "F ${formatMetricNumber(it)}g" }).joinToString("  "), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = JanuaryColors.Muted)
                                 }
                                 if (detail != null) Icon(Icons.Outlined.ChevronRight, "Open food details", tint = JanuaryColors.Subdued)
@@ -198,7 +198,7 @@ internal fun alternativeDetailFood(food: ai.january.partner.foods.DetectedFood):
         netCarbohydrates = n.netCarbohydrates?.value, totalFat = n.totalFat?.value, saturatedFat = n.saturatedFat?.value,
         fiber = n.fiber?.value, totalSugars = n.totalSugars?.value, addedSugars = n.addedSugars?.value, sodium = n.sodium?.value,
         potassium = null, cholesterol = null, glycemicIndex = null, glycemicLoad = null, photoUrl = null,
-        servings = servings.mapIndexed { index, serving -> ServingOption(ai.january.partner.ServingId(serving.id), serving.quantity ?: 1.0, serving.unit, 1.0, weightGrams = null, isPrimary = index == 0) })
+        servings = servings.mapIndexed { index, serving -> ServingOption(serving.id?.let { ai.january.partner.ServingId(it) }, serving.quantity ?: 1.0, serving.unit, 1.0, weightGrams = null, isPrimary = index == 0) })
 }
 
 private fun String.dietLabel(): String = replace('_', ' ').split(' ').joinToString(" ") { it.replaceFirstChar(Char::uppercase) }

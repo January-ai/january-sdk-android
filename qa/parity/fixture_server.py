@@ -37,15 +37,16 @@ class Handler(BaseHTTPRequestHandler):
   status=int(rule.get('status',200));empty=rule.get('empty')=='true'
   if status!=200:
    if status==404 and '/restaurants/' in path and path.endswith('/menu-items'):
-    return self.respond(dict(code='not_found',message='No v1.2 endpoint matches GET '+path+'. The API reference at /v1.2/docs lists every route.'),status)
+    restaurant_id=path.split('/restaurants/',1)[1].split('/menu-items',1)[0]
+    return self.respond(dict(code='not_found',message='No restaurant with id '+restaurant_id+'. Use an id from a GET /v1.2/restaurants result.'),status)
    return self.respond(dict(code='fixture_error',message='The test request could not be completed.',request_id='parity-request',docs_url='https://example.invalid/fixture-docs'),status)
   if path.endswith('/autocomplete'):result=dict(items=[])
   elif path.endswith('/alternatives'):result=dict(alternatives=[] if empty else [dict(food=food(102,'Fixture lentils'))])
   elif path.endswith('/foods/101'):result=food()
   elif path.endswith('/foods/102'):result=food(102,'Fixture lentils')
   elif path.endswith('/foods') or '/foods/barcode/' in path:result=dict(total_count=0 if empty else 1,items=[] if empty else [food(full=False)])
-  elif path.endswith('/restaurants/cafe/menu-items'):result=dict(total_count=0 if empty else 2,items=[] if empty or int(q.get('offset',0)) >= 2 else [dict(type='menu_item',id=str(101+int(q.get('offset',0))),name='Fixture bowl' if q.get('offset','0') == '0' else 'Fixture soup',restaurant_name='Fixture Cafe',image_url='',nutrients=NUTRIENTS,servings=SERVINGS)])
-  elif path.endswith('/restaurants/menu-items'):
+  elif path.endswith('/restaurants/cafe/menu-items'):result=dict(items=[] if empty or int(q.get('offset',0)) > 0 else [dict(id='101',name='Fixture bowl',nutrients=NUTRIENTS,servings=SERVINGS),dict(id='102',name='Fixture soup',nutrients=NUTRIENTS,servings=SERVINGS)])
+  elif path.endswith('/menu-items') and '/restaurants/' not in path:
    restaurant_name='Fixture Cafe'
    result=dict(total_count=0 if empty else 2,items=[] if empty else [dict(type='menu_item',id='101',name='Fixture bowl',restaurant_name=restaurant_name,image_url='',nutrients=NUTRIENTS,servings=SERVINGS),dict(type='menu_item',id='102',name='Fixture soup',restaurant_name=restaurant_name,image_url='',nutrients=NUTRIENTS,servings=SERVINGS)])
   elif path.endswith('/restaurants'):result=dict(total_count=0 if empty else 1,items=[] if empty else [dict(type='restaurant',id='cafe',name='Fixture Cafe',city='San Francisco',address1='123 Test Street',is_chain=False)])

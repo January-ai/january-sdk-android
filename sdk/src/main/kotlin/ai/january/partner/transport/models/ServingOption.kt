@@ -30,7 +30,7 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
+ * @param id Opaque serving id; may look numeric but is always a string.
  * @param quantity
  * @param unit
  * @param scalingFactor Multiplier applied to the food's nutrition values for this serving.
@@ -41,26 +41,26 @@ import com.squareup.moshi.JsonClass
 
 internal data class ServingOption (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
+    /* Opaque serving id; may look numeric but is always a string. */
     @Json(name = "id")
-    val id: kotlin.Long,
+    val id: kotlin.String?,
 
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal,
+    val quantity: java.math.BigDecimal?,
 
     @Json(name = "unit")
-    val unit: kotlin.String,
+    val unit: kotlin.String?,
 
     /* Multiplier applied to the food's nutrition values for this serving. */
     @Json(name = "scaling_factor")
-    val scalingFactor: java.math.BigDecimal = java.math.BigDecimal.ONE,
+    val scalingFactor: java.math.BigDecimal?,
 
     @Json(name = "weight_grams")
     val weightGrams: java.math.BigDecimal?,
 
     /* Whether this is the default serving for the food. */
     @Json(name = "is_primary")
-    val isPrimary: kotlin.Boolean
+    val isPrimary: kotlin.Boolean?
 
 ) {
 

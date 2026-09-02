@@ -118,9 +118,9 @@ internal fun EmptySearchCard(title: String, message: String) {
 @Composable
 internal fun FoodResultCard(food: FoodSearchItem, onClick: () -> Unit) {
     FoodRow(
-        name = food.name,
+        name = food.name ?: "Unnamed food",
         subtitle = food.brandName,
-        meta = listOfNotNull(food.calories?.let { "${it.toInt()} cal" }, primaryServing(food)?.let { "${formatDemoNumber(it.quantity)} ${it.unit}" }).joinToString(" · "),
+        meta = listOfNotNull(food.calories?.let { "${it.toInt()} cal" }, primaryServing(food)?.let { "${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit.orEmpty()}" }).joinToString(" · "),
         imageUrl = food.photoUrl,
         onClick = onClick,
         contentPadding = PaddingValues(vertical = 12.dp),
@@ -133,7 +133,7 @@ internal fun RestaurantResultCard(restaurant: Restaurant, onClick: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FoodLogMealIcon()
             Column(Modifier.weight(1f)) {
-                Text(restaurant.name, style = MaterialTheme.typography.titleMedium)
+                Text(restaurant.name ?: "Restaurant", style = MaterialTheme.typography.titleMedium)
                 Text(listOfNotNull(restaurant.city, restaurant.distance?.let { "%.1f mi".format(it / 1609.344) }).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Outlined.ChevronRight, contentDescription = null)
@@ -159,8 +159,8 @@ internal fun MenuItemRow(item: RestaurantMenuItem, modifier: Modifier = Modifier
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         NetworkImage(item.photoUrl, null, Modifier.size(56.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(item.name, style = MaterialTheme.typography.titleMedium)
-            Text(item.restaurantName, color = JanuaryColors.Muted)
+            Text(item.name ?: "Unnamed menu item", style = MaterialTheme.typography.titleMedium)
+            Text(item.restaurantName ?: "Restaurant", color = JanuaryColors.Muted)
             item.calories?.let { Text("${it.toInt()} cal", style = MaterialTheme.typography.labelSmall) }
         }
         Icon(Icons.Outlined.ChevronRight, null, tint = JanuaryColors.Subdued)

@@ -31,36 +31,51 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param name Generic foods are lowercase; branded foods keep their product name.
- * @param brandName Absent for generic (non-branded) foods.
- * @param imageUrl Thumbnail of the food, when the database has one.
+ * @param id Opaque id — the same id `GET /v1.2/foods/{food_id}` takes.
+ * @param type What kind of food this is: `generic` for a database staple (\"banana\"), `branded` for a packaged product, `recipe` for a multi-ingredient dish.
+ * @param name Generic foods are lowercase; branded foods keep their product name. Null only when the index has no name for the row.
+ * @param brandName null for generic (non-branded) foods.
+ * @param imageUrl Thumbnail of the food; null when the database has none.
  * @param nutrients
  */
 
 
 internal data class FoodSuggestion (
 
-    /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
+    /* Opaque id — the same id `GET /v1.2/foods/{food_id}` takes. */
     @Json(name = "id")
-    val id: kotlin.Long,
+    val id: kotlin.String,
 
-    /* Generic foods are lowercase; branded foods keep their product name. */
+    /* What kind of food this is: `generic` for a database staple (\"banana\"), `branded` for a packaged product, `recipe` for a multi-ingredient dish. */
+    @Json(name = "type")
+    val type: FoodSuggestion.Type,
+
+    /* Generic foods are lowercase; branded foods keep their product name. Null only when the index has no name for the row. */
     @Json(name = "name")
-    val name: kotlin.String,
+    val name: kotlin.String?,
 
-    /* Absent for generic (non-branded) foods. */
+    /* null for generic (non-branded) foods. */
     @Json(name = "brand_name")
-    val brandName: kotlin.String? = null,
+    val brandName: kotlin.String?,
 
-    /* Thumbnail of the food, when the database has one. */
+    /* Thumbnail of the food; null when the database has none. */
     @Json(name = "image_url")
-    val imageUrl: kotlin.String? = null,
+    val imageUrl: kotlin.String?,
 
     @Json(name = "nutrients")
-    val nutrients: NutritionFacts? = null
+    val nutrients: NutritionFacts
 
 ) {
 
+    /**
+     * What kind of food this is: `generic` for a database staple (\"banana\"), `branded` for a packaged product, `recipe` for a multi-ingredient dish.
+     *
+     * Values: GENERIC,BRANDED
+     */
+    @JsonClass(generateAdapter = false)
+    internal enum class Type(val value: kotlin.String) {
+        @Json(name = "generic") GENERIC("generic"),
+        @Json(name = "branded") BRANDED("branded");
+    }
 
 }

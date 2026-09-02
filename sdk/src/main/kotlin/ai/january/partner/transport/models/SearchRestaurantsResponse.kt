@@ -31,17 +31,13 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param totalCount Total number of matches; may exceed the number of items returned.
- * @param items
+ * @param items Matches ranked by proximity. Empty when nothing matches — not an error.
  */
 
 
 internal data class SearchRestaurantsResponse (
 
-    /* Total number of matches; may exceed the number of items returned. */
-    @Json(name = "total_count")
-    val totalCount: java.math.BigDecimal,
-
+    /* Matches ranked by proximity. Empty when nothing matches — not an error. */
     @Json(name = "items")
     val items: kotlin.collections.List<Restaurant>
 

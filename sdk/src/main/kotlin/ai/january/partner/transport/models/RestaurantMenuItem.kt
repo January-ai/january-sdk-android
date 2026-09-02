@@ -32,59 +32,39 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param type
- * @param id Opaque restaurant menu-item identifier.
- * @param name
- * @param restaurantName
- * @param servings
- * @param isChain
+ * @param id Food id of the dish — the same id `GET /v1.2/foods/{food_id}` and `POST /v1.2/food-logs` take. Null only when the menu source carries no id for the row.
+ * @param name Null only when the menu source has no name for the dish.
  * @param nutrients
- * @param glycemicIndex Glycemic index.
- * @param glycemicLoad Glycemic load.
- * @param imageUrl URL of a picture of the dish, when the source has one.
- * @param distance Distance from (latitude, longitude) in meters.
+ * @param glycemicIndex Glycemic index; null when the source has none.
+ * @param glycemicLoad Glycemic load; null when the source has none.
+ * @param servings The serving the nutrition is given for. `GET /v1.2/foods/{food_id}` returns the complete list of servings.
  */
 
 
 internal data class RestaurantMenuItem (
 
-    @Json(name = "type")
-    val type: kotlin.String,
-
-    /* Opaque restaurant menu-item identifier. */
+    /* Food id of the dish — the same id `GET /v1.2/foods/{food_id}` and `POST /v1.2/food-logs` take. Null only when the menu source carries no id for the row. */
     @Json(name = "id")
-    val id: kotlin.String,
+    val id: kotlin.String?,
 
+    /* Null only when the menu source has no name for the dish. */
     @Json(name = "name")
-    val name: kotlin.String,
-
-    @Json(name = "restaurant_name")
-    val restaurantName: kotlin.String,
-
-    @Json(name = "servings")
-    val servings: kotlin.collections.List<ServingOption>,
-
-    @Json(name = "is_chain")
-    val isChain: kotlin.Boolean? = null,
+    val name: kotlin.String?,
 
     @Json(name = "nutrients")
-    val nutrients: NutritionFacts? = null,
+    val nutrients: NutritionFacts,
 
-    /* Glycemic index. */
+    /* Glycemic index; null when the source has none. */
     @Json(name = "glycemic_index")
-    val glycemicIndex: java.math.BigDecimal? = null,
+    val glycemicIndex: java.math.BigDecimal?,
 
-    /* Glycemic load. */
+    /* Glycemic load; null when the source has none. */
     @Json(name = "glycemic_load")
-    val glycemicLoad: java.math.BigDecimal? = null,
+    val glycemicLoad: java.math.BigDecimal?,
 
-    /* URL of a picture of the dish, when the source has one. */
-    @Json(name = "image_url")
-    val imageUrl: kotlin.String? = null,
-
-    /* Distance from (latitude, longitude) in meters. */
-    @Json(name = "distance")
-    val distance: java.math.BigDecimal? = null
+    /* The serving the nutrition is given for. `GET /v1.2/foods/{food_id}` returns the complete list of servings. */
+    @Json(name = "servings")
+    val servings: kotlin.collections.List<ServingOption>
 
 ) {
 

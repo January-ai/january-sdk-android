@@ -85,7 +85,7 @@ import ai.january.partner.foods.FoodSuggestion
 import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
-import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
+import ai.january.partner.photos.FoodScan
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
@@ -144,7 +144,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var foodResults by remember { mutableStateOf<List<FoodSearchItem>>(emptyList()) }
     var foodResultLimit by remember { mutableStateOf(10) }
     var foodLimitMenuOpen by remember { mutableStateOf(false) }
-    var naturalResult by remember { mutableStateOf<SearchFoodsByNaturalLanguageResponse?>(null) }
+    var naturalResult by remember { mutableStateOf<FoodScan?>(null) }
     var restaurants by remember { mutableStateOf<List<Restaurant>>(emptyList()) }
     var menuItems by remember { mutableStateOf<List<RestaurantMenuItem>>(emptyList()) }
     var selectedFood by remember { mutableStateOf<FoodSearchItem?>(null) }
@@ -236,7 +236,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     LaunchedEffect(scope, foodMode, category, query, client, state.partnerUserId) {
         val value = query.trim()
         val autocompleteCategory = when (category) {
-            FoodCategory.GENERAL -> AutocompleteFoodCategory.GENERAL
+            FoodCategory.GENERIC, FoodCategory.GENERAL -> AutocompleteFoodCategory.GENERIC
             FoodCategory.BRANDED -> AutocompleteFoodCategory.BRANDED
             FoodCategory.RECIPE, null -> null
         }
@@ -320,10 +320,11 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 if (foodSuggestions.isNotEmpty()) {
                     item {
                         FoodSuggestionList(foodSuggestions) { suggestion ->
-                            autocompleteSuppressedQuery = suggestion.name
-                            query = suggestion.name
+                            val suggestionName = suggestion.name ?: return@FoodSuggestionList
+                            autocompleteSuppressedQuery = suggestionName
+                            query = suggestionName
                             foodSuggestions = emptyList()
-                            submit(suggestion.name)
+                            submit(suggestionName)
                         }
                     }
                 }
@@ -349,7 +350,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                             ChipSelector(
                                 options = listOf(
                                     ChipOption(null, "All"),
-                                    ChipOption(FoodCategory.GENERAL, "General"),
+                                    ChipOption(FoodCategory.GENERIC, "General"),
                                     ChipOption(FoodCategory.BRANDED, "Branded"),
                                     ChipOption(FoodCategory.RECIPE, "Recipe"),
                                 ),
@@ -457,7 +458,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     }
                     items(natural.detections) { detection ->
                         DemoCard {
-                            Text(detection.food.name, style = MaterialTheme.typography.titleMedium)
+                            Text(detection.food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
                             detection.food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
                             ScanStyleMacroStrip(
                                 detection.food.nutrients.calories?.value,

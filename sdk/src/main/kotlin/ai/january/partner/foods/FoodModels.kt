@@ -6,13 +6,15 @@ import ai.january.partner.ServingId
 import ai.january.partner.models.NutritionFacts
 
 public enum class FoodCategory {
-    GENERAL,
+    GENERIC,
+    @Deprecated("Use GENERIC") GENERAL,
     BRANDED,
     RECIPE,
 }
 
 public enum class AutocompleteFoodCategory {
-    GENERAL,
+    GENERIC,
+    @Deprecated("Use GENERIC") GENERAL,
     BRANDED,
 }
 
@@ -25,7 +27,7 @@ public data class AutocompleteFoodsRequest(
 
 public data class FoodSuggestion(
     public val id: FoodId,
-    public val name: String,
+    public val name: String?,
     public val brandName: String? = null,
     public val imageUrl: String? = null,
     public val nutrients: NutritionFacts? = null,
@@ -52,7 +54,7 @@ public data class FoodSearchResults(
 
 public data class FoodSearchItem(
     public val id: FoodId,
-    public val name: String,
+    public val name: String?,
     public val brandName: String?,
     public val calories: Double?,
     public val protein: Double?,
@@ -69,15 +71,17 @@ public data class FoodSearchItem(
     public val glycemicIndex: Double?,
     public val glycemicLoad: Double?,
     public val photoUrl: String?,
+    public val barcode: String? = null,
     public val servings: List<ServingOption>,
     public val nutrients: NutritionFacts? = null,
+    public val type: FoodCategory = FoodCategory.GENERIC,
 )
 
 public data class ServingOption(
-    public val id: ServingId,
-    public val quantity: Double,
-    public val unit: String,
+    public val id: ServingId?,
+    public val quantity: Double?,
+    public val unit: String?,
     public val scalingFactor: Double,
     public val weightGrams: Double?,
-    public val isPrimary: Boolean,
+    public val isPrimary: Boolean?,
 )

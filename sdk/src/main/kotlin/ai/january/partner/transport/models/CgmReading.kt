@@ -30,13 +30,14 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param timestamp
+ * @param timestamp When the reading was taken. Must carry a timezone designator.
  * @param `value` mg/dL. At most one reading per 15-minute window.
  */
 
 
 internal data class CgmReading (
 
+    /* When the reading was taken. Must carry a timezone designator. */
     @Json(name = "timestamp")
     val timestamp: java.time.OffsetDateTime,
 

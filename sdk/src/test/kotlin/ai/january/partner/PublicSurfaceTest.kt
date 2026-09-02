@@ -3,6 +3,7 @@ package ai.january.partner
 import ai.january.partner.foodlogs.CreateFoodLogRequest
 import ai.january.partner.foodlogs.DeleteFoodLogRequest
 import ai.january.partner.foodlogs.FoodLogUserContext
+import ai.january.partner.foodlogs.GetFoodLogRequest
 import ai.january.partner.foodlogs.ListFoodLogsRequest
 import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
@@ -23,6 +24,7 @@ import ai.january.partner.foods.DetectedFood
 import ai.january.partner.foods.DetectedServing
 import ai.january.partner.models.CompleteScanNutritionFacts
 import ai.january.partner.restaurants.SearchRestaurantsRequest
+import ai.january.partner.restaurants.GetRestaurantMenuItemsRequest
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import kotlinx.coroutines.runBlocking
@@ -51,11 +53,11 @@ public class PublicSurfaceTest {
     @Test
     public fun allContractOperationsAreExposedThroughThePublicClient(): Unit = runBlocking {
         val responses = listOf(
-            """{"items":[]}""", foodItem, envelope, envelope,
-            """{"detections":[]}""", """{"alternatives":[]}""",
-            envelope, envelope, photo, photo, foodLog, """{"total_count":0,"items":[]}""",
-            foodLog, """{"status":"deleted"}""",
-            """{"prediction":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
+            """{"items":[]}""", foodItem, envelope, foodItem,
+            photo, """{"alternatives":[]}""",
+            envelope, envelope, envelope, photo, photo, foodLog, envelope,
+            foodLog, foodLog, "",
+            """{"points":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
         )
         responses.forEach { body ->
             server.enqueue(MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(body))
@@ -85,12 +87,15 @@ public class PublicSurfaceTest {
         client.foods.suggestAlternatives(SuggestFoodAlternativesRequest(1, endUserId = userId))
         client.restaurants.search(SearchRestaurantsRequest("cafe", 40.0, -74.0, endUserId = userId))
         client.restaurants.searchMenuItems(SearchRestaurantsRequest("salad", 40.0, -74.0, endUserId = userId))
+        client.restaurants.getMenuItems(GetRestaurantMenuItemsRequest("restaurant-1", endUserId = userId))
         client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("fixture-image", userId))
-        client.foodAnalysis.correct(CorrectPhotoScanRequest("Meal", listOf(detection), "Add banana", userId))
+        client.foodAnalysis.correct(CorrectPhotoScanRequest(ai.january.partner.photos.FoodScan("Meal", CompleteScanNutritionFacts(), listOf(detection)), "Add banana", userId))
         val created = client.foodLogs.create(CreateFoodLogRequest(listOf(food), user = user))
+        val logId = requireNotNull(created.id)
         client.foodLogs.list(ListFoodLogsRequest("2026-08-21", "2026-08-23", user))
-        client.foodLogs.update(UpdateFoodLogRequest(created.id, name = "Updated", user = user))
-        client.foodLogs.delete(DeleteFoodLogRequest(created.id, user))
+        client.foodLogs.get(GetFoodLogRequest(logId, user))
+        client.foodLogs.update(UpdateFoodLogRequest(logId, name = "Updated", user = user))
+        client.foodLogs.delete(DeleteFoodLogRequest(logId, user))
         client.glucose.predict(
             PredictGlucoseRequest(
                 GlucosePredictionProfile(35.0, Gender.MALE, 70.0, 175.0),
@@ -98,13 +103,14 @@ public class PublicSurfaceTest {
             ),
         )
 
-        val paths = List(15) { server.takeRequest().requestUrl!!.encodedPath }
+        val paths = List(17) { server.takeRequest().requestUrl!!.encodedPath }
         assertEquals(
             listOf(
                 "/v1.2/foods/autocomplete", "/v1.2/foods/1", "/v1.2/foods",
-                "/v1.2/foods/barcode/049000006346", "/v1.2/food-scans/text",
-                "/v1.2/foods/1/alternatives", "/v1.2/restaurants", "/v1.2/restaurants/menu-items",
-                "/v1.2/food-scans/photo", "/v1.2/food-scans/corrections", "/v1.2/food-logs", "/v1.2/food-logs",
+                "/v1.2/foods/barcode/049000006346", "/v1.2/food-analysis/text",
+                "/v1.2/foods/1/alternatives", "/v1.2/restaurants", "/v1.2/menu-items",
+                "/v1.2/restaurants/restaurant-1/menu-items", "/v1.2/food-analysis/image", "/v1.2/food-analysis/corrections", "/v1.2/food-logs", "/v1.2/food-logs",
+                "/v1.2/food-logs/00000000-0000-0000-0000-000000000001",
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001",
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001", "/v1.2/glucose/predictions",
             ),
@@ -114,8 +120,8 @@ public class PublicSurfaceTest {
 
     private companion object {
         const val envelope = """{"total_count":0,"items":[]}"""
-        const val foodItem = """{"id":1,"name":"Banana","nutrients":{},"servings":[{"id":2,"quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
-        const val photo = """{"meal_name":"Fixture meal","detections":[]}"""
-        const val foodLog = """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"timestamp_utc":"2026-08-22T12:00:00Z","name":"Fixture"}"""
+        const val foodItem = """{"id":"1","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":null,"servings":[{"id":"2","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
+        const val photo = """{"meal_name":"Fixture meal","total_nutrients":{},"detections":[]}"""
+        const val foodLog = """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"eaten_at":"2026-08-22T12:00:00Z","name":"Fixture"}"""
     }
 }

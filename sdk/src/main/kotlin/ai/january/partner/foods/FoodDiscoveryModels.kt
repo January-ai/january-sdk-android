@@ -10,16 +10,16 @@ public data class SearchFoodsByNaturalLanguageRequest(public val query: String, 
 
 @JsonClass(generateAdapter = false)
 public data class NaturalLanguageServing(
-    public val id: Long,
+    public val id: String?,
     public val quantity: Double? = null,
-    public val unit: String,
+    public val unit: String?,
     @Json(name = "selected_quantity") public val selectedQuantity: Double? = null,
 )
 
 @JsonClass(generateAdapter = false)
 public data class NaturalLanguageFood(
-    public val id: Long? = null,
-    public val name: String,
+    public val id: String? = null,
+    public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     public val nutrients: CompleteScanNutritionFacts,
     public val servings: List<NaturalLanguageServing>? = null,
@@ -49,26 +49,43 @@ public enum class DietPreference(public val value: String) {
 }
 
 public data class SuggestFoodAlternativesRequest(
-    public val foodId: Long,
+    public val foodId: String,
     public val dietRestrictions: List<DietRestriction> = emptyList(),
     public val dietPreferences: List<DietPreference> = emptyList(),
     public val endUserId: PartnerUserId? = null,
-)
+) {
+    public constructor(
+        foodId: Long,
+        dietRestrictions: List<DietRestriction> = emptyList(),
+        dietPreferences: List<DietPreference> = emptyList(),
+        endUserId: PartnerUserId? = null,
+    ) : this(foodId.toString(), dietRestrictions, dietPreferences, endUserId)
+}
 
 @JsonClass(generateAdapter = false)
-public data class DetectedServing(public val id: Long, public val quantity: Double? = null, public val unit: String)
+public data class DetectedServing(
+    public val id: String?, public val quantity: Double? = null, public val unit: String?,
+    public val selectedQuantity: Double? = null,
+) {
+    public constructor(id: Long, quantity: Double? = null, unit: String) :
+        this(id.toString(), quantity, unit, null)
+}
 
 @JsonClass(generateAdapter = false)
 public data class DetectedFood(
-    public val id: Long? = null,
-    public val name: String,
+    public val id: String? = null,
+    public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     public val nutrients: CompleteScanNutritionFacts,
     public val servings: List<DetectedServing>? = null,
-)
+) {
+    public constructor(
+        id: Long?, name: String?, brandName: String? = null,
+        nutrients: CompleteScanNutritionFacts, servings: List<DetectedServing>? = null,
+    ) : this(id?.toString(), name, brandName, nutrients, servings)
+}
 
-@JsonClass(generateAdapter = false)
-public data class FoodAlternative(public val food: DetectedFood)
+public typealias FoodAlternative = DetectedFood
 
 @JsonClass(generateAdapter = false)
 public data class SuggestFoodAlternativesResponse(public val alternatives: List<FoodAlternative>)

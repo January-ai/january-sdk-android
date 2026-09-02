@@ -30,15 +30,15 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param status Deletion is idempotent — an unknown or already-deleted log_id returns the same response.
+ * @param endUserId The end user whose outstanding client tokens should all be revoked.
  */
 
 
-internal data class DeleteFoodLogResponse (
+internal data class RevokeClientTokensBody (
 
-    /* Deletion is idempotent — an unknown or already-deleted log_id returns the same response. */
-    @Json(name = "status")
-    val status: kotlin.String
+    /* The end user whose outstanding client tokens should all be revoked. */
+    @Json(name = "end_user_id")
+    val endUserId: kotlin.String
 
 ) {
 

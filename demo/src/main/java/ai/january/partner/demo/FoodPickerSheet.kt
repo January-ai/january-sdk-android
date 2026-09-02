@@ -173,10 +173,11 @@ internal fun FoodPickerSheet(
                     FoodSuggestionList(
                         suggestions = suggestions,
                         onSelect = { suggestion ->
-                            autocompleteSuppressedQuery = suggestion.name
-                            query = suggestion.name
+                            val suggestionName = suggestion.name ?: return@FoodSuggestionList
+                            autocompleteSuppressedQuery = suggestionName
+                            query = suggestionName
                             suggestions = emptyList()
-                            search(suggestion.name)
+                            search(suggestionName)
                         },
                     )
                 }

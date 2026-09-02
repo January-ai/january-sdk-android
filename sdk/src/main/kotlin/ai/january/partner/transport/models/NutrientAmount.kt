@@ -31,7 +31,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param `value`
- * @param unit
+ * @param unit Canonical across the API: g, mg, kcal, IU.
  */
 
 
@@ -40,6 +40,7 @@ internal data class NutrientAmount (
     @Json(name = "value")
     val `value`: java.math.BigDecimal,
 
+    /* Canonical across the API: g, mg, kcal, IU. */
     @Json(name = "unit")
     val unit: kotlin.String
 

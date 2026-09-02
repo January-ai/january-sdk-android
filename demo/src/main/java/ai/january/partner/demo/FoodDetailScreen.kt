@@ -146,10 +146,10 @@ internal fun FoodDetailScreen(state: DemoState, food: FoodSearchItem, onBack: ()
                     NetworkImage(detailFood.photoUrl, detailFood.name, Modifier.fillMaxSize().padding(18.dp), contentScale = ContentScale.Fit)
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(detailFood.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                    Text(detailFood.name ?: "Unnamed food", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                     detailFood.brandName?.let { Text(it, color = JanuaryColors.Muted) }
                 }
-                ServingControls(detailFood.servings, serving, quantity, { serving = it; quantity = it.quantity }, { quantity = it })
+                ServingControls(detailFood.servings, serving, quantity, { serving = it; quantity = it.quantity ?: 1.0 }, { quantity = it })
                 DemoCard { ScanStyleMacroStrip(portion?.nutrition?.calories?.value, portion?.nutrition?.protein?.value, portion?.nutrition?.carbohydrates?.value, portion?.nutrition?.totalFat?.value) }
                 val facts = listOf(
                     "Net carbohydrates" to portion?.nutrition?.netCarbohydrates,
@@ -180,7 +180,7 @@ internal fun FoodDetailScreen(state: DemoState, food: FoodSearchItem, onBack: ()
         }
     }
     if (showAlternatives) AlternativesSheet(state, detailFood) { showAlternatives = false }
-    if (showGlucose && serving != null && state.client != null) FoodGlucoseSheet(state.client!!, detailFood.id, detailFood.name, serving!!, quantity, state.partnerUserId, state.timezone) { showGlucose = false }
+    if (showGlucose && serving != null && state.client != null) FoodGlucoseSheet(state.client!!, detailFood.id, detailFood.name ?: "Unnamed food", serving!!, quantity, state.partnerUserId, state.timezone) { showGlucose = false }
 }
 internal fun servingLabel(serving: ServingOption): String = buildString {
     append(serving.unit)

@@ -35,9 +35,10 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param userProfile
+ * @param timezone The IANA timezone the end user is in. The prediction depends on the meal's local time of day.
  * @param foods The meal to predict the glucose response for.
  * @param startTime When the meal is (or will be) eaten. Must carry a timezone designator.
- * @param cgmData Optional CGM history for personalization; requires consumed_foods.
+ * @param cgmData Optional CGM history, to personalize the prediction to this end user. Send it together with `consumed_foods` covering the same period — **at least 5 complete days of paired history**, which is what the model needs to train on them. Fewer is refused with `invalid_request`. Omit both fields for a standard prediction, which needs no sensor and no history.
  * @param consumedFoods The meals eaten during the CGM history; requires cgm_data.
  */
 
@@ -47,6 +48,10 @@ internal data class PredictGlucoseBody (
     @Json(name = "user_profile")
     val userProfile: GlucosePredictionProfile,
 
+    /* The IANA timezone the end user is in. The prediction depends on the meal's local time of day. */
+    @Json(name = "timezone")
+    val timezone: kotlin.String,
+
     /* The meal to predict the glucose response for. */
     @Json(name = "foods")
     val foods: kotlin.collections.List<FoodLogInputFood>,
@@ -55,7 +60,7 @@ internal data class PredictGlucoseBody (
     @Json(name = "start_time")
     val startTime: java.time.OffsetDateTime,
 
-    /* Optional CGM history for personalization; requires consumed_foods. */
+    /* Optional CGM history, to personalize the prediction to this end user. Send it together with `consumed_foods` covering the same period — **at least 5 complete days of paired history**, which is what the model needs to train on them. Fewer is refused with `invalid_request`. Omit both fields for a standard prediction, which needs no sensor and no history. */
     @Json(name = "cgm_data")
     val cgmData: kotlin.collections.List<CgmReading>? = null,
 

@@ -23,8 +23,8 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.CompleteScanNutritionFacts
 import ai.january.partner.transport.models.DetectedServing
+import ai.january.partner.transport.models.NutritionFacts
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -32,33 +32,34 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param name
+ * @param id Catalog food id, or null when the producer matched none.
+ * @param name Null only when the producer sent a food with no name.
+ * @param brandName Null for generic (non-branded) foods.
  * @param nutrients
  * @param servings Never empty: every detection producer guarantees at least one serving.
- * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param brandName Empty for generic (non-branded) foods.
  */
 
 
 internal data class DetectedFood (
 
+    /* Catalog food id, or null when the producer matched none. */
+    @Json(name = "id")
+    val id: kotlin.String?,
+
+    /* Null only when the producer sent a food with no name. */
     @Json(name = "name")
-    val name: kotlin.String,
+    val name: kotlin.String?,
+
+    /* Null for generic (non-branded) foods. */
+    @Json(name = "brand_name")
+    val brandName: kotlin.String?,
 
     @Json(name = "nutrients")
-    val nutrients: CompleteScanNutritionFacts,
+    val nutrients: NutritionFacts,
 
     /* Never empty: every detection producer guarantees at least one serving. */
     @Json(name = "servings")
-    val servings: kotlin.collections.List<DetectedServing>,
-
-    /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
-    @Json(name = "id")
-    val id: kotlin.Long? = null,
-
-    /* Empty for generic (non-branded) foods. */
-    @Json(name = "brand_name")
-    val brandName: kotlin.String? = null
+    val servings: kotlin.collections.List<DetectedServing>
 
 ) {
 

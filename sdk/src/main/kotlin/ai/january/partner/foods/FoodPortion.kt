@@ -19,7 +19,7 @@ public class FoodPortion private constructor(
 ) {
     /** The exact selection sent by food-log and glucose-prediction requests. */
     public val selection: FoodSelection
-        get() = FoodSelection(foodId.value, ServingSelection(serving.id.value, quantity))
+        get() = FoodSelection(foodId.value, ServingSelection(requireNotNull(serving.id).value, quantity))
 
     public companion object {
         @JvmStatic
@@ -30,28 +30,29 @@ public class FoodPortion private constructor(
         ): FoodPortion {
             if (food.servings.isEmpty()) fail(FoodPortionError.NO_SERVINGS)
             val selected = if (servingId == null) {
-                food.servings.firstOrNull { it.isPrimary } ?: food.servings.first()
+                food.servings.firstOrNull { it.isPrimary == true } ?: food.servings.first()
             } else {
                 food.servings.firstOrNull { it.id == servingId }
                     ?: fail(FoodPortionError.SERVING_NOT_FOUND)
             }
-            if (!selected.quantity.isFinite() || selected.quantity <= 0 ||
+            val servingQuantity = selected.quantity
+            if (selected.id == null || servingQuantity == null || !servingQuantity.isFinite() || servingQuantity <= 0 ||
                 !selected.scalingFactor.isFinite() || selected.scalingFactor <= 0
             ) {
                 fail(FoodPortionError.INVALID_SERVING)
             }
-            val requested = quantity ?: selected.quantity
+            val requested = quantity ?: servingQuantity
             if (!requested.isFinite() || requested <= 0 || requested > 10_000) {
                 fail(FoodPortionError.INVALID_QUANTITY)
             }
-            val scale = requested * selected.scalingFactor / selected.quantity
+            val scale = requested * selected.scalingFactor / servingQuantity
             val base = food.nutrients ?: legacyNutrition(food)
             return FoodPortion(
                 foodId = food.id,
                 serving = selected,
                 quantity = requested,
                 nutrition = base.scaledBy(scale),
-                totalWeightGrams = selected.weightGrams?.times(requested)?.div(selected.quantity),
+                totalWeightGrams = selected.weightGrams?.times(requested)?.div(servingQuantity),
                 glycemicIndex = food.glycemicIndex,
                 glycemicLoad = food.glycemicLoad?.times(scale),
             )

@@ -34,7 +34,7 @@ public class FoodAnalysisResourceTest {
         repeat(2) {
             server.enqueue(
                 MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json")
-                    .setBody("""{"meal_name":"Burger and fries","detections":[]}"""),
+                    .setBody("""{"meal_name":"Burger and fries","total_nutrients":{},"detections":[]}"""),
             )
         }
         val fixture = requireNotNull(
@@ -54,7 +54,7 @@ public class FoodAnalysisResourceTest {
         val urlRequest = server.takeRequest()
         val dataRequest = server.takeRequest()
         assertEquals("POST", urlRequest.method)
-        assertEquals("/v1.2/food-scans/photo", urlRequest.requestUrl!!.encodedPath)
+        assertEquals("/v1.2/food-analysis/image", urlRequest.requestUrl!!.encodedPath)
         assertEquals(BURGER_IMAGE_URL, adapter.fromJson(urlRequest.body.readUtf8())!!.image)
         val encodedImage = adapter.fromJson(dataRequest.body.readUtf8())!!.image
         assertTrue(encodedImage.startsWith("data:image/png;base64,"))

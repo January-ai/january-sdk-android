@@ -3,7 +3,7 @@ package ai.january.partner.demo
 import android.graphics.Bitmap
 import androidx.activity.compose.setContent
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import ai.january.partner.*
 import okhttp3.OkHttpClient
@@ -119,11 +119,11 @@ class StateParityWorkflowTest {
             .first { it.getString("path") == "/v1.2/restaurants/cafe/menu-items" }
         assertEquals("0", menuRequest.getJSONObject("query").getString("offset"))
         assertTrue(!menuRequest.getJSONObject("query").has("query"))
-        assertTrue((0 until requests.length()).none { requests.getJSONObject(it).getString("path") == "/v1.2/restaurants/menu-items" })
+        assertTrue((0 until requests.length()).none { requests.getJSONObject(it).getString("path") == "/v1.2/menu-items" })
         waitText("Fixture soup")
     }
 
-    @Test fun restaurantMenuFallsBackOnlyWhenIdRouteIsNotDeployed() {
+    @Test fun restaurantMenuFallsBackWhenTheSelectedIdHasNoMenu() {
         tap("Restaurants")
         ui.onNodeWithText("Restaurant name").performTextInput("Fixture")
         tap("Search nearby");waitText("Fixture Cafe")
@@ -132,7 +132,7 @@ class StateParityWorkflowTest {
         val requests = org.json.JSONArray(request("/__requests"))
         val paths = (0 until requests.length()).map { requests.getJSONObject(it).getString("path") }
         assertTrue(paths.contains("/v1.2/restaurants/cafe/menu-items"))
-        assertTrue(paths.contains("/v1.2/restaurants/menu-items"))
+        assertTrue(paths.contains("/v1.2/menu-items"))
     }
 
     @Test fun restaurantSearchMenuLoadingEmptyErrorAndRecovery() {

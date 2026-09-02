@@ -55,8 +55,8 @@ public class FoodPortionTest {
         assertEquals(200.0, portion.totalWeightGrams!!, 0.001)
         assertEquals(51.0, portion.glycemicIndex!!, 0.0)
         assertEquals(20.3389, portion.glycemicLoad!!, 0.001)
-        assertEquals(70_381_819, portion.selection.id)
-        assertEquals(2, portion.selection.serving.id)
+        assertEquals("70381819", portion.selection.id)
+        assertEquals("2", portion.selection.serving.id)
         assertEquals(200.0, portion.selection.serving.quantity, 0.0)
     }
 

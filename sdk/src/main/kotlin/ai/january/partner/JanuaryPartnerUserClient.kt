@@ -4,6 +4,7 @@ import ai.january.partner.foodlogs.CreateFoodLogRequest
 import ai.january.partner.foodlogs.DeleteFoodLogRequest
 import ai.january.partner.foodlogs.DeleteFoodLogResponse
 import ai.january.partner.foodlogs.FoodLog
+import ai.january.partner.foodlogs.GetFoodLogRequest
 import ai.january.partner.foodlogs.FoodLogsResource
 import ai.january.partner.foodlogs.ListFoodLogsRequest
 import ai.january.partner.foodlogs.ListFoodLogsResponse
@@ -16,7 +17,6 @@ import ai.january.partner.foods.FoodsResource
 import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
-import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
 import ai.january.partner.foods.SuggestFoodAlternativesResponse
@@ -29,6 +29,7 @@ import ai.january.partner.photos.FoodScan
 import ai.january.partner.photos.FoodAnalysisResource
 import ai.january.partner.photos.ScanFoodPhotoRequest
 import ai.january.partner.restaurants.RestaurantsResource
+import ai.january.partner.restaurants.GetRestaurantMenuItemsResponse
 import ai.january.partner.restaurants.SearchRestaurantMenuItemsResponse
 import ai.january.partner.restaurants.SearchRestaurantsRequest
 import ai.january.partner.restaurants.SearchRestaurantsResponse
@@ -74,7 +75,7 @@ public class UserRestaurantsResource internal constructor(
     private val resource: RestaurantsResource,
     private val context: PartnerUserContext,
 ) {
-    public suspend fun getMenuItems(request: ai.january.partner.restaurants.GetRestaurantMenuItemsRequest): SearchRestaurantMenuItemsResponse =
+    public suspend fun getMenuItems(request: ai.january.partner.restaurants.GetRestaurantMenuItemsRequest): GetRestaurantMenuItemsResponse =
         resource.getMenuItems(request.copy(endUserId = context.endUserId))
 
     public suspend fun search(request: SearchRestaurantsRequest): SearchRestaurantsResponse =
@@ -96,7 +97,7 @@ public class UserFoodAnalysisResource internal constructor(
 
     public suspend fun analyzeDescription(
         request: SearchFoodsByNaturalLanguageRequest,
-    ): SearchFoodsByNaturalLanguageResponse =
+    ): FoodScan =
         resource.analyzeDescription(request.copy(endUserId = context.endUserId))
 
     public suspend fun correct(request: CorrectPhotoScanRequest): FoodScan =
@@ -116,6 +117,8 @@ public class UserFoodLogsResource internal constructor(
 
     public suspend fun list(start: String, end: String): ListFoodLogsResponse =
         resource.list(ListFoodLogsRequest(start, end, context))
+
+    public suspend fun get(id: String): FoodLog = resource.get(GetFoodLogRequest(id, context))
 
     public suspend fun update(
         id: String,
