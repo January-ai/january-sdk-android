@@ -18,8 +18,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * [partialTranscript], [latestResult], and [error] to render app-owned UI. Call
  * [close] when the input leaves composition or its owner is destroyed.
  *
- * The host app must declare `android.permission.RECORD_AUDIO` and request runtime
- * permission before calling [startListening].
+ * The SDK manifest declares `android.permission.RECORD_AUDIO`. The host app must
+ * request runtime permission before calling [startListening].
  */
 public class VoiceCaptureSession private constructor(
     private val engine: VoiceRecognitionEngine,

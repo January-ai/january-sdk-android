@@ -1,6 +1,8 @@
 package ai.january.partner.demo
 
 import android.Manifest
+import android.app.Activity
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -90,10 +92,16 @@ fun SearchField(
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startVoiceCapture()
-        else voiceError = VoiceErrorPresentation(
-            message = "Microphone permission is required to use voice input.",
-            opensSettings = true,
-        )
+        else {
+            val activity = generateSequence(context) { (it as? ContextWrapper)?.baseContext }
+                .filterIsInstance<Activity>()
+                .firstOrNull()
+            val canRequestAgain = activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) ?: true
+            voiceError = VoiceErrorPresentation(
+                message = "Microphone permission is required to use voice input.",
+                opensSettings = !canRequestAgain,
+            )
+        }
     }
 
     DisposableEffect(voiceCapture) {
