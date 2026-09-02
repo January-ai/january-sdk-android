@@ -40,7 +40,7 @@ mavenPublishing {
             license {
                 name.set("The Apache License, Version 2.0")
                 url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("repo")
             }
         }
         developers {
@@ -52,7 +52,7 @@ mavenPublishing {
         }
         scm {
             url.set("https://github.com/January-ai/january-sdk-android")
-            connection.set("scm:git:git://github.com/January-ai/january-sdk-android.git")
+            connection.set("scm:git:https://github.com/January-ai/january-sdk-android.git")
             developerConnection.set("scm:git:ssh://git@github.com/January-ai/january-sdk-android.git")
         }
     }

@@ -47,10 +47,11 @@ jobs:
       - name: Validate release tag and source commit
         shell: bash
         run: |
-          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          semver_regex='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          [[ "$GITHUB_REF_NAME" =~ $semver_regex ]]
           sdk_version="$(./gradlew --no-daemon -q :sdk:properties | sed -n 's/^version: //p')"
           test "$GITHUB_REF_NAME" = "v$sdk_version"
-          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          git merge-base --is-ancestor HEAD origin/main
           echo "SDK_VERSION=$sdk_version" >> "$GITHUB_ENV"
 
       - name: Validate documentation

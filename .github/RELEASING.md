@@ -16,6 +16,7 @@
 2. Create and push a tag exactly matching `v<SDK version>`, such as `v0.2.0` or
    `v0.2.0-beta.1`.
 
-The release workflow accepts tags that point to `main`, runs the SDK and complete
-demo UI test suites, validates a signed local Maven publication, publishes and
-waits for Maven Central, and then creates the GitHub Release.
+The release workflow accepts tags whose commits are contained in `main`'s history,
+runs the SDK and complete demo UI test suites, validates a signed local Maven
+publication, publishes and waits for Maven Central, and then creates the GitHub
+Release.
