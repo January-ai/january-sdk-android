@@ -73,8 +73,11 @@ class DemoNavigationTest {
         val context = instrumentation.targetContext
         val directory = context.getExternalFilesDir(null) ?: context.filesDir
         val file = File(directory, "$name.png")
+        val screenshot = checkNotNull(instrumentation.uiAutomation.takeScreenshot()) {
+            "Unable to capture screenshot $name"
+        }
         file.outputStream().use {
-            instrumentation.uiAutomation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it)
+            screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
         }
     }
 }
