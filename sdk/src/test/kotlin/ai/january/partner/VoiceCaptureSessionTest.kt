@@ -130,7 +130,7 @@ private class FakeVoiceRecognitionEngine : VoiceRecognitionEngine {
     var stopCount = 0
     var cancelCount = 0
     var destroyCount = 0
-    var stopFailure: Throwable? = null
+    var stopFailure: Exception? = null
 
     override fun startListening() { startCount += 1 }
     override fun stopListening() {

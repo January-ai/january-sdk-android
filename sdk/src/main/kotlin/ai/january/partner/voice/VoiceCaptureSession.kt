@@ -108,7 +108,7 @@ public class VoiceCaptureSession private constructor(
 
         try {
             engine.startListening()
-        } catch (failure: Throwable) {
+        } catch (failure: Exception) {
             resetActiveState()
             val error = failure as? VoiceCaptureException ?: VoiceCaptureException(
                 VoiceCaptureErrorCode.UNKNOWN,
@@ -133,7 +133,7 @@ public class VoiceCaptureSession private constructor(
         mutableAudioLevel.value = 0f
         try {
             engine.stopListening()
-        } catch (failure: Throwable) {
+        } catch (failure: Exception) {
             val error = VoiceCaptureException(
                 VoiceCaptureErrorCode.UNKNOWN,
                 "Voice capture could not stop cleanly.",

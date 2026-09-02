@@ -79,27 +79,37 @@ fun SearchField(
     val captureError by voiceCapture.error.collectAsState()
     var visibleDuration by remember { mutableLongStateOf(0L) }
     var voiceError by remember { mutableStateOf<VoiceErrorPresentation?>(null) }
+    val activity = remember(context) {
+        generateSequence(context) { (it as? ContextWrapper)?.baseContext }
+            .filterIsInstance<Activity>()
+            .firstOrNull()
+    }
+
+    fun permissionRequiresSettings(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED &&
+            activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == false
+
+    fun opensSettingsFor(failure: Exception): Boolean =
+        (failure as? VoiceCaptureException)?.code == VoiceCaptureErrorCode.PERMISSION_DENIED &&
+            permissionRequiresSettings()
 
     fun startVoiceCapture() {
-        runCatching { voiceCapture.startListening() }
-            .onFailure { failure ->
-                voiceError = VoiceErrorPresentation(
-                    message = failure.message ?: "Voice input could not start.",
-                    opensSettings = (failure as? VoiceCaptureException)?.code == VoiceCaptureErrorCode.PERMISSION_DENIED,
-                )
-            }
+        try {
+            voiceCapture.startListening()
+        } catch (failure: Exception) {
+            voiceError = VoiceErrorPresentation(
+                message = failure.message ?: "Voice input could not start.",
+                opensSettings = opensSettingsFor(failure),
+            )
+        }
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startVoiceCapture()
         else {
-            val activity = generateSequence(context) { (it as? ContextWrapper)?.baseContext }
-                .filterIsInstance<Activity>()
-                .firstOrNull()
-            val canRequestAgain = activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) ?: true
             voiceError = VoiceErrorPresentation(
                 message = "Microphone permission is required to use voice input.",
-                opensSettings = !canRequestAgain,
+                opensSettings = permissionRequiresSettings(),
             )
         }
     }
@@ -130,7 +140,7 @@ fun SearchField(
         captureError?.let {
             voiceError = VoiceErrorPresentation(
                 message = it.message ?: "Voice input failed.",
-                opensSettings = it.code == VoiceCaptureErrorCode.PERMISSION_DENIED,
+                opensSettings = it.code == VoiceCaptureErrorCode.PERMISSION_DENIED && permissionRequiresSettings(),
             )
             voiceCapture.clearError()
         }
@@ -186,13 +196,14 @@ fun SearchField(
             durationMillis = visibleDuration,
             onCancel = voiceCapture::cancel,
             onStop = {
-                runCatching { voiceCapture.stopListening() }
-                    .onFailure { failure ->
-                        voiceError = VoiceErrorPresentation(
-                            message = failure.message ?: "Voice input could not stop.",
-                            opensSettings = (failure as? VoiceCaptureException)?.code == VoiceCaptureErrorCode.PERMISSION_DENIED,
-                        )
-                    }
+                try {
+                    voiceCapture.stopListening()
+                } catch (failure: Exception) {
+                    voiceError = VoiceErrorPresentation(
+                        message = failure.message ?: "Voice input could not stop.",
+                        opensSettings = opensSettingsFor(failure),
+                    )
+                }
             },
             modifier = modifier,
         )
@@ -210,6 +221,7 @@ fun SearchField(
                         context.startActivity(
                             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                 data = Uri.fromParts("package", context.packageName, null)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             },
                         )
                     }) { Text("Open settings") }
