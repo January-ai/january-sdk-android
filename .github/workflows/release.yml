@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: maven-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish Android SDK release
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.MAVEN_GPG_PASSWORD }}
+
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      - name: Enable hardware acceleration for Android UI tests
+        run: |
+          sudo chown "$USER":kvm /dev/kvm
+          sudo chmod 0660 /dev/kvm
+
+      - name: Validate release tag and source commit
+        shell: bash
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          sdk_version="$(./gradlew --no-daemon -q :sdk:properties | sed -n 's/^version: //p')"
+          test "$GITHUB_REF_NAME" = "v$sdk_version"
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          echo "SDK_VERSION=$sdk_version" >> "$GITHUB_ENV"
+
+      - name: Validate documentation
+        run: node scripts/check-documentation.mjs
+
+      - name: Test and build SDK and demo
+        run: >-
+          ./gradlew --no-daemon
+          :sdk:testDebugUnitTest
+          :sdk:lintDebug
+          :sdk:assembleRelease
+          :demo:lintDebug
+          :demo:assembleDebug
+
+      - name: Run complete demo UI suite
+        run: |
+          python3 qa/parity/fixture_server.py 18766 > "$RUNNER_TEMP/android-fixture.log" 2>&1 &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:18766/__reset >/dev/null && break
+            if [[ "$attempt" == 20 ]]; then
+              cat "$RUNNER_TEMP/android-fixture.log"
+              exit 1
+            fi
+            sleep 0.25
+          done
+          ./gradlew --no-daemon :demo:pixel2api35DebugAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.fixtureOrigin=http://10.0.2.2:18766
+
+      - name: Validate signed Maven publication locally
+        run: |
+          ./gradlew --no-daemon :sdk:publishToMavenLocal
+          publication_dir="$HOME/.m2/repository/ai/january/january-sdk-android/$SDK_VERSION"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION.aar"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION.pom"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION-sources.jar"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION-javadoc.jar"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION.aar.asc"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION.pom.asc"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION-sources.jar.asc"
+          test -f "$publication_dir/january-sdk-android-$SDK_VERSION-javadoc.jar.asc"
+
+      - name: Publish signed artifacts to Maven Central
+        run: ./gradlew --no-daemon :sdk:publishToMavenCentral
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          args=(release create "$GITHUB_REF_NAME" --verify-tag --generate-notes --title "$GITHUB_REF_NAME")
+          if [[ "$SDK_VERSION" == *-* ]]; then
+            args+=(--prerelease)
+          fi
+          gh "${args[@]}"

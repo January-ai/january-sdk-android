@@ -1,43 +1,62 @@
-import org.gradle.api.publish.maven.MavenPublication
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+import com.vanniktech.maven.publish.DeploymentValidation
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
     id("com.android.library")
+    id("com.vanniktech.maven.publish")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("maven-publish")
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            create<MavenPublication>("release") {
-                from(components["release"])
-                groupId = "ai.january"
-                artifactId = "january-sdk-android"
-                version = project.version.toString()
-                pom {
-                    name.set("January SDK for Android")
-                    description.set("The official January SDK for Android")
-                    url.set("https://github.com/January-ai/january-sdk-android")
-                    licenses {
-                        license {
-                            name.set("Apache License, Version 2.0")
-                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                            distribution.set("repo")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:https://github.com/January-ai/january-sdk-android.git")
-                        developerConnection.set("scm:git:ssh://git@github.com/January-ai/january-sdk-android.git")
-                        url.set("https://github.com/January-ai/january-sdk-android")
-                    }
-                }
-            }
-        }
-    }
 }
 
 group = "ai.january"
 version = "0.1.0"
+
+mavenPublishing {
+    configure(
+        AndroidSingleVariantLibrary(
+            javadocJar = JavadocJar.Empty(),
+            sourcesJar = SourcesJar.Sources(),
+            variant = "release",
+        ),
+    )
+    publishToMavenCentral(
+        automaticRelease = true,
+        validateDeployment = DeploymentValidation.PUBLISHED,
+    )
+    signAllPublications()
+    coordinates(
+        groupId = "ai.january",
+        artifactId = "january-sdk-android",
+        version = project.version.toString(),
+    )
+
+    pom {
+        name.set("January SDK for Android")
+        description.set("The official January SDK for Android")
+        inceptionYear.set("2026")
+        url.set("https://github.com/January-ai/january-sdk-android")
+        licenses {
+            license {
+                name.set("The Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+        developers {
+            developer {
+                id.set("january-ai")
+                name.set("January AI")
+                url.set("https://january.ai")
+            }
+        }
+        scm {
+            url.set("https://github.com/January-ai/january-sdk-android")
+            connection.set("scm:git:git://github.com/January-ai/january-sdk-android.git")
+            developerConnection.set("scm:git:ssh://git@github.com/January-ai/january-sdk-android.git")
+        }
+    }
+}
 
 android {
     namespace = "ai.january.partner"
@@ -64,11 +83,6 @@ android {
         }
     }
 
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
 }
 
 dependencies {
