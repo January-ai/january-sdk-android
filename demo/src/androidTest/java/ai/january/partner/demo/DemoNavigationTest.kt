@@ -1,5 +1,9 @@
 package ai.january.partner.demo
 
+import ai.january.partner.JanuaryClientToken
+import ai.january.partner.JanuaryPartnerClient
+import ai.january.partner.forJanuaryDevelopment
+import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.performScrollTo
@@ -8,6 +12,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,6 +22,21 @@ import org.junit.runner.RunWith
 class DemoNavigationTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
+
+    @Before
+    fun setUpDemo() {
+        val fixtureOrigin = InstrumentationRegistry.getArguments().getString("fixtureOrigin")
+            ?: "http://127.0.0.1:18766"
+        val client = JanuaryPartnerClient.forJanuaryDevelopment(
+            provider = { JanuaryClientToken("fixture-client-token", 3_600) },
+            apiBaseUrl = fixtureOrigin,
+        )
+        composeRule.activityRule.scenario.onActivity { activity ->
+            val state = DemoState(activity.applicationContext, client)
+            state.endUserId = "navigation-user"
+            activity.setContent { JanuaryDemoTheme { JanuaryDemoApp(state) } }
+        }
+    }
 
     @Test
     fun primaryDestinationsAreReachable() {

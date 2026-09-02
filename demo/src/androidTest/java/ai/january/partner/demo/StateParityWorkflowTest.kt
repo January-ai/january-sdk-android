@@ -9,6 +9,7 @@ import ai.january.partner.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.IOException
 import org.junit.*
 import org.junit.Assert.*
 
@@ -16,12 +17,27 @@ import org.junit.Assert.*
 class StateParityWorkflowTest {
     @get:Rule val ui = createAndroidComposeRule<MainActivity>()
     private val http = OkHttpClient()
-    private val origin = "http://127.0.0.1:18766"
+    private val origin by lazy {
+        InstrumentationRegistry.getArguments().getString("fixtureOrigin")
+            ?: "http://127.0.0.1:18766"
+    }
     private var previousUser: String? = null
     private var previousTimezone: String? = null
     private val prefs get() = ui.activity.getSharedPreferences("january_demo", 0)
-    private fun request(path: String): String = http.newCall(Request.Builder().url(origin + path).build()).execute().use {
-        check(it.isSuccessful);it.body!!.string()
+    private fun request(path: String): String {
+        var lastConnectionFailure: IOException? = null
+        repeat(3) { attempt ->
+            try {
+                return http.newCall(Request.Builder().url(origin + path).build()).execute().use {
+                    check(it.isSuccessful)
+                    it.body!!.string()
+                }
+            } catch (error: IOException) {
+                lastConnectionFailure = error
+                if (attempt < 2) Thread.sleep(1_000)
+            }
+        }
+        throw checkNotNull(lastConnectionFailure)
     }
     private fun control(route: String, status: Int = 200, delay: Int = 0, empty: Boolean = false) {
         request("/__control?route=$route&status=$status&delay=$delay&empty=$empty")
@@ -96,9 +112,19 @@ class StateParityWorkflowTest {
         desc("Add food log");capture("log-new");reveal("Save food log").assertIsNotEnabled();tap("Add first food");capture("food-picker-initial");addFood()
         control("/v1.2/food-logs",500,4);tap("Save food log");capture("log-save-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("log-save-error")
         control("/v1.2/food-logs");tap("Try again");waitText("Fixture breakfast");reveal("Fixture breakfast");capture("logs-results");tap("Fixture breakfast");capture("log-detail");tap("Edit");capture("log-edit")
-        tap("Update food log");waitText("Fixture breakfast");tap("Fixture breakfast")
-        tap("Delete food log");capture("log-delete-confirmation")
-        control("/v1.2/food-logs/11111111-1111-4111-8111-111111111111",500);tap("Delete food log");waitText("January couldn’t complete the request");reveal("Try again");capture("log-delete-error")
+        tap("Update food log")
+        ui.waitUntil(12_000) { ui.onAllNodesWithText("Edit food log").fetchSemanticsNodes().isEmpty() }
+        waitText("BROWSE SAVED LOGS")
+        val savedLog = hasText("Fixture breakfast") and hasClickAction()
+        ui.waitUntil(12_000) { ui.onAllNodes(savedLog).fetchSemanticsNodes().isNotEmpty() }
+        ui.onAllNodes(savedLog).onLast().performScrollTo().performClick()
+        waitText("Delete food log")
+        control("/v1.2/food-logs/11111111-1111-4111-8111-111111111111",500)
+        tap("Delete food log")
+        ui.waitUntil(12_000) { ui.onAllNodesWithTag("confirm-delete-food-log").fetchSemanticsNodes().isNotEmpty() }
+        capture("log-delete-confirmation")
+        ui.onNodeWithTag("confirm-delete-food-log").performClick()
+        waitText("January couldn’t complete the request");reveal("Try again");capture("log-delete-error")
         control("/v1.2/food-logs/11111111-1111-4111-8111-111111111111");tap("Try again");waitText("No food logs in this range");capture("log-delete-result")
         val requests = request("/__requests")
         assertTrue(requests.contains("POST"));assertTrue(requests.contains("PATCH") || requests.contains("PUT"));assertTrue(requests.contains("DELETE"))
