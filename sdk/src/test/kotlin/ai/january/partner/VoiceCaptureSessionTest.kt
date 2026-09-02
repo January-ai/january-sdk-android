@@ -49,6 +49,23 @@ class VoiceCaptureSessionTest {
 
         assertEquals(VoiceCaptureState.PROCESSING, session.state.value)
         assertEquals(0f, session.audioLevel.value)
+        engine.listener!!.onPartialTranscript("late transcript")
+        assertEquals("", session.partialTranscript.value)
+    }
+
+    @Test
+    fun stopFailureIsPublishedAndThrown() {
+        val engine = FakeVoiceRecognitionEngine().apply {
+            stopFailure = IllegalStateException("stop failed")
+        }
+        val session = VoiceCaptureSession(engine, { true }, { 0L })
+
+        session.startListening()
+        val error = assertThrows(VoiceCaptureException::class.java) { session.stopListening() }
+
+        assertEquals(VoiceCaptureErrorCode.UNKNOWN, error.code)
+        assertEquals(error, session.error.value)
+        assertEquals(VoiceCaptureState.IDLE, session.state.value)
     }
 
     @Test
@@ -113,9 +130,13 @@ private class FakeVoiceRecognitionEngine : VoiceRecognitionEngine {
     var stopCount = 0
     var cancelCount = 0
     var destroyCount = 0
+    var stopFailure: Throwable? = null
 
     override fun startListening() { startCount += 1 }
-    override fun stopListening() { stopCount += 1 }
+    override fun stopListening() {
+        stopCount += 1
+        stopFailure?.let { throw it }
+    }
     override fun cancel() { cancelCount += 1 }
     override fun destroy() { destroyCount += 1 }
 }

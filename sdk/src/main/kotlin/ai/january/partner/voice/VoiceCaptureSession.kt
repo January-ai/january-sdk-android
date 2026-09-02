@@ -134,13 +134,13 @@ public class VoiceCaptureSession private constructor(
         try {
             engine.stopListening()
         } catch (failure: Throwable) {
-            completeWithError(
-                VoiceCaptureException(
-                    VoiceCaptureErrorCode.UNKNOWN,
-                    "Voice capture could not stop cleanly.",
-                    failure,
-                ),
+            val error = VoiceCaptureException(
+                VoiceCaptureErrorCode.UNKNOWN,
+                "Voice capture could not stop cleanly.",
+                failure,
             )
+            completeWithError(error)
+            throw error
         }
     }
 
@@ -173,7 +173,7 @@ public class VoiceCaptureSession private constructor(
     }
 
     override fun onPartialTranscript(transcript: String) {
-        if (mutableState.value != VoiceCaptureState.IDLE) {
+        if (mutableState.value == VoiceCaptureState.LISTENING) {
             mutablePartialTranscript.value = transcript.trim()
         }
     }
