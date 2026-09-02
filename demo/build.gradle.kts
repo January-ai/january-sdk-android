@@ -60,7 +60,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":sdk"))
+    implementation("ai.january:january-sdk-android:0.1.0")
 
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
@@ -84,6 +84,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     testImplementation("junit:junit:4.13.2")
+    // Fixture-only debug helpers live in the test APK; the demo APK uses the Maven artifact above.
+    androidTestImplementation(project(":sdk"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
