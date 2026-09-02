@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Keep one session for each voice-enabled input. Observe [state], [audioLevel],
  * [partialTranscript], [latestResult], and [error] to render app-owned UI. Call
  * [close] when the input leaves composition or its owner is destroyed.
+ * Call all session functions from the main thread.
  *
  * The SDK manifest declares `android.permission.RECORD_AUDIO`. The host app must
  * request runtime permission before calling [startListening].

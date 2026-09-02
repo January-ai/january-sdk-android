@@ -198,11 +198,8 @@ fun SearchField(
             onStop = {
                 try {
                     voiceCapture.stopListening()
-                } catch (failure: Exception) {
-                    voiceError = VoiceErrorPresentation(
-                        message = failure.message ?: "Voice input could not stop.",
-                        opensSettings = opensSettingsFor(failure),
-                    )
+                } catch (_: VoiceCaptureException) {
+                    // The session publishes this through its error flow.
                 }
             },
             modifier = modifier,

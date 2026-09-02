@@ -65,9 +65,17 @@ level, partial text, a final transcript, duration, and stable errors:
 
 ```kotlin
 val voiceCapture = VoiceCaptureSession(context)
-voiceCapture.startListening()
-// Render voiceCapture.state and voiceCapture.audioLevel.
-voiceCapture.stopListening()
+if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+    PackageManager.PERMISSION_GRANTED
+) {
+    try {
+        voiceCapture.startListening()
+        // Render voiceCapture.state and voiceCapture.audioLevel.
+        voiceCapture.stopListening()
+    } catch (error: VoiceCaptureException) {
+        // Present error.code through your app's voice-input UI.
+    }
+}
 ```
 
 The SDK manifest declares `RECORD_AUDIO`; the host app must request runtime
