@@ -36,5 +36,6 @@ Android app ◀──── { token, expiresIn } ─────┘
 * Gradle 9.5.1 and Android Gradle Plugin 9.2.1 for the current source checkout
 * Java 17
 * Kotlin coroutines
+
 The [example app](getting-started/example-app.md) demonstrates all public
 resources and the native camera scanner.

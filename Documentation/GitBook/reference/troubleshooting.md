@@ -2,8 +2,8 @@
 
 ## Gradle cannot find `ai.january:january-sdk-android:0.1.0`
 
-That artifact is not on Maven Central. Confirm the SDK checkout exists at the
-path in `includeBuild`, and that `dependencySubstitution` maps the coordinate to
+Confirm the SDK checkout exists at the path in `includeBuild`, and that
+`dependencySubstitution` maps the coordinate to
 `project(":sdk")`. Run the dependency-report command from the
 [installation guide](../getting-started/installation.md).
 
