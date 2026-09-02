@@ -316,6 +316,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                             FoodMode.BARCODE -> "6–14 digit barcode"
                         },
                         onSearch = { submit() },
+                        voiceCaptureEnabled = foodMode != FoodMode.BARCODE,
                     )
                 }
                 if (foodSuggestions.isNotEmpty()) {

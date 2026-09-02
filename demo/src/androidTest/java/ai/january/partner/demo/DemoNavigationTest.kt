@@ -1,5 +1,6 @@
 package ai.january.partner.demo
 
+import android.graphics.Bitmap
 import ai.january.partner.JanuaryClientToken
 import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.forJanuaryDevelopment
@@ -13,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -41,6 +43,8 @@ class DemoNavigationTest {
     @Test
     fun primaryDestinationsAreReachable() {
         composeRule.onNodeWithText("Food name").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Use voice input").assertIsDisplayed()
+        capture("search-voice-capture")
 
         composeRule.onNodeWithContentDescription("Scan", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Scan a meal").assertIsDisplayed()
@@ -61,5 +65,19 @@ class DemoNavigationTest {
 
         composeRule.onNodeWithContentDescription("Glucose", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Estimate this meal’s response").assertIsDisplayed()
+    }
+
+    private fun capture(name: String) {
+        composeRule.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val directory = context.getExternalFilesDir(null) ?: context.filesDir
+        val file = File(directory, "$name.png")
+        val screenshot = checkNotNull(instrumentation.uiAutomation.takeScreenshot()) {
+            "Unable to capture screenshot $name"
+        }
+        file.outputStream().use {
+            screenshot.compress(Bitmap.CompressFormat.PNG, 100, it)
+        }
     }
 }

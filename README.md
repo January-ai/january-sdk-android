@@ -57,6 +57,31 @@ val page = client.restaurants.getMenuItems(GetRestaurantMenuItemsRequest(restaur
 
 The response contains `items` and `totalCount` (`total_count` on the wire). Request subsequent pages by advancing `offset` by the number of items received, until it reaches the total or a page is empty. An unknown restaurant returns 404; an existing restaurant with no menu returns an empty list.
 
+## Add voice input
+
+`VoiceCaptureSession` wraps Android speech recognition for search, chat, and
+form inputs. It publishes listening/processing state, normalized microphone
+level, partial text, a final transcript, duration, and stable errors:
+
+```kotlin
+val voiceCapture = VoiceCaptureSession(context)
+if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+    PackageManager.PERMISSION_GRANTED
+) {
+    try {
+        voiceCapture.startListening()
+        // Render voiceCapture.state and voiceCapture.audioLevel.
+        voiceCapture.stopListening()
+    } catch (error: VoiceCaptureException) {
+        // Present error.code through your app's voice-input UI.
+    }
+}
+```
+
+The SDK manifest declares `RECORD_AUDIO`; the host app must request runtime
+permission after the user taps its microphone control. See the
+[voice capture guide](Documentation/GitBook/guides/voice-capture.md).
+
 ## License
 
 The Apache 2.0 license applies to the source code in this repository. It does not grant rights to nutrition data, food images, or other content returned by the January API, which are subject to the January API Developer Terms.

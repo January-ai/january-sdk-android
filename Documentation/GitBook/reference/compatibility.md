@@ -11,11 +11,16 @@
 | Network API | Kotlin `suspend` functions |
 | Distribution | Pinned composite source build; Maven publication prepared but not published |
 
-The SDK manifest declares `android.permission.INTERNET` and
-`android.permission.CAMERA`. The camera permission is needed by
+The SDK manifest declares `android.permission.INTERNET`,
+`android.permission.CAMERA`, and `android.permission.RECORD_AUDIO`. The camera permission is needed by
 `JanuaryFoodScanner`, which uses CameraX for photo capture and barcode analysis.
 The scanner requests runtime permission and provides denied/settings states.
 
-If an application does not expose the scanner, review the merged manifest and
-its permission disclosure before release. The Apache-2.0 AAR includes
+`RECORD_AUDIO` enables `VoiceCaptureSession`. The host app owns the runtime
+permission request and should launch it only after the user taps a microphone
+control. Voice recognition uses the Android speech-recognition service and does
+not send audio or transcripts to January.
+
+If an application does not expose the scanner or voice capture, review the
+merged manifest and its permission disclosure before release. The Apache-2.0 AAR includes
 Compose, CameraX, ML Kit barcode scanning, Retrofit, Moshi, and coroutines.
