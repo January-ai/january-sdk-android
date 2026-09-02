@@ -2,11 +2,11 @@
 
 ## Gradle cannot find `ai.january:january-sdk-android:0.1.0`
 
-Confirm `mavenCentral()` is present in
-`dependencyResolutionManagement.repositories`.
-Confirm the dependency is exactly
-`implementation("ai.january:january-sdk-android:0.1.0")`, then run the
-dependency-report command from the [installation guide](../getting-started/installation.md).
+Confirm your `settings.gradle.kts` has `mavenCentral()` inside the
+`dependencyResolutionManagement { repositories { ... } }` block. Confirm your
+Gradle dependency declaration references
+`ai.january:january-sdk-android:0.1.0`, then run the `dependencyInsight` command
+from the [installation guide](../getting-started/installation.md).
 
 ## Token provider fails
 
