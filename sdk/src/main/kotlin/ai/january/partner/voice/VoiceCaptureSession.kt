@@ -56,7 +56,7 @@ public class VoiceCaptureSession private constructor(
     ) : this(
         engine = AndroidVoiceRecognitionEngine(context.applicationContext, locale),
         hasRecordPermission = {
-            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            ContextCompat.checkSelfPermission(context.applicationContext, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
         },
         elapsedRealtime = SystemClock::elapsedRealtime,

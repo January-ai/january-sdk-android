@@ -70,7 +70,9 @@ class DemoNavigationTest {
     private fun capture(name: String) {
         composeRule.waitForIdle()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val file = File(instrumentation.targetContext.getExternalFilesDir(null), "$name.png")
+        val context = instrumentation.targetContext
+        val directory = context.getExternalFilesDir(null) ?: context.filesDir
+        val file = File(directory, "$name.png")
         file.outputStream().use {
             instrumentation.uiAutomation.takeScreenshot().compress(Bitmap.CompressFormat.PNG, 100, it)
         }

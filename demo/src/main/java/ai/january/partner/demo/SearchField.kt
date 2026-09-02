@@ -293,7 +293,7 @@ private fun VoiceCaptureBar(
 
 @Composable
 private fun VoiceLevelMeter(level: Float, modifier: Modifier = Modifier) {
-    val weights = listOf(0.45f, 0.8f, 0.6f, 1f, 0.7f, 0.9f, 0.5f, 0.75f)
+    val weights = remember { listOf(0.45f, 0.8f, 0.6f, 1f, 0.7f, 0.9f, 0.5f, 0.75f) }
     Row(modifier.height(30.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         weights.forEach { weight ->
             Surface(
