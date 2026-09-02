@@ -9,6 +9,7 @@ import ai.january.partner.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.IOException
 import org.junit.*
 import org.junit.Assert.*
 
@@ -23,8 +24,20 @@ class StateParityWorkflowTest {
     private var previousUser: String? = null
     private var previousTimezone: String? = null
     private val prefs get() = ui.activity.getSharedPreferences("january_demo", 0)
-    private fun request(path: String): String = http.newCall(Request.Builder().url(origin + path).build()).execute().use {
-        check(it.isSuccessful);it.body!!.string()
+    private fun request(path: String): String {
+        var lastConnectionFailure: IOException? = null
+        repeat(3) { attempt ->
+            try {
+                return http.newCall(Request.Builder().url(origin + path).build()).execute().use {
+                    check(it.isSuccessful)
+                    it.body!!.string()
+                }
+            } catch (error: IOException) {
+                lastConnectionFailure = error
+                if (attempt < 2) Thread.sleep(1_000)
+            }
+        }
+        throw checkNotNull(lastConnectionFailure)
     }
     private fun control(route: String, status: Int = 200, delay: Int = 0, empty: Boolean = false) {
         request("/__control?route=$route&status=$status&delay=$delay&empty=$empty")
