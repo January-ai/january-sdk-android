@@ -93,6 +93,7 @@ import ai.january.partner.foods.SuggestFoodAlternativesRequest
 import ai.january.partner.foods.portion
 import ai.january.partner.glucose.GlucosePrediction
 import ai.january.partner.glucose.GlucosePredictionProfile
+import ai.january.partner.glucose.ActivityLevel
 import ai.january.partner.glucose.Height
 import ai.january.partner.glucose.HeightUnit
 import ai.january.partner.glucose.PredictGlucoseRequest
@@ -146,6 +147,9 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var foodResultLimit by remember { mutableStateOf(10) }
     var foodLimitMenuOpen by remember { mutableStateOf(false) }
     var naturalResult by remember { mutableStateOf<FoodScan?>(null) }
+    var naturalPrediction by remember { mutableStateOf<GlucosePrediction?>(null) }
+    var naturalPredictionLoading by remember { mutableStateOf(false) }
+    var naturalPredictionError by remember { mutableStateOf<Throwable?>(null) }
     var restaurants by remember { mutableStateOf<List<Restaurant>>(emptyList()) }
     var menuItems by remember { mutableStateOf<List<RestaurantMenuItem>>(emptyList()) }
     var selectedFood by remember { mutableStateOf<FoodSearchItem?>(null) }
@@ -164,7 +168,56 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var showFilters by remember { mutableStateOf(false) }
 
     fun clearResults() {
-        foodSuggestions = emptyList(); foodResults = emptyList(); naturalResult = null; restaurants = emptyList(); menuItems = emptyList(); error = null
+        foodSuggestions = emptyList(); foodResults = emptyList(); naturalResult = null
+        naturalPrediction = null; naturalPredictionLoading = false; naturalPredictionError = null
+        restaurants = emptyList(); menuItems = emptyList(); error = null
+    }
+
+    fun naturalFoodSelections(result: FoodScan): List<FoodSelection> =
+        result.detections.orEmpty().mapNotNull { detection ->
+            val foodId = detection.food.id ?: return@mapNotNull null
+            val serving = detection.food.servings?.firstOrNull { it.id != null } ?: return@mapNotNull null
+            FoodSelection(
+                foodId,
+                ServingSelection(
+                    requireNotNull(serving.id),
+                    serving.selectedQuantity ?: serving.quantity ?: 1.0,
+                ),
+            )
+        }
+
+    fun predictNaturalMeal() {
+        val sdk = client ?: return
+        val meal = naturalResult ?: return
+        val foods = naturalFoodSelections(meal)
+        if (foods.isEmpty()) return
+        naturalPredictionLoading = true
+        naturalPredictionError = null
+        coroutineScope.launch {
+            runCatching {
+                sdk.glucose.predict(
+                    PredictGlucoseRequest(
+                        userProfile = GlucosePredictionProfile(
+                            age = 42.0,
+                            sex = Sex.FEMALE,
+                            height = Height(66.0, HeightUnit.INCHES),
+                            weight = Weight(150.0, WeightUnit.POUNDS),
+                            activityLevel = ActivityLevel.MODERATELY_ACTIVE,
+                            healthConditions = emptyList(),
+                        ),
+                        foods = foods,
+                        startTime = OffsetDateTime.now(),
+                        endUserId = state.partnerUserId,
+                        timezone = state.timezone,
+                    ),
+                )
+            }.onSuccess {
+                if (naturalResult == meal) naturalPrediction = it
+            }.onFailure {
+                if (naturalResult == meal) naturalPredictionError = it
+            }
+            if (naturalResult == meal) naturalPredictionLoading = false
+        }
     }
 
     fun updateLocation() {
@@ -452,6 +505,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     }
                 }
                 naturalResult?.let { natural ->
+                    val naturalFoods = naturalFoodSelections(natural)
                     natural.totalNutrients?.let { nutrients ->
                         item {
                             Text("Meal nutrition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -469,6 +523,32 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                                 detection.food.nutrients.totalFat?.value,
                             )
                         }
+                    }
+                    item {
+                        DemoPrimaryButton(
+                            text = if (naturalPrediction == null) "Show glucose prediction" else "Refresh glucose prediction",
+                            onClick = ::predictNaturalMeal,
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = naturalFoods.isNotEmpty(),
+                            loading = naturalPredictionLoading,
+                        )
+                    }
+                    naturalPredictionError?.let { predictionError ->
+                        item { ErrorCard(predictionError, ::predictNaturalMeal) }
+                    }
+                    naturalPrediction?.let { prediction ->
+                        item { NaturalMealPredictionResult(prediction) }
+                    }
+                    item {
+                        DemoSecondaryButton(
+                            text = "Analyze another meal",
+                            onClick = {
+                                query = ""
+                                autocompleteSuppressedQuery = null
+                                clearResults()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     }
                 }
                 if (restaurants.isNotEmpty()) {
@@ -512,6 +592,37 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
             locationLabel = locationLabel,
             onCurrentLocation = ::requestLocation,
             onDismiss = { showFilters = false },
+        )
+    }
+}
+
+@Composable
+private fun NaturalMealPredictionResult(result: GlucosePrediction) {
+    val peak = result.prediction.maxByOrNull { it.value }
+    val impact = result.impact?.value ?: "unknown"
+    val impactColor = glucoseImpactColor(impact)
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        DemoCard {
+            SectionLabel("Likely meal peak")
+            Text(
+                peak?.value?.let { formatDemoNumber(it) } ?: "—",
+                fontFamily = FontFamily.Monospace,
+                fontSize = MaterialTheme.typography.displaySmall.fontSize,
+                fontWeight = FontWeight.Bold,
+                color = impactColor,
+            )
+            Text(
+                "mg/dL" + (peak?.let { " · about ${formatDemoNumber(it.minutes)} minutes after the meal" } ?: ""),
+                color = JanuaryColors.Muted,
+            )
+            Text(glucoseImpactLabel(impact), fontWeight = FontWeight.Bold, color = impactColor)
+        }
+        GlucoseChart(result)
+        Text(
+            "Prediction for all detected foods. This estimate is for demonstration purposes, not medical advice.",
+            color = JanuaryColors.Muted,
+            style = MaterialTheme.typography.bodySmall,
         )
     }
 }
