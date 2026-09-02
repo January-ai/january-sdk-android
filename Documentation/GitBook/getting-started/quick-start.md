@@ -48,8 +48,8 @@ dependencies {
 }
 ```
 
-The source-build substitution from the installation page makes the SDK
-coordinate resolve.
+Maven Central resolves the SDK coordinate configured on the
+[installation](installation.md) page.
 
 ## 2. Add the manifest
 
