@@ -117,6 +117,7 @@ class VoiceCaptureSessionTest {
 
         session.close()
         assertEquals(1, engine.destroyCount)
+        assertNull(engine.listener)
     }
 
     @Test

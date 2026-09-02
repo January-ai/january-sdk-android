@@ -155,11 +155,13 @@ public class VoiceCaptureSession private constructor(
 
     /** Clears the last result after the host app consumes it. */
     public fun clearResult() {
+        checkThread()
         mutableLatestResult.value = null
     }
 
     /** Clears the last error after the host app presents it. */
     public fun clearError() {
+        checkThread()
         mutableError.value = null
     }
 
@@ -234,6 +236,7 @@ public class VoiceCaptureSession private constructor(
             engine.cancel()
             resetActiveState()
         }
+        engine.listener = null
         engine.destroy()
     }
 
