@@ -19,7 +19,12 @@ import okhttp3.RequestBody.Companion.toRequestBody
 class DemoState(context: Context, private val clientOverride: JanuaryPartnerClient? = null) {
     private val preferences = context.getSharedPreferences("january_demo", Context.MODE_PRIVATE)
     private val developmentApiKey = BuildConfig.JANUARY_API_KEY.trim()
-    private val defaultUserId = if (BuildConfig.DEBUG && developmentApiKey.isNotEmpty()) "your-android-user-id" else ""
+    private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
+    private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
+    private val hasConfiguredAuthentication =
+        partnerTokenUrl.isNotEmpty() && partnerSessionToken.isNotEmpty() ||
+            BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
+    private val defaultUserId = if (hasConfiguredAuthentication) "your-android-user-id" else ""
     private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", defaultUserId).orEmpty())
     var endUserId: String
         get() = endUserIdState.value
@@ -37,8 +42,6 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         }
 
     private val tokenHttpClient = OkHttpClient()
-    private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
-    private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
     val isDevelopmentAuthentication: Boolean get() = clientOverride == null && BuildConfig.DEBUG && developmentApiKey.isNotEmpty() && partnerTokenUrl.isEmpty()
     val authenticationDescription: String
     private var cachedClientUserId: String? = null

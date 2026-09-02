@@ -41,3 +41,6 @@ jobs:
 
       - name: Build the example app
         run: ./gradlew --no-daemon :demo:lintDebug :demo:assembleDebug
+
+      - name: Run complete demo UI suite
+        run: ./gradlew --no-daemon :demo:pixel2api35DebugAndroidTest

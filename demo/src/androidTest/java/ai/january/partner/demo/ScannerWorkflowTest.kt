@@ -44,7 +44,7 @@ class ScannerWorkflowTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.uiAutomation.grantRuntimePermission(instrumentation.targetContext.packageName, Manifest.permission.CAMERA)
         server.enqueue(json("""{"message":"Temporary scan failure"}""", 500).setBodyDelay(2, TimeUnit.SECONDS))
-        server.enqueue(json("""{"meal_name":"Camera fixture","detections":[]}"""))
+        server.enqueue(json("""{"meal_name":"Camera fixture","total_nutrients":{},"detections":[]}"""))
         val client = JanuaryPartnerClient.forJanuaryDevelopment(
             provider = { JanuaryClientToken("fixture-client-token", 3600) },
             apiBaseUrl = server.url("/").toString(),
@@ -71,7 +71,7 @@ class ScannerWorkflowTest {
         assertTrue(result.get() is JanuaryFoodScannerResult.Photo)
         repeat(2) {
             val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
-            assertEquals("/v1.2/food-scans/photo", request.path)
+            assertEquals("/v1.2/food-analysis/image", request.path)
             assertTrue(JSONObject(request.body.readUtf8()).getString("image").startsWith("data:image/jpeg;base64,"))
         }
         assertEquals(2, server.requestCount)

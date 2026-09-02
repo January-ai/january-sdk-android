@@ -7,13 +7,13 @@ from urllib.parse import urlparse, parse_qs
 from pathlib import Path
 
 NUTRIENTS = {k: {'value':v,'unit':u} for k,v,u in [('calories',100,'kcal'),('protein',4,'g'),('carbohydrates',20,'g'),('total_fat',2,'g'),('fiber',3,'g'),('sodium',10,'mg')]}
-SERVINGS = [dict(id=11,quantity=1,unit='cup',scaling_factor=1,weight_grams=100,is_primary=True),dict(id=12,quantity=1,unit='oz',scaling_factor=0.2835,weight_grams=28.35,is_primary=False)]
-def food(id=101,name='Fixture oatmeal',full=True):return dict(id=id,name=name,brand_name='January fixture',nutrients=NUTRIENTS,servings=SERVINGS if full else SERVINGS[:1])
-PREDICTION = dict(prediction=[dict(minutes=m,value=v) for m,v in [(0,90),(30,125),(60,140),(90,115),(120,95)]],impact_score='medium',chart=dict(min=70,max=140))
-def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=food(),confidence_score='high')],total_nutrients=NUTRIENTS,glucose_prediction=PREDICTION)
+SERVINGS = [dict(id='11',quantity=1,unit='cup',scaling_factor=1,weight_grams=100,is_primary=True),dict(id='12',quantity=1,unit='oz',scaling_factor=0.2835,weight_grams=28.35,is_primary=False)]
+def food(id='101',name='Fixture oatmeal',full=True):return dict(id=str(id),type='generic',name=name,brand_name='January fixture',nutrients=NUTRIENTS,glycemic_index=52,glycemic_load=12,image_url=None,barcode=None,servings=SERVINGS if full else SERVINGS[:1])
+PREDICTION = dict(points=[dict(minutes=m,value=v) for m,v in [(0,90),(30,125),(60,140),(90,115),(120,95)]],impact_score='medium',chart=dict(min=70,max=140))
+def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=food(),confidence='high')],total_nutrients=NUTRIENTS)
 def log(name='Fixture breakfast'):
- f=food(); f.pop('servings');f.update(consumed_serving=dict(id=11,quantity=1),serving_details=dict(id=11,quantity=1,unit='cup',weight_grams=100))
- return dict(id='11111111-1111-4111-8111-111111111111',name=name,timestamp_utc='2026-08-31T12:00:00Z',foods=[f])
+ f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
+ return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at='2026-08-31T12:00:00Z',foods=[f])
 state={'rules':{},'logs':[],'requests':[]}
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
@@ -41,21 +41,22 @@ class Handler(BaseHTTPRequestHandler):
     return self.respond(dict(code='not_found',message='No restaurant with id '+restaurant_id+'. Use an id from a GET /v1.2/restaurants result.'),status)
    return self.respond(dict(code='fixture_error',message='The test request could not be completed.',request_id='parity-request',docs_url='https://example.invalid/fixture-docs'),status)
   if path.endswith('/autocomplete'):result=dict(items=[])
-  elif path.endswith('/alternatives'):result=dict(alternatives=[] if empty else [dict(food=food(102,'Fixture lentils'))])
+  elif path.endswith('/alternatives'):result=dict(alternatives=[] if empty else [food('102','Fixture lentils')])
   elif path.endswith('/foods/101'):result=food()
   elif path.endswith('/foods/102'):result=food(102,'Fixture lentils')
-  elif path.endswith('/foods') or '/foods/barcode/' in path:result=dict(total_count=0 if empty else 1,items=[] if empty else [food(full=False)])
+  elif path.endswith('/foods'):result=dict(items=[] if empty else [food(full=False)])
+  elif '/foods/barcode/' in path:result=food(full=False)
   elif path.endswith('/restaurants/cafe/menu-items'):result=dict(items=[] if empty or int(q.get('offset',0)) > 0 else [dict(id='101',name='Fixture bowl',nutrients=NUTRIENTS,servings=SERVINGS),dict(id='102',name='Fixture soup',nutrients=NUTRIENTS,servings=SERVINGS)])
   elif path.endswith('/menu-items') and '/restaurants/' not in path:
    restaurant_name='Fixture Cafe'
-   result=dict(total_count=0 if empty else 2,items=[] if empty else [dict(type='menu_item',id='101',name='Fixture bowl',restaurant_name=restaurant_name,image_url='',nutrients=NUTRIENTS,servings=SERVINGS),dict(type='menu_item',id='102',name='Fixture soup',restaurant_name=restaurant_name,image_url='',nutrients=NUTRIENTS,servings=SERVINGS)])
-  elif path.endswith('/restaurants'):result=dict(total_count=0 if empty else 1,items=[] if empty else [dict(type='restaurant',id='cafe',name='Fixture Cafe',city='San Francisco',address1='123 Test Street',is_chain=False)])
+   result=dict(items=[] if empty else [dict(type='menu_item',id='101',name='Fixture bowl',restaurant_name=restaurant_name,is_chain=False,distance_meters=100,image_url=None,nutrients=NUTRIENTS,glycemic_index=None,glycemic_load=None,servings=SERVINGS),dict(type='menu_item',id='102',name='Fixture soup',restaurant_name=restaurant_name,is_chain=False,distance_meters=100,image_url=None,nutrients=NUTRIENTS,glycemic_index=None,glycemic_load=None,servings=SERVINGS)])
+  elif path.endswith('/restaurants'):result=dict(items=[] if empty else [dict(type='restaurant',id='cafe',name='Fixture Cafe',city='San Francisco',address1='123 Test Street',address2=None,is_chain=False,distance_meters=100)])
   elif path.endswith('/glucose/predictions'):result=PREDICTION
-  elif path.endswith('/food-scans/photo'):result=scan()
-  elif 'correct' in path:result=scan('Corrected breakfast')
-  elif path.endswith('/food-scans/text'):result=dict(detections=[] if empty else [dict(food=food())],total_nutrients=NUTRIENTS)
+  elif path.endswith('/food-analysis/image'):result=scan()
+  elif path.endswith('/food-analysis/corrections'):result=scan('Corrected breakfast')
+  elif path.endswith('/food-analysis/text'):result=dict(meal_name=None,detections=[] if empty else [dict(food=food(),confidence=None)],total_nutrients=NUTRIENTS)
   elif '/food-logs' in path:
-   if self.command=='GET':result=dict(total_count=len(state['logs']),items=state['logs'])
+   if self.command=='GET':result=dict(items=state['logs'])
    elif self.command=='DELETE':state['logs']=[];result=dict(status='success')
    else:
     result=log(body.get('name') or 'Fixture breakfast');state['logs']=[result]

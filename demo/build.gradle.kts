@@ -10,6 +10,10 @@ val localProperties = Properties().apply {
     if (file.exists()) file.inputStream().use(::load)
 }
 
+fun demoConfiguration(gradleProperty: String, localProperty: String): String =
+    providers.gradleProperty(gradleProperty).orNull
+        ?: localProperties.getProperty(localProperty, "")
+
 android {
     namespace = "ai.january.partner.demo"
     compileSdk = 36
@@ -21,9 +25,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        val apiKey = localProperties.getProperty("january.apiKey", "")
-        val partnerTokenUrl = localProperties.getProperty("january.partnerTokenUrl", "")
-        val partnerSessionToken = localProperties.getProperty("january.partnerSessionToken", "")
+        val apiKey = demoConfiguration("januaryApiKey", "january.apiKey")
+        val partnerTokenUrl = demoConfiguration("januaryPartnerTokenUrl", "january.partnerTokenUrl")
+        val partnerSessionToken = demoConfiguration("januaryPartnerSessionToken", "january.partnerSessionToken")
         buildConfigField("String", "JANUARY_API_KEY", "\"${apiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         buildConfigField("String", "JANUARY_PARTNER_TOKEN_URL", "\"${partnerTokenUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", "\"${partnerSessionToken.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
@@ -33,6 +37,18 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("pixel2api35") {
+                    device = "Pixel 2"
+                    apiLevel = 35
+                    systemImageSource = "aosp"
+                }
+            }
+        }
     }
 
     sourceSets["main"].assets.srcDir("../sdk/src/test/resources")
