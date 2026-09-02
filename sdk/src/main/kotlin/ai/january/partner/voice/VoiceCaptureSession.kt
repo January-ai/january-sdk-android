@@ -34,6 +34,7 @@ public class VoiceCaptureSession private constructor(
     private val mutableError = MutableStateFlow<VoiceCaptureException?>(null)
     private var startedAtMillis: Long? = null
     private var endedAtMillis: Long? = null
+    private var isClosed = false
 
     /** Current voice-capture lifecycle state. */
     public val state: StateFlow<VoiceCaptureState> = mutableState.asStateFlow()
@@ -81,6 +82,12 @@ public class VoiceCaptureSession private constructor(
     /** Starts listening after the host app has obtained microphone permission. */
     public fun startListening() {
         checkThread()
+        if (isClosed) {
+            throw VoiceCaptureException(
+                VoiceCaptureErrorCode.INVALID_STATE,
+                "Voice capture is closed.",
+            )
+        }
         if (mutableState.value != VoiceCaptureState.IDLE) {
             throw VoiceCaptureException(
                 VoiceCaptureErrorCode.INVALID_STATE,
@@ -232,6 +239,8 @@ public class VoiceCaptureSession private constructor(
     /** Cancels active work and releases the platform recognizer. */
     override fun close() {
         checkThread()
+        if (isClosed) return
+        isClosed = true
         if (mutableState.value != VoiceCaptureState.IDLE) {
             engine.cancel()
             resetActiveState()

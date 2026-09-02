@@ -118,6 +118,11 @@ class VoiceCaptureSessionTest {
         session.close()
         assertEquals(1, engine.destroyCount)
         assertNull(engine.listener)
+
+        val closedError = assertThrows(VoiceCaptureException::class.java) { session.startListening() }
+        assertEquals(VoiceCaptureErrorCode.INVALID_STATE, closedError.code)
+        session.close()
+        assertEquals(1, engine.destroyCount)
     }
 
     @Test
