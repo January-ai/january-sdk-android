@@ -32,6 +32,7 @@ class VoiceCaptureSessionTest {
         session.stopListening()
         assertEquals(VoiceCaptureState.PROCESSING, session.state.value)
         assertEquals(1, engine.stopCount)
+        now = 9_000L
         engine.listener!!.onFinalTranscript("  greek yogurt  ")
 
         assertEquals(VoiceCaptureState.IDLE, session.state.value)
@@ -42,12 +43,16 @@ class VoiceCaptureSessionTest {
     @Test
     fun automaticEndOfSpeechMovesToProcessing() {
         val engine = FakeVoiceRecognitionEngine()
-        val session = VoiceCaptureSession(engine, { true }, { 10L })
+        var now = 10L
+        val session = VoiceCaptureSession(engine, { true }, { now })
 
         session.startListening()
+        now = 410L
         engine.listener!!.onEndOfSpeech()
+        now = 1_000L
 
         assertEquals(VoiceCaptureState.PROCESSING, session.state.value)
+        assertEquals(400L, session.elapsedDurationMillis)
         assertEquals(0f, session.audioLevel.value)
         engine.listener!!.onPartialTranscript("late transcript")
         assertEquals("", session.partialTranscript.value)

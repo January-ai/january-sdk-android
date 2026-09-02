@@ -33,6 +33,7 @@ public class VoiceCaptureSession private constructor(
     private val mutableLatestResult = MutableStateFlow<VoiceCaptureResult?>(null)
     private val mutableError = MutableStateFlow<VoiceCaptureException?>(null)
     private var startedAtMillis: Long? = null
+    private var endedAtMillis: Long? = null
 
     /** Current voice-capture lifecycle state. */
     public val state: StateFlow<VoiceCaptureState> = mutableState.asStateFlow()
@@ -104,6 +105,7 @@ public class VoiceCaptureSession private constructor(
         mutablePartialTranscript.value = ""
         mutableAudioLevel.value = 0f
         startedAtMillis = elapsedRealtime()
+        endedAtMillis = null
         mutableState.value = VoiceCaptureState.LISTENING
 
         try {
@@ -129,8 +131,7 @@ public class VoiceCaptureSession private constructor(
                 "Voice capture is not listening.",
             )
         }
-        mutableState.value = VoiceCaptureState.PROCESSING
-        mutableAudioLevel.value = 0f
+        finishListening()
         try {
             engine.stopListening()
         } catch (failure: Exception) {
@@ -164,7 +165,9 @@ public class VoiceCaptureSession private constructor(
 
     /** Current elapsed listening time. */
     public val elapsedDurationMillis: Long
-        get() = startedAtMillis?.let { (elapsedRealtime() - it).coerceAtLeast(0) } ?: 0
+        get() = startedAtMillis?.let { startedAt ->
+            ((endedAtMillis ?: elapsedRealtime()) - startedAt).coerceAtLeast(0)
+        } ?: 0
 
     override fun onAudioLevel(rmsDecibels: Float) {
         if (mutableState.value == VoiceCaptureState.LISTENING) {
@@ -180,13 +183,13 @@ public class VoiceCaptureSession private constructor(
 
     override fun onEndOfSpeech() {
         if (mutableState.value == VoiceCaptureState.LISTENING) {
-            mutableState.value = VoiceCaptureState.PROCESSING
-            mutableAudioLevel.value = 0f
+            finishListening()
         }
     }
 
     override fun onFinalTranscript(transcript: String) {
         if (mutableState.value == VoiceCaptureState.IDLE) return
+        if (mutableState.value == VoiceCaptureState.LISTENING) finishListening()
         val normalized = transcript.trim()
         if (normalized.isEmpty()) {
             completeWithError(
@@ -210,8 +213,15 @@ public class VoiceCaptureSession private constructor(
         resetActiveState()
     }
 
+    private fun finishListening() {
+        if (endedAtMillis == null) endedAtMillis = elapsedRealtime()
+        mutableState.value = VoiceCaptureState.PROCESSING
+        mutableAudioLevel.value = 0f
+    }
+
     private fun resetActiveState() {
         startedAtMillis = null
+        endedAtMillis = null
         mutableState.value = VoiceCaptureState.IDLE
         mutableAudioLevel.value = 0f
         mutablePartialTranscript.value = ""
