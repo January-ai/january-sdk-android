@@ -30,23 +30,25 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param unit
- * @param quantity
+ * @param id Null only when the producer sent a serving with no id.
+ * @param quantity How much of `unit` this serving is; null when the producer reported none.
+ * @param unit Null only when the producer sent a serving with no unit.
  */
 
 
 internal data class AlternativeServing (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
+    /* Null only when the producer sent a serving with no id. */
     @Json(name = "id")
-    val id: kotlin.Long,
+    val id: kotlin.String?,
 
-    @Json(name = "unit")
-    val unit: kotlin.String,
-
+    /* How much of `unit` this serving is; null when the producer reported none. */
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal? = null
+    val quantity: java.math.BigDecimal?,
+
+    /* Null only when the producer sent a serving with no unit. */
+    @Json(name = "unit")
+    val unit: kotlin.String?
 
 ) {
 

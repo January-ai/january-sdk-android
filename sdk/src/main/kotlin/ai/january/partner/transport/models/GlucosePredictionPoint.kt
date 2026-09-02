@@ -39,7 +39,7 @@ internal data class GlucosePredictionPoint (
 
     /* Minutes after start_time. */
     @Json(name = "minutes")
-    val minutes: java.math.BigDecimal,
+    val minutes: kotlin.Int,
 
     /* Predicted glucose, mg/dL. */
     @Json(name = "value")

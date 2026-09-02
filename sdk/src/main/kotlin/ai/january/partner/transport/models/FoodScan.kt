@@ -23,8 +23,8 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.CompleteScanNutritionFacts
 import ai.january.partner.transport.models.FoodDetection
+import ai.january.partner.transport.models.NutritionFacts
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -32,23 +32,24 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param detections Detected foods. Always present — an empty array means nothing was recognized.
- * @param mealName
+ * @param mealName A name for the meal as a whole. Null on text analyses — the caller already has the words.
  * @param totalNutrients
+ * @param detections Detected foods. Always present — an empty array means nothing was recognized.
  */
 
 
 internal data class FoodScan (
 
-    /* Detected foods. Always present — an empty array means nothing was recognized. */
-    @Json(name = "detections")
-    val detections: kotlin.collections.List<FoodDetection>,
-
+    /* A name for the meal as a whole. Null on text analyses — the caller already has the words. */
     @Json(name = "meal_name")
-    val mealName: kotlin.String? = null,
+    val mealName: kotlin.String?,
 
     @Json(name = "total_nutrients")
-    val totalNutrients: CompleteScanNutritionFacts? = null
+    val totalNutrients: NutritionFacts,
+
+    /* Detected foods. Always present — an empty array means nothing was recognized. */
+    @Json(name = "detections")
+    val detections: kotlin.collections.List<FoodDetection>
 
 ) {
 

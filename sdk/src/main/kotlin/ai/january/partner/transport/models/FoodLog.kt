@@ -31,28 +31,29 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable food-log identifier; the upstream 400 response explicitly rejects non-UUID values.
+ * @param id Save this id to update or delete the log. Null only when the upstream sent a log with no id — such a log cannot be addressed.
  * @param foods
- * @param timestampUtc Returned UTC timestamp. Treat as an opaque string because deployed responses are not consistently RFC 3339 formatted.
- * @param name
+ * @param eatenAt When the meal was eaten. UTC, with milliseconds.
+ * @param name Null when no name was given.
  */
 
 
 internal data class FoodLog (
 
-    /* Stable food-log identifier; the upstream 400 response explicitly rejects non-UUID values. */
+    /* Save this id to update or delete the log. Null only when the upstream sent a log with no id — such a log cannot be addressed. */
     @Json(name = "id")
-    val id: java.util.UUID,
+    val id: kotlin.String?,
 
     @Json(name = "foods")
     val foods: kotlin.collections.List<LoggedFood>,
 
-    /* Returned UTC timestamp. Treat as an opaque string because deployed responses are not consistently RFC 3339 formatted. */
-    @Json(name = "timestamp_utc")
-    val timestampUtc: kotlin.String,
+    /* When the meal was eaten. UTC, with milliseconds. */
+    @Json(name = "eaten_at")
+    val eatenAt: java.time.OffsetDateTime,
 
+    /* Null when no name was given. */
     @Json(name = "name")
-    val name: kotlin.String? = null
+    val name: kotlin.String?
 
 ) {
 

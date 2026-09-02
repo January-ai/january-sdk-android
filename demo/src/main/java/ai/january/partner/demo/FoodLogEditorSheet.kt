@@ -75,7 +75,7 @@ internal fun FoodLogEditorSheet(
         coroutineScope.launch {
             runCatching {
                 val selections = foods.map {
-                    FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
+                    FoodSelection(it.food.id.value, ServingSelection(requireNotNull(it.serving.id).value, it.quantity))
                 }
                 val timestampUtc = timestamp.withOffsetSameInstant(ZoneOffset.UTC).toString()
                 if (existing == null) {
@@ -86,7 +86,7 @@ internal fun FoodLogEditorSheet(
                     )
                 } else {
                     userClient.foodLogs.update(
-                        id = existing.id,
+                        id = requireNotNull(existing.id),
                         foods = selections,
                         timestampUtc = timestampUtc,
                         name = name.trim().takeIf(String::isNotEmpty),
@@ -162,8 +162,8 @@ internal fun FoodLogEditorSheet(
 
 private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSelectedFood {
     val serving = ServingOption(
-        id = ServingId(logged.servingDetails.id),
-        quantity = logged.servingDetails.quantity,
+        id = logged.servingDetails.id?.let(::ServingId),
+        quantity = logged.servingDetails.quantity ?: 1.0,
         unit = logged.servingDetails.unit,
         scalingFactor = 1.0,
         weightGrams = logged.servingDetails.weightGrams,
@@ -171,7 +171,7 @@ private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSe
     )
     return DemoSelectedFood(
         food = FoodSearchItem(
-            id = FoodId(logged.id),
+            id = FoodId(requireNotNull(logged.id)),
             name = logged.name,
             brandName = logged.brandName,
             calories = logged.nutrients.calories?.value,
@@ -192,6 +192,6 @@ private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSe
             servings = listOf(serving),
         ),
         serving = serving,
-        quantity = logged.consumedServing.quantity,
+        quantity = logged.consumedServing.quantity ?: 1.0,
     )
 }

@@ -31,19 +31,19 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
+ * @param confidence How sure the vision model is of this detection. Null on text analyses and on corrected results.
  * @param food
- * @param confidenceScore Photo scans only; absent on text scans.
  */
 
 
 internal data class FoodDetection (
 
-    @Json(name = "food")
-    val food: DetectedFood,
+    /* How sure the vision model is of this detection. Null on text analyses and on corrected results. */
+    @Json(name = "confidence")
+    val confidence: kotlin.String?,
 
-    /* Photo scans only; absent on text scans. */
-    @Json(name = "confidence_score")
-    val confidenceScore: kotlin.String? = null
+    @Json(name = "food")
+    val food: DetectedFood
 
 ) {
 

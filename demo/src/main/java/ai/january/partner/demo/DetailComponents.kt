@@ -96,7 +96,7 @@ internal fun FoodGlucoseSheet(client: JanuaryPartnerClient, foodId: FoodId, food
         scope.launch {
             runCatching { client.glucose.predict(PredictGlucoseRequest(
                 GlucosePredictionProfile(42.0, Sex.FEMALE, Height(66.0, HeightUnit.INCHES), Weight(150.0, WeightUnit.POUNDS)),
-                listOf(FoodSelection(foodId.value, ServingSelection(serving.id.value, quantity))), OffsetDateTime.now(), endUserId = endUserId, timezone = timezone,
+                listOf(FoodSelection(foodId.value, ServingSelection(requireNotNull(serving.id).value, quantity))), OffsetDateTime.now(), endUserId = endUserId, timezone = timezone,
             )) }.onSuccess { result = it }.onFailure { error = it }
             loading = false
         }
@@ -136,8 +136,9 @@ private fun Modifier.androidxScroll(): Modifier = this.then(Modifier.verticalScr
 private fun FoodGlucoseResult(result: GlucosePrediction) {
     DemoCard {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Outlined.MonitorHeart, null, tint = glucoseImpactColor(result.impact.value))
-            Text(glucoseImpactLabel(result.impact.value), Modifier.weight(1f), fontWeight = FontWeight.SemiBold, color = glucoseImpactColor(result.impact.value))
+            val impact = result.impact?.value ?: "unknown"
+            Icon(Icons.Outlined.MonitorHeart, null, tint = glucoseImpactColor(impact))
+            Text(glucoseImpactLabel(impact), Modifier.weight(1f), fontWeight = FontWeight.SemiBold, color = glucoseImpactColor(impact))
             Text("Estimated impact", fontSize = 15.sp, color = JanuaryColors.Muted)
         }
     }

@@ -4,13 +4,11 @@ import ai.january.partner.ErrorCategory
 import ai.january.partner.FoodId
 import ai.january.partner.JanuaryException
 import ai.january.partner.ServingId
-import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
 import ai.january.partner.models.NutrientAmount
 import ai.january.partner.models.NutritionFacts
 import ai.january.partner.transport.apis.FoodsApi
 import ai.january.partner.transport.models.SuggestFoodAlternativesBody
-import java.math.BigDecimal
 
 public class FoodsResource internal constructor(private val api: FoodsApi) {
     public suspend fun autocomplete(request: AutocompleteFoodsRequest): AutocompleteFoodsResponse {
@@ -30,9 +28,8 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
             operation = {
                 api.autocompleteFoods(
                     query = request.query,
-                    xEndUserId = request.endUserId?.value,
-                    category = request.category?.toTransport(),
-                    limit = BigDecimal.valueOf(request.limit.toLong()),
+                    type = request.category?.toTransport(),
+                    limit = request.limit,
                 )
             },
             transform = { response ->
@@ -43,7 +40,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
                             name = it.name,
                             brandName = it.brandName,
                             imageUrl = it.imageUrl,
-                            nutrients = it.nutrients?.toPublicNutrition(),
+                            nutrients = it.nutrients.toPublicNutrition(),
                         )
                     },
                 )
@@ -52,7 +49,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
     }
 
     public suspend fun get(request: GetFoodRequest): FoodSearchItem = executeApiCall(
-        operation = { api.getFood(request.foodId.value, request.endUserId?.value) },
+        operation = { api.getFood(request.foodId.value) },
         transform = { it.toPublic() },
     )
 
@@ -74,9 +71,8 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
             operation = {
                 api.searchFoods(
                     query = request.query,
-                    xEndUserId = request.endUserId?.value,
-                    category = request.category?.toTransport(),
-                    limit = BigDecimal.valueOf(request.limit.toLong()),
+                    type = request.category?.toTransport(),
+                    limit = request.limit,
                 )
             },
             transform = { it.toPublic() },
@@ -85,8 +81,8 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
 
     public suspend fun lookupBarcode(request: LookupFoodByBarcodeRequest): FoodSearchResults =
         executeApiCall(
-            operation = { api.lookupFoodByBarcode(request.upc, request.endUserId?.value) },
-            transform = { it.toPublic() },
+            operation = { api.lookupFoodByBarcode(request.upc) },
+            transform = { FoodSearchResults(1, listOf(it.toPublic())) },
         )
 
     public suspend fun suggestAlternatives(
@@ -103,32 +99,52 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
                         requireNotNull(ai.january.partner.transport.models.DietPreference.decode(preference.value))
                     },
                 ),
-                xEndUserId = request.endUserId?.value,
             )
         },
-        transform = { bridgeModel(it) },
+        transform = { response ->
+            SuggestFoodAlternativesResponse(response.alternatives.map { food ->
+                DetectedFood(
+                    id = food.id,
+                    name = food.name,
+                    brandName = food.brandName,
+                    nutrients = food.nutrients.toPublicCompleteNutrition(),
+                    servings = food.servings.map { serving ->
+                        DetectedServing(serving.id, serving.quantity?.toDouble(), serving.unit)
+                    },
+                )
+            })
+        },
     )
 
     private fun FoodCategory.toTransport() = when (this) {
-        FoodCategory.GENERAL -> ai.january.partner.transport.models.FoodCategory.GENERAL
+        FoodCategory.GENERIC -> ai.january.partner.transport.models.FoodCategory.GENERIC
+        FoodCategory.GENERAL -> ai.january.partner.transport.models.FoodCategory.GENERIC
         FoodCategory.BRANDED -> ai.january.partner.transport.models.FoodCategory.BRANDED
         FoodCategory.RECIPE -> ai.january.partner.transport.models.FoodCategory.RECIPE
     }
 
     private fun AutocompleteFoodCategory.toTransport() = when (this) {
+        AutocompleteFoodCategory.GENERIC ->
+            ai.january.partner.transport.models.AutocompleteFoodCategory.GENERIC
         AutocompleteFoodCategory.GENERAL ->
-            ai.january.partner.transport.models.AutocompleteFoodCategory.GENERAL
+            ai.january.partner.transport.models.AutocompleteFoodCategory.GENERIC
         AutocompleteFoodCategory.BRANDED ->
             ai.january.partner.transport.models.AutocompleteFoodCategory.BRANDED
     }
 
     private fun ai.january.partner.transport.models.FoodSearchResults.toPublic() = FoodSearchResults(
-        totalCount = totalCount.toInt(),
+        totalCount = items.size,
         items = items.map { it.toPublic() },
     )
 
     private fun ai.january.partner.transport.models.FoodSearchItem.toPublic() = FoodSearchItem(
         id = FoodId(id),
+        type = when (type) {
+            ai.january.partner.transport.models.FoodSearchItem.Type.GENERIC -> FoodCategory.GENERIC
+            ai.january.partner.transport.models.FoodSearchItem.Type.BRANDED -> FoodCategory.BRANDED
+            ai.january.partner.transport.models.FoodSearchItem.Type.RECIPE -> FoodCategory.RECIPE
+            else -> FoodCategory.GENERIC
+        },
         name = name,
         brandName = brandName,
         nutrients = nutrients.toPublicNutrition(),
@@ -147,10 +163,11 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
         glycemicIndex = glycemicIndex?.toDouble(),
         glycemicLoad = glycemicLoad?.toDouble(),
         photoUrl = imageUrl,
+        barcode = barcode,
         servings = servings.map { serving ->
             ServingOption(
-                id = ServingId(serving.id),
-                quantity = serving.quantity.toDouble(),
+                id = serving.id?.let(::ServingId),
+                quantity = serving.quantity?.toDouble(),
                 unit = serving.unit,
                 scalingFactor = serving.scalingFactor?.toDouble() ?: 1.0,
                 weightGrams = serving.weightGrams?.toDouble(),
@@ -173,5 +190,17 @@ private fun ai.january.partner.transport.models.NutritionFacts.toPublicNutrition
         totalSugars = totalSugars.amount(), addedSugars = addedSugars.amount(),
         cholesterol = cholesterol.amount(), calcium = calcium.amount(), iron = iron.amount(),
         potassium = potassium.amount(), sodium = sodium.amount(), vitaminD = vitaminD.amount(),
+    )
+}
+
+private fun ai.january.partner.transport.models.NutritionFacts.toPublicCompleteNutrition():
+    ai.january.partner.models.CompleteScanNutritionFacts {
+    fun ai.january.partner.transport.models.NutrientAmount?.amount(): NutrientAmount? =
+        this?.let { NutrientAmount(it.value.toDouble(), it.unit) }
+    return ai.january.partner.models.CompleteScanNutritionFacts(
+        calories = calories.amount(), protein = protein.amount(),
+        carbohydrates = carbohydrates.amount(), netCarbohydrates = netCarbohydrates.amount(),
+        totalFat = totalFat.amount(), saturatedFat = saturatedFat.amount(), fiber = fiber.amount(),
+        totalSugars = totalSugars.amount(), addedSugars = addedSugars.amount(), sodium = sodium.amount(),
     )
 }

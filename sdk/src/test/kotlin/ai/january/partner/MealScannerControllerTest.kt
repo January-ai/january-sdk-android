@@ -28,8 +28,8 @@ class MealScannerControllerTest {
     @Test
     fun barcodeWorkflowLooksUpThenFetchesCompleteFood(): Unit = runBlocking {
         val food =
-            """{"id":42,"name":"Banana","nutrients":{},"servings":[{"id":7,"quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
-        server.enqueue(json("""{"total_count":1,"items":[$food]}"""))
+            """{"id":"42","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":"049000006346","servings":[{"id":"7","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
+        server.enqueue(json(food))
         server.enqueue(json(food))
         val client = JanuaryPartnerClient.testing(
             "fixture-api-key",
@@ -47,8 +47,8 @@ class MealScannerControllerTest {
         val fullFood = server.takeRequest()
         assertEquals("/v1.2/foods/barcode/049000006346", lookup.requestUrl!!.encodedPath)
         assertEquals("/v1.2/foods/42", fullFood.requestUrl!!.encodedPath)
-        assertEquals("scanner-user", lookup.getHeader("x-end-user-id"))
-        assertEquals("scanner-user", fullFood.getHeader("x-end-user-id"))
+        assertEquals(null, lookup.getHeader("January-End-User-ID"))
+        assertEquals(null, fullFood.getHeader("January-End-User-ID"))
     }
 
     private fun json(body: String): MockResponse = MockResponse()

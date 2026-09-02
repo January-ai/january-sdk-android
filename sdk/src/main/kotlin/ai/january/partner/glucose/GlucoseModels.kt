@@ -69,12 +69,14 @@ public data class GlucosePredictionProfile(
 public data class CgmReading(public val timestamp: String, public val value: Double)
 
 @JsonClass(generateAdapter = false)
-public data class ConsumedHistoricalServing(public val id: Long, public val quantity: Double)
+public data class ConsumedHistoricalServing(public val id: String, public val quantity: Double) {
+    public constructor(id: Long, quantity: Double) : this(id.toString(), quantity)
+}
 
 @JsonClass(generateAdapter = false)
 public data class ConsumedHistoricalFood(
     public val timestamp: String,
-    public val id: Long,
+    public val id: String,
     public val serving: ConsumedHistoricalServing,
 )
 
@@ -98,15 +100,15 @@ public value class GlucoseImpact(public val value: String) {
 }
 
 public data class GlucosePredictionPoint(public val minutes: Double, public val value: Double)
-public data class GlucoseChart(public val min: Double, public val max: Double)
+public data class GlucoseChart(public val min: Double?, public val max: Double?)
 
 public data class GlucosePrediction(
     public val prediction: List<GlucosePredictionPoint>,
-    public val impact: GlucoseImpact,
+    public val impact: GlucoseImpact?,
     public val chart: GlucoseChart,
 ) {
     public val curve: List<List<Double>> get() = prediction.map { listOf(it.minutes, it.value) }
-    public val scoring: GlucoseImpact get() = impact
-    public val minimum: Double get() = chart.min
-    public val maximum: Double get() = chart.max
+    public val scoring: GlucoseImpact? get() = impact
+    public val minimum: Double? get() = chart.min
+    public val maximum: Double? get() = chart.max
 }

@@ -25,7 +25,7 @@ public enum class RestaurantResultType {
 
 @JsonClass(generateAdapter = false)
 public data class Restaurant(
-    public val type: RestaurantResultType, public val id: String, public val name: String,
+    public val type: RestaurantResultType, public val id: String, public val name: String?,
     @Json(name = "is_chain") public val isChain: Boolean? = null,
     public val distance: Double? = null, public val city: String? = null,
     public val address1: String? = null, public val address2: String? = null,
@@ -39,8 +39,8 @@ public data class SearchRestaurantsResponse(
 
 @JsonClass(generateAdapter = false)
 public data class RestaurantMenuItem(
-    public val type: String, public val id: String, public val name: String,
-    @Json(name = "restaurant_name") public val restaurantName: String,
+    public val type: String, public val id: String, public val name: String?,
+    @Json(name = "restaurant_name") public val restaurantName: String?,
     @Json(name = "is_chain") public val isChain: Boolean? = null,
     @Json(name = "energy") public val calories: Double? = null,
     public val protein: Double? = null,
@@ -63,3 +63,14 @@ public data class SearchRestaurantMenuItemsResponse(
     public val items: List<RestaurantMenuItem>,
 )
 
+public data class RestaurantMenuEntry(
+    public val id: String?, public val name: String?,
+    public val calories: Double? = null, public val protein: Double? = null,
+    public val carbohydrates: Double? = null, public val netCarbohydrates: Double? = null,
+    public val totalFat: Double? = null, public val fiber: Double? = null,
+    public val totalSugars: Double? = null, public val addedSugars: Double? = null,
+    public val glycemicIndex: Double? = null, public val glycemicLoad: Double? = null,
+    public val servings: List<ServingOption>,
+)
+
+public data class GetRestaurantMenuItemsResponse(public val items: List<RestaurantMenuEntry>)

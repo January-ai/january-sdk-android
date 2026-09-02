@@ -18,20 +18,21 @@ public data class UpdateFoodLogRequest(
     public val timestampUtc: String? = null, public val name: String? = null,
     public val user: PartnerUserContext,
 )
+public data class GetFoodLogRequest(public val id: String, public val user: PartnerUserContext)
 public data class DeleteFoodLogRequest(public val id: String, public val user: PartnerUserContext)
 
 @JsonClass(generateAdapter = false)
-public data class ConsumedServing(public val id: Long, public val quantity: Double)
+public data class ConsumedServing(public val id: String?, public val quantity: Double?)
 
 @JsonClass(generateAdapter = false)
 public data class ServingDetails(
-    public val id: Long, public val quantity: Double, public val unit: String,
+    public val id: String?, public val quantity: Double?, public val unit: String?,
     @Json(name = "weight_grams") public val weightGrams: Double? = null,
 )
 
 @JsonClass(generateAdapter = false)
 public data class LoggedFood(
-    public val id: Long, public val name: String,
+    public val id: String?, public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     @Json(name = "image_url") public val imageUrl: String? = null,
     @Json(name = "glycemic_index") public val glycemicIndex: Double? = null,
@@ -43,7 +44,7 @@ public data class LoggedFood(
 
 @JsonClass(generateAdapter = false)
 public data class FoodLog(
-    public val id: String, public val foods: List<LoggedFood>,
+    public val id: String?, public val foods: List<LoggedFood>,
     @Json(name = "timestamp_utc") public val timestampUtc: String,
     public val name: String? = null,
 )
@@ -54,5 +55,4 @@ public data class ListFoodLogsResponse(
     public val items: List<FoodLog>,
 )
 
-@JsonClass(generateAdapter = false)
-public data class DeleteFoodLogResponse(public val status: String)
+public typealias DeleteFoodLogResponse = Unit

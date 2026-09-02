@@ -181,15 +181,15 @@ internal fun SelectedFoodRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(selected.food.name, style = MaterialTheme.typography.titleMedium)
+            Text(selected.food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
             Box {
                 TextButton(onClick = { menuOpen = true }) {
-                    Text("${formatDemoNumber(selected.serving.quantity)} ${selected.serving.unit}", color = JanuaryColors.Muted)
+                    Text("${formatDemoNumber(selected.serving.quantity ?: 1.0)} ${selected.serving.unit.orEmpty()}", color = JanuaryColors.Muted)
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                     selected.food.servings.forEach { serving ->
                         DropdownMenuItem(
-                            text = { Text("${formatDemoNumber(serving.quantity)} ${serving.unit}") },
+                            text = { Text("${formatDemoNumber(serving.quantity ?: 1.0)} ${serving.unit.orEmpty()}") },
                             onClick = { onServingChange(serving); menuOpen = false },
                         )
                     }
@@ -255,14 +255,15 @@ internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<Demo
     val peak = result.prediction.maxByOrNull { it.value }
     val mealStart = result.prediction.minByOrNull { it.minutes }
     val delta = ((peak?.value ?: 0.0) - (mealStart?.value ?: 0.0)).coerceAtLeast(0.0)
-    val impactColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
+    val impact = result.impact?.value ?: "unknown"
+    val impactColor = if (impact == "low") JanuaryColors.Green else JanuaryColors.Rust
     val peakMinutes = peak?.minutes?.toInt()
     val peakWindow = peakMinutes?.let { "${maxOf(0, it - 15)}–${it + 15} min" } ?: "estimated timing"
     PredictionChart(
         points = result.prediction.map { PredictionPoint(it.minutes, it.value) },
         minimum = result.minimum, maximum = result.maximum, lineColor = impactColor,
         summaryValue = peak?.value,
-        summaryDetail = "${glucoseImpactLabel(result.impact.value).lowercase()} · $peakWindow",
+        summaryDetail = "${glucoseImpactLabel(impact).lowercase()} · $peakWindow",
         summaryDelta = "+${kotlin.math.round(delta).toInt()} above meal start",
     )
     DemoCard {
@@ -270,9 +271,9 @@ internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<Demo
             if (index > 0) HorizontalDivider(color = JanuaryColors.Divider)
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(food.food.name, style = MaterialTheme.typography.titleMedium)
+                    Text(food.food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "${formatDemoNumber(food.serving.quantity)} ${food.serving.unit} · quantity ${formatDemoNumber(food.quantity)}",
+                        "${formatDemoNumber(food.serving.quantity ?: 1.0)} ${food.serving.unit.orEmpty()} · quantity ${formatDemoNumber(food.quantity)}",
                         color = JanuaryColors.Muted,
                     )
                 }
@@ -301,7 +302,7 @@ internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<Demo
 
 @Composable
 internal fun GlucoseChart(result: GlucosePrediction) {
-    val lineColor = if (result.impact.value == "low") JanuaryColors.Green else JanuaryColors.Rust
+    val lineColor = if (result.impact?.value == "low") JanuaryColors.Green else JanuaryColors.Rust
     PredictionChart(
         points = result.prediction.map { PredictionPoint(it.minutes.toDouble(), it.value) },
         minimum = result.chart.min,

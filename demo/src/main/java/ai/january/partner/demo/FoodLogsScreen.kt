@@ -183,7 +183,7 @@ private fun FoodLogRow(log: FoodLog, onClick: () -> Unit) {
             FoodLogMealIcon()
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(log.name?.takeIf(String::isNotBlank) ?: "Meal", style = MaterialTheme.typography.titleMedium)
-                Text(log.foods.joinToString { it.name }, maxLines = 2)
+                Text(log.foods.joinToString { it.name ?: "Unnamed food" }, maxLines = 2)
                 Text("${localLogDate(log.timestampUtc)} · ${log.foods.size} food${if (log.foods.size == 1) "" else "s"}", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
             }
             Icon(Icons.Outlined.ChevronRight, null, tint = JanuaryColors.Subdued)
@@ -215,7 +215,7 @@ private fun FoodLogDetailScreen(
         deleting = true
         error = null
         coroutineScope.launch {
-            runCatching { client.forUser(user).foodLogs.delete(log.id) }
+            runCatching { client.forUser(user).foodLogs.delete(requireNotNull(log.id)) }
                 .onSuccess { onChanged() }
                 .onFailure { error = it }
             deleting = false
@@ -273,9 +273,9 @@ private fun FoodLogDetailScreen(
 private fun LoggedFoodCard(food: LoggedFood) {
     FoodLogCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(food.name, style = MaterialTheme.typography.titleMedium)
+            Text(food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
             food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
-            Text("${formatLogNumber(food.consumedServing.quantity)} × ${formatLogNumber(food.servingDetails.quantity)} ${food.servingDetails.unit}", fontSize = 15.sp)
+            Text("${formatLogNumber(food.consumedServing.quantity ?: 1.0)} × ${formatLogNumber(food.servingDetails.quantity ?: 1.0)} ${food.servingDetails.unit.orEmpty()}", fontSize = 15.sp)
             FoodLogMacros(listOf("Calories" to food.nutrients.calories, "Protein" to food.nutrients.protein, "Carbs" to food.nutrients.carbohydrates, "Fat" to food.nutrients.totalFat))
             NutritionList(listOf(
                 "Net carbohydrates" to food.nutrients.netCarbohydrates,

@@ -30,20 +30,15 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param quantity How many of that serving were consumed.
+ * @param revokedCount How many live tokens this call revoked. Already-revoked and already-expired tokens are not counted, so an immediate second call reports 0 — repeat the call until it does.
  */
 
 
-internal data class FoodLogInputServing (
+internal data class ClientTokenRevocationResult (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
-    @Json(name = "id")
-    val id: kotlin.Long,
-
-    /* How many of that serving were consumed. */
-    @Json(name = "quantity")
-    val quantity: java.math.BigDecimal
+    /* How many live tokens this call revoked. Already-revoked and already-expired tokens are not counted, so an immediate second call reports 0 — repeat the call until it does. */
+    @Json(name = "revoked_count")
+    val revokedCount: kotlin.Int
 
 ) {
 

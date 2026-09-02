@@ -30,14 +30,14 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * Values: GENERAL,BRANDED
+ * Values: GENERIC,BRANDED
  */
 
 @JsonClass(generateAdapter = false)
 internal enum class AutocompleteFoodCategory(val value: kotlin.String) {
 
-    @Json(name = "general")
-    GENERAL("general"),
+    @Json(name = "generic")
+    GENERIC("generic"),
 
     @Json(name = "branded")
     BRANDED("branded");

@@ -30,27 +30,30 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param quantity
- * @param unit
- * @param weightGrams
+ * @param id Null only when the upstream sent a serving with no id.
+ * @param quantity How many units make up one of this serving, e.g. 1 for \"1 cup\". Null when the upstream reported none.
+ * @param unit Null only when the upstream sent a serving with no unit.
+ * @param weightGrams Null when the upstream has no gram weight for this serving.
  */
 
 
 internal data class ServingDetails (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
+    /* Null only when the upstream sent a serving with no id. */
     @Json(name = "id")
-    val id: kotlin.Long,
+    val id: kotlin.String?,
 
+    /* How many units make up one of this serving, e.g. 1 for \"1 cup\". Null when the upstream reported none. */
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal,
+    val quantity: java.math.BigDecimal?,
 
+    /* Null only when the upstream sent a serving with no unit. */
     @Json(name = "unit")
-    val unit: kotlin.String,
+    val unit: kotlin.String?,
 
+    /* Null when the upstream has no gram weight for this serving. */
     @Json(name = "weight_grams")
-    val weightGrams: java.math.BigDecimal? = null
+    val weightGrams: java.math.BigDecimal?
 
 ) {
 

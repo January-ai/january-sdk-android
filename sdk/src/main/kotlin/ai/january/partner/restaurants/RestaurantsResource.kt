@@ -2,7 +2,6 @@ package ai.january.partner.restaurants
 
 import ai.january.partner.JanuaryException
 import ai.january.partner.ErrorCategory
-import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
 import ai.january.partner.transport.apis.RestaurantsApi
 import java.math.BigDecimal
@@ -14,10 +13,21 @@ public class RestaurantsResource internal constructor(private val api: Restauran
             operation = {
                 api.searchRestaurants(
                     request.query, BigDecimal.valueOf(request.latitude), BigDecimal.valueOf(request.longitude),
-                    request.endUserId?.value, BigDecimal.valueOf(request.radius), BigDecimal.valueOf(request.limit.toLong()),
+                    BigDecimal.valueOf(request.radius), request.limit,
                 )
             },
-            transform = { bridgeModel(it) },
+            transform = { response -> SearchRestaurantsResponse(response.items.size, response.items.map { item ->
+                Restaurant(
+                    type = RestaurantResultType.RESTAURANT,
+                    id = item.id,
+                    name = item.name,
+                    isChain = item.isChain,
+                    distance = item.distanceMeters?.toDouble(),
+                    city = item.city,
+                    address1 = item.address1,
+                    address2 = item.address2,
+                )
+            }) },
         )
     }
 
@@ -27,7 +37,7 @@ public class RestaurantsResource internal constructor(private val api: Restauran
             operation = {
                 api.searchRestaurantMenuItems(
                     request.query, BigDecimal.valueOf(request.latitude), BigDecimal.valueOf(request.longitude),
-                    request.endUserId?.value, BigDecimal.valueOf(request.radius), BigDecimal.valueOf(request.limit.toLong()),
+                    BigDecimal.valueOf(request.radius), request.limit,
                 )
             },
             transform = ::mapMenu,
@@ -35,30 +45,43 @@ public class RestaurantsResource internal constructor(private val api: Restauran
     }
 
     /** Loads one page of the selected restaurant's menu without text search or coordinates. */
-    public suspend fun getMenuItems(request: GetRestaurantMenuItemsRequest): SearchRestaurantMenuItemsResponse {
+    public suspend fun getMenuItems(request: GetRestaurantMenuItemsRequest): GetRestaurantMenuItemsResponse {
         if (!Regex("^[A-Za-z0-9_-]{1,256}$").matches(request.restaurantId) || request.limit !in 1..100 || request.offset < 0) {
             throw JanuaryException(ErrorCategory.VALIDATION, "A restaurant id and valid menu pagination are required.")
         }
         return executeApiCall(
-            operation = { api.getRestaurantMenuItems(request.restaurantId, request.endUserId?.value, request.limit, request.offset) },
-            transform = ::mapMenu,
+            operation = { api.getRestaurantMenuItems(request.restaurantId, request.limit, request.offset) },
+            transform = { response -> GetRestaurantMenuItemsResponse(response.items.map { item ->
+                RestaurantMenuEntry(
+                    id = item.id,
+                    name = item.name,
+                    calories = item.nutrients.calories?.value?.toDouble(),
+                    protein = item.nutrients.protein?.value?.toDouble(),
+                    carbohydrates = item.nutrients.carbohydrates?.value?.toDouble(),
+                    netCarbohydrates = item.nutrients.netCarbohydrates?.value?.toDouble(),
+                    totalFat = item.nutrients.totalFat?.value?.toDouble(),
+                    fiber = item.nutrients.fiber?.value?.toDouble(),
+                    totalSugars = item.nutrients.totalSugars?.value?.toDouble(),
+                    addedSugars = item.nutrients.addedSugars?.value?.toDouble(),
+                    glycemicIndex = item.glycemicIndex?.toDouble(),
+                    glycemicLoad = item.glycemicLoad?.toDouble(),
+                    servings = item.servings.map(::mapServing),
+                )
+            }) },
         )
     }
 
     private fun mapMenu(response: ai.january.partner.transport.models.SearchRestaurantMenuItemsResponse): SearchRestaurantMenuItemsResponse =
-        SearchRestaurantMenuItemsResponse(response.totalCount.toInt(), response.items.map { item ->
+        SearchRestaurantMenuItemsResponse(response.items.size, response.items.map { item ->
                     RestaurantMenuItem(
-                        type = item.type, id = item.id, name = item.name, restaurantName = item.restaurantName,
-                        isChain = item.isChain, calories = item.nutrients?.calories?.value?.toDouble(),
-                        protein = item.nutrients?.protein?.value?.toDouble(), carbohydrates = item.nutrients?.carbohydrates?.value?.toDouble(),
-                        netCarbohydrates = item.nutrients?.netCarbohydrates?.value?.toDouble(), totalFat = item.nutrients?.totalFat?.value?.toDouble(),
-                        fiber = item.nutrients?.fiber?.value?.toDouble(), totalSugars = item.nutrients?.totalSugars?.value?.toDouble(),
-                        addedSugars = item.nutrients?.addedSugars?.value?.toDouble(), glycemicIndex = item.glycemicIndex?.toDouble(),
-                        glycemicLoad = item.glycemicLoad?.toDouble(), photoUrl = item.imageUrl, distance = item.distance?.toDouble(),
-                        servings = item.servings.map { serving -> ai.january.partner.foods.ServingOption(
-                            ai.january.partner.ServingId(serving.id), serving.quantity.toDouble(), serving.unit,
-                            serving.scalingFactor.toDouble(), serving.weightGrams?.toDouble(), serving.isPrimary,
-                        ) },
+                        type = item.type.value, id = item.id, name = item.name, restaurantName = item.restaurantName,
+                        isChain = item.isChain, calories = item.nutrients.calories?.value?.toDouble(),
+                        protein = item.nutrients.protein?.value?.toDouble(), carbohydrates = item.nutrients.carbohydrates?.value?.toDouble(),
+                        netCarbohydrates = item.nutrients.netCarbohydrates?.value?.toDouble(), totalFat = item.nutrients.totalFat?.value?.toDouble(),
+                        fiber = item.nutrients.fiber?.value?.toDouble(), totalSugars = item.nutrients.totalSugars?.value?.toDouble(),
+                        addedSugars = item.nutrients.addedSugars?.value?.toDouble(), glycemicIndex = item.glycemicIndex?.toDouble(),
+                        glycemicLoad = item.glycemicLoad?.toDouble(), photoUrl = item.imageUrl, distance = item.distanceMeters?.toDouble(),
+                        servings = item.servings.map(::mapServing),
                     )
                 })
 
@@ -69,9 +92,18 @@ public class RestaurantsResource internal constructor(private val api: Restauran
         if (request.latitude !in -90.0..90.0 || request.longitude !in -180.0..180.0) {
             throw JanuaryException(ErrorCategory.VALIDATION, "Restaurant coordinates are outside the valid range.")
         }
-        if (request.radius !in 1.0..17_000.0 || request.limit !in 1..100) {
+        if (request.radius !in 1.0..50_000.0 || request.limit !in 1..100) {
             throw JanuaryException(ErrorCategory.VALIDATION, "Restaurant radius or limit is outside the valid range.")
         }
     }
 }
 
+private fun mapServing(serving: ai.january.partner.transport.models.ServingOption) =
+    ai.january.partner.foods.ServingOption(
+        serving.id?.let { ai.january.partner.ServingId(it) },
+        serving.quantity?.toDouble(),
+        serving.unit,
+        serving.scalingFactor?.toDouble() ?: 1.0,
+        serving.weightGrams?.toDouble(),
+        serving.isPrimary,
+    )

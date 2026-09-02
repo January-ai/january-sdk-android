@@ -57,6 +57,33 @@ internal suspend fun <Transport, Public> executeApiCall(
     }
 }
 
+internal suspend fun executeEmptyApiCall(operation: suspend () -> Response<Unit>) {
+    try {
+        val response = operation()
+        if (!response.isSuccessful) {
+            val details = runCatching {
+                response.errorBody()?.string()?.let { Serializer.moshiBuilder.build().adapter(Map::class.java).fromJson(it) }
+            }.getOrNull()
+            throw JanuaryException(
+                categoryForStatus(response.code()),
+                details?.get("message") as? String ?: "The January API returned HTTP ${response.code()}.",
+                response.code(),
+                cause = null,
+                code = details?.get("code") as? String,
+                requestId = details?.get("request_id") as? String ?: response.headers()["x-request-id"],
+            )
+        }
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: JanuaryException) {
+        throw error
+    } catch (error: SocketTimeoutException) {
+        throw JanuaryException(ErrorCategory.TIMEOUT, "The request to the January API timed out.", cause = error)
+    } catch (error: IOException) {
+        throw JanuaryException(ErrorCategory.TRANSPORT, "The request to the January API failed.", cause = error)
+    }
+}
+
 internal fun categoryForStatus(status: Int): ErrorCategory = when (status) {
     400, 422 -> ErrorCategory.VALIDATION
     401 -> ErrorCategory.AUTHENTICATION

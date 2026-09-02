@@ -126,7 +126,7 @@ internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: St
         DemoCard {
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(detection.food.name, style = MaterialTheme.typography.titleMedium)
+                    Text(detection.food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
                     detection.food.brandName?.takeIf(String::isNotBlank)?.let { Text(it, color = JanuaryColors.Muted) }
                 }
                 detection.confidenceScore?.let {
@@ -142,11 +142,6 @@ internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: St
             }
             ScanMacroStrip(detection.food.nutrients)
         }
-    }
-    result.glucoseImpact?.takeIf { it.prediction.isNotEmpty() }?.let { impact ->
-        Text("Estimated glucose response", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-        Text(impact.impactScore.replace('_', ' ').replaceFirstChar(Char::uppercase), color = JanuaryColors.Rust, fontWeight = FontWeight.SemiBold)
-        PhotoGlucoseChart(impact)
     }
 }
 
@@ -237,7 +232,7 @@ internal fun CorrectionSheet(
             SectionLabel("Current detections")
             DemoCard {
                 initial.detections.orEmpty().forEachIndexed { index, detection ->
-                    Text(detection.food.name, Modifier.padding(vertical = 14.dp), style = MaterialTheme.typography.titleMedium)
+                    Text(detection.food.name ?: "Unnamed food", Modifier.padding(vertical = 14.dp), style = MaterialTheme.typography.titleMedium)
                     if (index < initial.detections.orEmpty().lastIndex) HorizontalDivider(color = JanuaryColors.Divider)
                 }
             }

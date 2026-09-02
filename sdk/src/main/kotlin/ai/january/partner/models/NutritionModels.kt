@@ -41,8 +41,11 @@ public data class NutritionFacts(
 )
 
 @JsonClass(generateAdapter = false)
-public data class ServingSelection(public val id: Long, public val quantity: Double)
+public data class ServingSelection(public val id: String, public val quantity: Double) {
+    public constructor(id: Long, quantity: Double) : this(id.toString(), quantity)
+}
 
 @JsonClass(generateAdapter = false)
-public data class FoodSelection(public val id: Long, public val serving: ServingSelection)
-
+public data class FoodSelection(public val id: String, public val serving: ServingSelection) {
+    public constructor(id: Long, serving: ServingSelection) : this(id.toString(), serving)
+}

@@ -31,15 +31,11 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param totalCount
  * @param items Logs in the range, ordered by timestamp. An empty list is a valid result.
  */
 
 
 internal data class ListFoodLogsResponse (
-
-    @Json(name = "total_count")
-    val totalCount: java.math.BigDecimal,
 
     /* Logs in the range, ordered by timestamp. An empty list is a valid result. */
     @Json(name = "items")

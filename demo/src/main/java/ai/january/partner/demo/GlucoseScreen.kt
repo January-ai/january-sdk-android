@@ -117,7 +117,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                             healthConditions = conditions.toList(),
                         ),
                         foods = foods.map {
-                            FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
+                            FoodSelection(it.food.id.value, ServingSelection(requireNotNull(it.serving.id).value, it.quantity))
                         },
                         startTime = startTime,
                     ),

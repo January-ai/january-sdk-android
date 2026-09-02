@@ -40,15 +40,23 @@ public data class PhotoScanGlucoseImpact(
 @JsonClass(generateAdapter = false)
 public data class FoodScan(
     @Json(name = "meal_name") public val mealName: String? = null,
-    @Json(name = "total_nutrients") public val totalNutrients: CompleteScanNutritionFacts? = null,
-    public val detections: List<FoodDetection>? = null,
-    @Json(name = "glucose_impact") public val glucoseImpact: PhotoScanGlucoseImpact? = null,
+    @Json(name = "total_nutrients") public val totalNutrients: CompleteScanNutritionFacts,
+    public val detections: List<FoodDetection>,
 )
 
 @Deprecated("Use FoodScan.", ReplaceWith("FoodScan"))
 public typealias PhotoScan = FoodScan
 
 public data class CorrectPhotoScanRequest(
-    public val mealName: String, public val detections: List<FoodDetection>,
-    public val userInput: String, public val endUserId: PartnerUserId? = null,
-)
+    public val analysis: FoodScan,
+    public val instruction: String,
+    public val endUserId: PartnerUserId? = null,
+) {
+    @Deprecated("Pass the complete prior analysis and an instruction.")
+    public constructor(
+        mealName: String,
+        detections: List<FoodDetection>,
+        userInput: String,
+        endUserId: PartnerUserId? = null,
+    ) : this(FoodScan(mealName, CompleteScanNutritionFacts(), detections), userInput, endUserId)
+}

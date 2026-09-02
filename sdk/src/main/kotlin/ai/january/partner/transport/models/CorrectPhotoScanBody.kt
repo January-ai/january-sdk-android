@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.FoodDetection
+import ai.january.partner.transport.models.FoodScan
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -31,25 +31,19 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param detections The detections array from a photo or text food scan, exactly as returned. Omitted zero-value nutrient keys are filled in automatically; each detection needs at least one serving.
- * @param userInput Plain-English description of what to correct.
- * @param mealName The meal name from the scan, when it returned one (photo scans do; text scans don't). Defaults to 'Meal'.
+ * @param analysis
+ * @param instruction Plain-English description of what to correct.
  */
 
 
 internal data class CorrectPhotoScanBody (
 
-    /* The detections array from a photo or text food scan, exactly as returned. Omitted zero-value nutrient keys are filled in automatically; each detection needs at least one serving. */
-    @Json(name = "detections")
-    val detections: kotlin.collections.List<FoodDetection>,
+    @Json(name = "analysis")
+    val analysis: FoodScan,
 
     /* Plain-English description of what to correct. */
-    @Json(name = "user_input")
-    val userInput: kotlin.String,
-
-    /* The meal name from the scan, when it returned one (photo scans do; text scans don't). Defaults to 'Meal'. */
-    @Json(name = "meal_name")
-    val mealName: kotlin.String? = null
+    @Json(name = "instruction")
+    val instruction: kotlin.String
 
 ) {
 

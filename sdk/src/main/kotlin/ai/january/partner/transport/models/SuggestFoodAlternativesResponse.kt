@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.FoodAlternative
+import ai.january.partner.transport.models.AlternativeFood
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -39,7 +39,7 @@ internal data class SuggestFoodAlternativesResponse (
 
     /* Healthier alternatives matching the restrictions and preferences. An empty array is a valid result, not an error. */
     @Json(name = "alternatives")
-    val alternatives: kotlin.collections.List<FoodAlternative>
+    val alternatives: kotlin.collections.List<AlternativeFood>
 
 ) {
 

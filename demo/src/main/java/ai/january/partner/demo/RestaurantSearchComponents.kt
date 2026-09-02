@@ -200,21 +200,32 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
                 val menu = mutableListOf<RestaurantMenuItem>()
                 do {
                     val page = client.restaurants.getMenuItems(ai.january.partner.restaurants.GetRestaurantMenuItemsRequest(restaurant.id, offset = menu.size, endUserId = endUserId))
-                    menu.addAll(page.items)
-                } while (page.items.isNotEmpty() && menu.size < page.totalCount)
+                    menu.addAll(page.items.mapIndexed { index, entry ->
+                        RestaurantMenuItem(
+                            type = "menu_item", id = entry.id ?: "menu-${menu.size + index}",
+                            name = entry.name, restaurantName = restaurant.name,
+                            calories = entry.calories, protein = entry.protein,
+                            carbohydrates = entry.carbohydrates, netCarbohydrates = entry.netCarbohydrates,
+                            totalFat = entry.totalFat, fiber = entry.fiber,
+                            totalSugars = entry.totalSugars, addedSugars = entry.addedSugars,
+                            glycemicIndex = entry.glycemicIndex, glycemicLoad = entry.glycemicLoad,
+                            servings = entry.servings,
+                        )
+                    })
+                } while (page.items.size == 100)
                 menu.toList()
             } catch (failure: JanuaryException) {
-                if (!failure.isMissingRestaurantMenuRoute()) throw failure
+                if (!failure.isRestaurantMenuUnavailable()) throw failure
                 val page = client.restaurants.searchMenuItems(SearchRestaurantsRequest(
-                    query = restaurant.name,
+                    query = restaurant.name ?: "Restaurant",
                     latitude = latitude,
                     longitude = longitude,
                     radius = radius,
                     limit = resultLimit.coerceIn(1, 100),
                     endUserId = endUserId,
                 ))
-                val selectedName = normalizedRestaurantName(restaurant.name)
-                page.items.filter { normalizedRestaurantName(it.restaurantName) == selectedName }
+                val selectedName = normalizedRestaurantName(restaurant.name.orEmpty())
+                page.items.filter { normalizedRestaurantName(it.restaurantName.orEmpty()) == selectedName }
             }
         }.onSuccess { items = it }.onFailure { error = it }
         loading = false
@@ -226,7 +237,7 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
     ) {
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Text(restaurant.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                Text(restaurant.name ?: "Restaurant", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                 DemoCard {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         SectionLabel("Location")
@@ -257,10 +268,7 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
     }
 }
 
-private fun JanuaryException.isMissingRestaurantMenuRoute(): Boolean =
-    httpStatus == 404 &&
-        message.orEmpty().contains("No v1.2 endpoint matches GET /v1.2/restaurants/") &&
-        message.orEmpty().contains("/menu-items")
+private fun JanuaryException.isRestaurantMenuUnavailable(): Boolean = httpStatus == 404
 
 private fun normalizedRestaurantName(value: String): String = value
     .substringBefore('(')
@@ -270,7 +278,7 @@ private fun normalizedRestaurantName(value: String): String = value
 
 @Composable
 internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, onBack: () -> Unit, modifier: Modifier) {
-    var serving by remember(item.id) { mutableStateOf(item.servings.firstOrNull { it.isPrimary } ?: item.servings.firstOrNull()) }
+    var serving by remember(item.id) { mutableStateOf(item.servings.firstOrNull { it.isPrimary == true } ?: item.servings.firstOrNull()) }
     var quantity by remember(item.id) { mutableDoubleStateOf(serving?.quantity ?: 1.0) }
     var showGlucose by remember { mutableStateOf(false) }
     val foodId = item.id.toLongOrNull()?.let { ai.january.partner.FoodId(it) }
@@ -282,10 +290,10 @@ internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, on
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Box(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(28.dp)).background(JanuaryColors.Control), contentAlignment = Alignment.Center) {
-                    NetworkImage(item.photoUrl, item.name, Modifier.fillMaxSize().padding(18.dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit, placeholderSize = 44.dp)
+                    NetworkImage(item.photoUrl, item.name ?: "Menu item", Modifier.fillMaxSize().padding(18.dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit, placeholderSize = 44.dp)
                 }
-                Text(item.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                Text(item.restaurantName, color = JanuaryColors.Muted)
+                Text(item.name ?: "Unnamed menu item", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
+                Text(item.restaurantName ?: "Restaurant", color = JanuaryColors.Muted)
                 DemoCard { ScanStyleMacroStrip(item.calories, item.protein, item.carbohydrates, item.totalFat) }
                 DemoCard { NutritionList(listOfNotNull(
                     item.netCarbohydrates?.let { NutritionValue("Net carbohydrates", "${formatNumber(it)} g") },
@@ -295,7 +303,7 @@ internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, on
                     item.glycemicIndex?.let { NutritionValue("Glycemic index", formatNumber(it)) },
                     item.glycemicLoad?.let { NutritionValue("Glycemic load", formatNumber(it)) },
                 )) }
-                ServingControls(item.servings, serving, quantity, { serving = it; quantity = it.quantity }, { quantity = it }, menuItem = true)
+                ServingControls(item.servings, serving, quantity, { serving = it; quantity = it.quantity ?: 1.0 }, { quantity = it }, menuItem = true)
                 DemoPrimaryButton("See glucose impact", { showGlucose = true }, Modifier.fillMaxWidth(), enabled = serving != null && foodId != null && state.client != null,
                     icon = { Icon(Icons.Outlined.MonitorHeart, null) })
                 DetailDisclosure { Text("Menu item ID · ${item.id}", style = MaterialTheme.typography.bodySmall) }
@@ -303,5 +311,5 @@ internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, on
             }
         }
     }
-    if (showGlucose && serving != null && foodId != null && state.client != null) FoodGlucoseSheet(state.client!!, foodId, item.name, serving!!, quantity, state.partnerUserId, state.timezone) { showGlucose = false }
+    if (showGlucose && serving != null && foodId != null && state.client != null) FoodGlucoseSheet(state.client!!, foodId, item.name ?: "Menu item", serving!!, quantity, state.partnerUserId, state.timezone) { showGlucose = false }
 }

@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.RestaurantMenuItem
+import ai.january.partner.transport.models.RestaurantMenuSearchItem
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -31,19 +31,15 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param totalCount Total number of matches; may exceed the number of items returned.
- * @param items
+ * @param items Matching dishes ranked by proximity. Empty when nothing matches — not an error.
  */
 
 
 internal data class SearchRestaurantMenuItemsResponse (
 
-    /* Total number of matches; may exceed the number of items returned. */
-    @Json(name = "total_count")
-    val totalCount: java.math.BigDecimal,
-
+    /* Matching dishes ranked by proximity. Empty when nothing matches — not an error. */
     @Json(name = "items")
-    val items: kotlin.collections.List<RestaurantMenuItem>
+    val items: kotlin.collections.List<RestaurantMenuSearchItem>
 
 ) {
 

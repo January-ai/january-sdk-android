@@ -93,7 +93,7 @@ internal fun DemoEmptyFoodState(modifier: Modifier = Modifier) {
 @Composable
 internal fun FoodSuggestionList(
     suggestions: List<FoodSuggestion>,
-    loadingFoodId: Long? = null,
+    loadingFoodId: String? = null,
     onSelect: (FoodSuggestion) -> Unit,
 ) {
     DemoCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
@@ -108,7 +108,7 @@ internal fun FoodSuggestionList(
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = suggestion.name,
+                        text = suggestion.name ?: "Unnamed food",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         color = JanuaryColors.Ink,
@@ -136,11 +136,11 @@ internal fun FoodResultRow(
     onClick: () -> Unit,
 ) {
     FoodRow(
-        name = food.name,
+        name = food.name ?: "Unnamed food",
         subtitle = food.brandName,
         meta = listOfNotNull(
             food.calories?.let { "${it.roundToInt()} cal" },
-            primaryServing(food)?.let { "${formatDemoNumber(it.quantity)} ${it.unit}" },
+            primaryServing(food)?.let { "${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit.orEmpty()}" },
         ).joinToString(" · "),
         imageUrl = food.photoUrl,
         loading = loading,
@@ -168,7 +168,7 @@ internal fun ServingSelectionSheet(
             ),
         )
     }
-    var serving by remember(food.id) { mutableStateOf(servings.firstOrNull { it.isPrimary } ?: servings.first()) }
+    var serving by remember(food.id) { mutableStateOf(servings.firstOrNull { it.isPrimary == true } ?: servings.first()) }
     var quantity by remember(food.id) { mutableStateOf(1.0) }
     var servingMenuOpen by remember { mutableStateOf(false) }
     val scale = quantity * serving.scalingFactor / serving.quantity.takeUnless { it == 0.0 }.orEmptyOne()
@@ -178,7 +178,7 @@ internal fun ServingSelectionSheet(
             modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(top = 16.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(food.name, style = MaterialTheme.typography.headlineMedium, color = JanuaryColors.Ink)
+            Text(food.name ?: "Unnamed food", style = MaterialTheme.typography.headlineMedium, color = JanuaryColors.Ink)
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -194,13 +194,13 @@ internal fun ServingSelectionSheet(
                         Spacer(Modifier.weight(1f))
                         Box {
                             TextButton(onClick = { servingMenuOpen = true }) {
-                                Text("${formatDemoNumber(serving.quantity)} ${serving.unit}", color = androidx.compose.ui.graphics.Color(0xFF6E5613))
+                                Text("${formatDemoNumber(serving.quantity ?: 1.0)} ${serving.unit.orEmpty()}", color = androidx.compose.ui.graphics.Color(0xFF6E5613))
                                 Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = androidx.compose.ui.graphics.Color(0xFF6E5613))
                             }
                             DropdownMenu(expanded = servingMenuOpen, onDismissRequest = { servingMenuOpen = false }) {
                                 servings.forEach { option ->
                                     DropdownMenuItem(
-                                        text = { Text("${formatDemoNumber(option.quantity)} ${option.unit}") },
+                                        text = { Text("${formatDemoNumber(option.quantity ?: 1.0)} ${option.unit.orEmpty()}") },
                                         onClick = { serving = option; servingMenuOpen = false },
                                     )
                                 }
@@ -235,7 +235,7 @@ internal fun ServingSelectionSheet(
                 text = "Add to meal",
                 onClick = { onSelect(DemoSelectedFood(food, serving, quantity)) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = serving.id.value != 0L,
+                enabled = serving.id?.value != "0",
             )
         }
     }
@@ -271,7 +271,7 @@ internal fun ServingMetric(label: String, value: Double?, unit: String) {
 }
 
 internal fun primaryServing(food: FoodSearchItem): ServingOption? =
-    food.servings.firstOrNull { it.isPrimary } ?: food.servings.firstOrNull()
+    food.servings.firstOrNull { it.isPrimary == true } ?: food.servings.firstOrNull()
 
 internal fun formatDemoNumber(value: Double): String =
     if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value).trimEnd('0').trimEnd('.')

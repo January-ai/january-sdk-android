@@ -32,54 +32,72 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable food identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param name
+ * @param id Opaque id — pass it back verbatim to log, predict, or fetch this food.
+ * @param type What kind of food this is: `generic` for a database staple (\"banana\"), `branded` for a packaged product, `recipe` for a multi-ingredient dish.
+ * @param name Null only when the database has no name for the row.
+ * @param brandName null for generic foods and recipes, which have no brand.
  * @param nutrients
- * @param servings
- * @param brandName Absent for generic (non-branded) foods.
- * @param glycemicIndex Glycemic index.
- * @param glycemicLoad Glycemic load.
- * @param imageUrl URL of a picture of the food, when the database has one.
- * @param upc The product's barcode, for branded foods that have one.
+ * @param glycemicIndex Glycemic index; null when the database has none for this food.
+ * @param glycemicLoad Glycemic load; null when the database has none for this food.
+ * @param imageUrl URL of a picture of the food; null when the database has none.
+ * @param barcode The product's barcode; null for foods that have none. Named for the code rather than one of its encodings — the same field carries a UPC, an EAN or a GTIN. It is the database's normalized form, so it may differ from the digits you scanned in leading zeros: display it, do not string-compare it.
+ * @param servings Search and barcode results carry the default serving only; `GET /v1.2/foods/{food_id}` returns the complete list to choose from.
  */
 
 
 internal data class FoodSearchItem (
 
-    /* Stable food identifier, provisionally narrowed to JavaScript's safe integer range. */
+    /* Opaque id — pass it back verbatim to log, predict, or fetch this food. */
     @Json(name = "id")
-    val id: kotlin.Long,
+    val id: kotlin.String,
 
+    /* What kind of food this is: `generic` for a database staple (\"banana\"), `branded` for a packaged product, `recipe` for a multi-ingredient dish. */
+    @Json(name = "type")
+    val type: FoodSearchItem.Type,
+
+    /* Null only when the database has no name for the row. */
     @Json(name = "name")
-    val name: kotlin.String,
+    val name: kotlin.String?,
+
+    /* null for generic foods and recipes, which have no brand. */
+    @Json(name = "brand_name")
+    val brandName: kotlin.String?,
 
     @Json(name = "nutrients")
     val nutrients: NutritionFacts,
 
-    @Json(name = "servings")
-    val servings: kotlin.collections.List<ServingOption>,
-
-    /* Absent for generic (non-branded) foods. */
-    @Json(name = "brand_name")
-    val brandName: kotlin.String? = null,
-
-    /* Glycemic index. */
+    /* Glycemic index; null when the database has none for this food. */
     @Json(name = "glycemic_index")
-    val glycemicIndex: java.math.BigDecimal? = null,
+    val glycemicIndex: java.math.BigDecimal?,
 
-    /* Glycemic load. */
+    /* Glycemic load; null when the database has none for this food. */
     @Json(name = "glycemic_load")
-    val glycemicLoad: java.math.BigDecimal? = null,
+    val glycemicLoad: java.math.BigDecimal?,
 
-    /* URL of a picture of the food, when the database has one. */
+    /* URL of a picture of the food; null when the database has none. */
     @Json(name = "image_url")
-    val imageUrl: kotlin.String? = null,
+    val imageUrl: kotlin.String?,
 
-    /* The product's barcode, for branded foods that have one. */
-    @Json(name = "upc")
-    val upc: kotlin.String? = null
+    /* The product's barcode; null for foods that have none. Named for the code rather than one of its encodings — the same field carries a UPC, an EAN or a GTIN. It is the database's normalized form, so it may differ from the digits you scanned in leading zeros: display it, do not string-compare it. */
+    @Json(name = "barcode")
+    val barcode: kotlin.String?,
+
+    /* Search and barcode results carry the default serving only; `GET /v1.2/foods/{food_id}` returns the complete list to choose from. */
+    @Json(name = "servings")
+    val servings: kotlin.collections.List<ServingOption>
 
 ) {
 
+    /**
+     * What kind of food this is: `generic` for a database staple (\"banana\"), `branded` for a packaged product, `recipe` for a multi-ingredient dish.
+     *
+     * Values: GENERIC,BRANDED,RECIPE
+     */
+    @JsonClass(generateAdapter = false)
+    internal enum class Type(val value: kotlin.String) {
+        @Json(name = "generic") GENERIC("generic"),
+        @Json(name = "branded") BRANDED("branded"),
+        @Json(name = "recipe") RECIPE("recipe");
+    }
 
 }

@@ -30,28 +30,30 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Stable serving identifier, provisionally narrowed to JavaScript's safe integer range.
- * @param unit
- * @param quantity
- * @param selectedQuantity Quantity the parser selected from the text ('2 cups' → 2); text scans only. Advisory — corrections reads the serving's own quantity.
+ * @param id Null only when the producer sent a serving with no id.
+ * @param quantity How much of `unit` this serving is; null when the producer reported none.
+ * @param unit Null only when the producer sent a serving with no unit.
+ * @param selectedQuantity Quantity parsed from the text ('2 cups' → 2); null on image analyses. Advisory — corrections reads the serving's own quantity.
  */
 
 
 internal data class DetectedServing (
 
-    /* Stable serving identifier, provisionally narrowed to JavaScript's safe integer range. */
+    /* Null only when the producer sent a serving with no id. */
     @Json(name = "id")
-    val id: kotlin.Long,
+    val id: kotlin.String?,
 
-    @Json(name = "unit")
-    val unit: kotlin.String,
-
+    /* How much of `unit` this serving is; null when the producer reported none. */
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal? = null,
+    val quantity: java.math.BigDecimal?,
 
-    /* Quantity the parser selected from the text ('2 cups' → 2); text scans only. Advisory — corrections reads the serving's own quantity. */
+    /* Null only when the producer sent a serving with no unit. */
+    @Json(name = "unit")
+    val unit: kotlin.String?,
+
+    /* Quantity parsed from the text ('2 cups' → 2); null on image analyses. Advisory — corrections reads the serving's own quantity. */
     @Json(name = "selected_quantity")
-    val selectedQuantity: java.math.BigDecimal? = null
+    val selectedQuantity: java.math.BigDecimal?
 
 ) {
 

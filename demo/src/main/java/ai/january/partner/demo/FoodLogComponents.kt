@@ -97,10 +97,10 @@ internal fun FoodLogSelectedFoodCard(selected: DemoSelectedFood, onServingChange
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 FoodLogMealIcon()
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(selected.food.name, style = MaterialTheme.typography.titleMedium)
+                    Text(selected.food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
                     selected.food.brandName?.takeIf(String::isNotBlank)?.let { Text(it, fontSize = 15.sp, color = JanuaryColors.Muted) }
                 }
-                IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) { Icon(Icons.Outlined.DeleteOutline, "Remove ${selected.food.name}", tint = JanuaryColors.Error) }
+                IconButton(onClick = onRemove, modifier = Modifier.size(32.dp)) { Icon(Icons.Outlined.DeleteOutline, "Remove ${selected.food.name ?: "food"}", tint = JanuaryColors.Error) }
             }
             HorizontalDivider(color = JanuaryColors.Divider)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -108,12 +108,12 @@ internal fun FoodLogSelectedFoodCard(selected: DemoSelectedFood, onServingChange
                 Spacer(Modifier.weight(1f))
                 Box {
                     TextButton(onClick = { menuOpen = true }, contentPadding = PaddingValues(0.dp)) {
-                        Text("${formatDemoNumber(selected.serving.quantity)} ${selected.serving.unit}", color = JanuaryColors.Green)
+                        Text("${formatDemoNumber(selected.serving.quantity ?: 1.0)} ${selected.serving.unit.orEmpty()}", color = JanuaryColors.Green)
                         Icon(Icons.Outlined.UnfoldMore, null, Modifier.size(18.dp), tint = JanuaryColors.Green)
                     }
                     DropdownMenu(menuOpen, { menuOpen = false }) {
                         selected.food.servings.forEach { serving ->
-                            DropdownMenuItem(text = { Text("${formatDemoNumber(serving.quantity)} ${serving.unit}") }, onClick = { onServingChange(serving); menuOpen = false })
+                            DropdownMenuItem(text = { Text("${formatDemoNumber(serving.quantity ?: 1.0)} ${serving.unit.orEmpty()}") }, onClick = { onServingChange(serving); menuOpen = false })
                         }
                     }
                 }
