@@ -69,8 +69,8 @@ final class ParityUITests: XCTestCase {
     func testScan() {
         tab("Scan");capture("scan-initial");tap("Image URL");capture("image-url");tap("Close image URL entry")
         tap("Sample meal");capture("scan-preview")
-        control("/v1.2/food-scans/photo",status:500,delay:4);tap("Analyze meal");capture("scan-loading");wait("January couldn’t complete the request");reveal("Try again");capture("scan-error")
-        control("/v1.2/food-scans/photo");tap("Try again");wait("Fixture breakfast");capture("scan-result");tap("Correct result");capture("correction-initial")
+        control("/v1.2/food-analysis/image",status:500,delay:4);tap("Analyze meal");capture("scan-loading");wait("January couldn’t complete the request");reveal("Try again");capture("scan-error")
+        control("/v1.2/food-analysis/image");tap("Try again");wait("Fixture breakfast");capture("scan-result");tap("Correct result");capture("correction-initial")
     }
     func testLogs() {
         tab("Food Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
@@ -102,8 +102,8 @@ final class ParityUITests: XCTestCase {
     func testCorrectionRecovery() {
         tab("Scan");tap("Sample meal");tap("Analyze meal");wait("Fixture breakfast");tap("Correct result")
         let field=app.textViews.firstMatch;XCTAssertTrue(field.waitForExistence(timeout:5));field.tap();field.typeText("This was lentils")
-        control("/v1.2/food-scans/corrections",status:500,delay:4);tap("Submit correction");capture("correction-loading");wait("January couldn’t complete the request");reveal("Try again");capture("correction-error")
-        control("/v1.2/food-scans/corrections");tap("Try again");wait("Corrected breakfast");capture("correction-result")
+        control("/v1.2/food-analysis/corrections",status:500,delay:4);tap("Submit correction");capture("correction-loading");wait("January couldn’t complete the request");reveal("Try again");capture("correction-error")
+        control("/v1.2/food-analysis/corrections");tap("Try again");wait("Corrected breakfast");capture("correction-result")
     }
     func testRestaurantSelectionUsesRestaurantID() {
         tap("Restaurants")
@@ -136,7 +136,7 @@ final class ParityUITests: XCTestCase {
     func testRemainingRequestFailures() {
         tap("Restaurants");app.textFields["Restaurant name"].tap();app.textFields["Restaurant name"].typeText("Fixture Cafe")
         control("/v1.2/restaurants",status:500,delay:4);tap("Search nearby");capture("restaurants-loading");wait("January couldn’t complete the request");reveal("Try again");capture("restaurants-error")
-        tab("Scan");tap("Sample meal");control("/v1.2/food-scans/photo",status:500,delay:4);tap("Analyze meal");capture("scan-loading");wait("January couldn’t complete the request");reveal("Try again");capture("scan-error")
+        tab("Scan");tap("Sample meal");control("/v1.2/food-analysis/image",status:500,delay:4);tap("Analyze meal");capture("scan-loading");wait("January couldn’t complete the request");reveal("Try again");capture("scan-error")
         tab("Food Logs");reveal("Refresh food logs");control("/v1.2/food-logs",status:500,delay:4);tap("Refresh food logs");capture("logs-loading");wait("January couldn’t complete the request");reveal("Try again");capture("logs-error")
     }
 

@@ -82,12 +82,12 @@ class StateParityWorkflowTest {
     @Test fun scanAndCorrectionErrorsRecoverWithoutLosingInput() {
         desc("Scan");capture("scan-initial");tap("Image URL");capture("image-url");desc("Close Use image URL")
         tap("Sample meal");capture("scan-preview")
-        control("/v1.2/food-scans/photo",500,4);tap("Analyze meal");capture("scan-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("scan-error")
-        control("/v1.2/food-scans/photo");tap("Try again");waitText("Fixture breakfast");capture("scan-result");tap("Correct result");capture("correction-initial")
+        control("/v1.2/food-analysis/image",500,4);tap("Analyze meal");capture("scan-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("scan-error")
+        control("/v1.2/food-analysis/image");tap("Try again");waitText("Fixture breakfast");capture("scan-result");tap("Correct result");capture("correction-initial")
         ui.onNodeWithText("Describe the correction").performTextInput("This was lentils")
-        control("/v1.2/food-scans/corrections",500,4);tap("Submit correction");capture("correction-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("correction-error")
+        control("/v1.2/food-analysis/corrections",500,4);tap("Submit correction");capture("correction-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("correction-error")
         ui.onNode(hasSetTextAction() and hasText("This was lentils")).assertExists()
-        control("/v1.2/food-scans/corrections");tap("Try again");waitText("Corrected breakfast");capture("correction-result")
+        control("/v1.2/food-analysis/corrections");tap("Try again");waitText("Corrected breakfast");capture("correction-result")
     }
     @Test fun foodLogsLoadCreateEditDeleteAndRetry() {
         desc("Food Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
