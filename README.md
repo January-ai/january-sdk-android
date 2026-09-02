@@ -1,12 +1,7 @@
 # January SDK for Android
 
-Controlled-preview Kotlin SDK for January food discovery, restaurants, meal
-scanning, food logs, and glucose prediction.
-
-> **Distribution status:** `ai.january:january-sdk-android:0.1.0` is not published to
-> Maven Central, and the source repository is private. January must grant your
-> GitHub account access before you can use the pinned composite-build workflow in the
-> [installation guide](Documentation/GitBook/getting-started/installation.md).
+Official Kotlin SDK for January food discovery, restaurants, meal scanning,
+food logs, and glucose prediction.
 
 ## Documentation
 
@@ -14,17 +9,13 @@ The [Android SDK GitBook](Documentation/GitBook/README.md) covers installation,
 backend token exchange, a complete token provider, first request, every resource,
 permissions, retries, errors, testing, and troubleshooting.
 
-## Evaluate the repository
+## Install from source
 
 ```bash
 git clone https://github.com/January-ai/january-sdk-android.git
 cd january-sdk-android
-git checkout <revision-supplied-by-january>
 ./gradlew :sdk:testDebugUnitTest :sdk:assembleRelease
 ```
-
-During Controlled Preview, pin the exact revision January approves for your
-integration. Do not depend on a moving branch.
 
 The repository contains:
 
@@ -65,8 +56,6 @@ val page = client.restaurants.getMenuItems(GetRestaurantMenuItemsRequest(restaur
 ```
 
 The response contains `items` and `totalCount` (`total_count` on the wire). Request subsequent pages by advancing `offset` by the number of items received, until it reaches the total or a page is empty. An unknown restaurant returns 404; an existing restaurant with no menu returns an empty list.
-
-This operation requires the backend restaurant-ID menu endpoint; deployment is pending for this unreleased change.
 
 ## License
 

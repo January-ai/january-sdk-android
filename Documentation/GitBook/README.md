@@ -3,17 +3,9 @@
 Build food discovery, meal scanning, food logging, and glucose-prediction
 experiences in native Android apps with Kotlin coroutines and typed models.
 
-{% hint style="warning" %}
-**Controlled preview:** no Android artifact is published yet, and the source
-repository is private. January must grant your GitHub account access. The coordinate
-`ai.january:january-sdk-android:0.1.0` is not available from Maven Central. Follow the
-verified [source checkout installation](getting-started/installation.md); do not
-use a Maven-only snippet until January announces a published release.
-{% endhint %}
-
 ## Start here
 
-1. [Install the controlled-preview source build](getting-started/installation.md).
+1. [Install the SDK](getting-started/installation.md).
 2. Build an authenticated [backend token endpoint](getting-started/backend-token-endpoint.md).
 3. Implement `JanuaryTokenProvider` in the app.
 4. Run the [first food search](getting-started/quick-start.md).
@@ -44,7 +36,6 @@ Android app ◀──── { token, expiresIn } ─────┘
 * Gradle 9.5.1 and Android Gradle Plugin 9.2.1 for the current source checkout
 * Java 17
 * Kotlin coroutines
-* A GitHub account authorized for the private SDK repository
 
 The [example app](getting-started/example-app.md) demonstrates all public
 resources and the native camera scanner.

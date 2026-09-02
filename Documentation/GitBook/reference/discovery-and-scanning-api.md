@@ -32,16 +32,11 @@ Restaurant fields are `type`, `id`, `name`, optional chain/distance/city/address
 metadata. Menu search returns `RestaurantMenuItem` values with restaurant name,
 optional nutrition/distance/photo data, and `servings`.
 
-The production OpenAPI document currently lists `search` only. Keep
-`searchMenuItems` and `getMenuItems` behind an integration gate until January
-announces the matching backend routes.
-
 `GetRestaurantMenuItemsRequest` accepts `restaurantId`, `limit` (default
 `100`, range 1–100), `offset` (default `0`), and optional `endUserId`. Advance
 the offset by the returned item count until it reaches `totalCount` or a page
 is empty. An unknown restaurant returns `404`; a restaurant without a menu
-returns an empty response. The client operation is ready, but the backend route
-is deployment-gated during Controlled Preview.
+returns an empty response.
 
 ## Food analysis
 
