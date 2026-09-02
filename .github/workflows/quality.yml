@@ -49,4 +49,17 @@ jobs:
         run: ./gradlew --no-daemon :demo:lintDebug :demo:assembleDebug
 
       - name: Run complete demo UI suite
-        run: ./gradlew --no-daemon :demo:pixel2api35DebugAndroidTest
+        run: |
+          python3 qa/parity/fixture_server.py 18766 > "$RUNNER_TEMP/android-fixture.log" 2>&1 &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid"' EXIT
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:18766/__reset >/dev/null && break
+            if [[ "$attempt" == 20 ]]; then
+              cat "$RUNNER_TEMP/android-fixture.log"
+              exit 1
+            fi
+            sleep 0.25
+          done
+          ./gradlew --no-daemon :demo:pixel2api35DebugAndroidTest \
+            -Pandroid.testInstrumentationRunnerArguments.fixtureOrigin=http://10.0.2.2:18766
