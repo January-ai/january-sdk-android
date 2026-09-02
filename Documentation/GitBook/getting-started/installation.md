@@ -64,8 +64,7 @@ dependencies {
 ```
 
 The `includeBuild` substitution resolves the coordinate to the checked-out SDK
-source. Coroutines are
-used by the complete token-provider example, and Lifecycle supplies
+source. Coroutines are used by the complete token-provider example, and Lifecycle supplies
 `viewModelScope` in the first-request example.
 
 ## 4. Verify resolution

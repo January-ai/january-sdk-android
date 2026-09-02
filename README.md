@@ -5,7 +5,7 @@ food logs, and glucose prediction.
 
 ## Documentation
 
-The [Android SDK GitBook](Documentation/GitBook/README.md) covers installation,
+The [Android SDK GitBook](https://docs.january.ai/android-sdk/android-sdk) covers installation,
 backend token exchange, a complete token provider, first request, every resource,
 permissions, retries, errors, testing, and troubleshooting.
 
@@ -27,7 +27,7 @@ The repository contains:
 
 Public SDK authentication uses short-lived client tokens only. An app obtains
 its token from its own authenticated backend and supplies a
-`JanuaryTokenProvider`. Start with the [backend token endpoint](Documentation/GitBook/getting-started/backend-token-endpoint.md).
+`JanuaryTokenProvider`. Start with the [backend token endpoint](https://docs.january.ai/android-sdk/android-sdk/getting-started/backend-token-endpoint).
 
 ## Set the active user once
 
