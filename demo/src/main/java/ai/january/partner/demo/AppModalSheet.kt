@@ -21,6 +21,7 @@ internal fun AppModalSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = expanded),
+        dragHandle = null,
         containerColor = JanuaryColors.Paper,
         properties = ModalBottomSheetProperties(isAppearanceLightStatusBars = true, isAppearanceLightNavigationBars = true),
     ) {
