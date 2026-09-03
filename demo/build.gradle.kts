@@ -84,7 +84,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     testImplementation("junit:junit:4.13.2")
-    // Fixture-only debug helpers live in the test APK; the demo APK uses the Maven artifact above.
+    // UI tests use the local debug SDK to target the fixture server; the demo APK uses the Maven artifact above.
     androidTestImplementation(project(":sdk"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")

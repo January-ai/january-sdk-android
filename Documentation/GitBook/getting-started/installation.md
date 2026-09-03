@@ -1,29 +1,16 @@
 # Installation
 
-## Source distribution
+## Maven Central
 
-The Android SDK is integrated as a pinned Gradle composite source build. The
-verified toolchain is Gradle 9.5.1, Android Gradle Plugin 9.2.1, compile SDK 36,
-Java 17, and minimum Android API 26.
+The Android SDK is published to Maven Central as
+`ai.january:january-sdk-android`. You do not need to clone this repository or
+configure a Gradle composite build. The verified toolchain is Gradle 9.5.1,
+Android Gradle Plugin 9.2.1, compile SDK 36, Java 17, and minimum Android API 26.
 
-## 1. Clone and pin the SDK
+## 1. Enable Maven Central
 
-Clone the repository next to your application:
-
-```bash
-git clone https://github.com/January-ai/january-sdk-android.git
-cd january-sdk-android
-./gradlew :sdk:testDebugUnitTest
-```
-
-Record the resolved commit with `git rev-parse HEAD` and pin that commit in your
-release process. Advance it deliberately after running your consumer tests;
-never track a moving branch in a production build.
-
-## 2. Include the source build
-
-In the consuming application's `settings.gradle.kts`, substitute the future
-module coordinate with the checked-out `:sdk` project:
+In your application's `settings.gradle.kts`, include Maven Central in dependency
+resolution:
 
 ```kotlin
 pluginManagement {
@@ -41,18 +28,9 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-
-includeBuild("../january-sdk-android") {
-    dependencySubstitution {
-        substitute(module("ai.january:january-sdk-android"))
-            .using(project(":sdk"))
-    }
-}
 ```
 
-Change `../january-sdk-android` to the actual relative path from your app.
-
-## 3. Add the dependency
+## 2. Add the dependency
 
 ```kotlin
 // app/build.gradle.kts
@@ -63,16 +41,18 @@ dependencies {
 }
 ```
 
-The `includeBuild` substitution resolves the coordinate to the checked-out SDK
-source. Coroutines are used by the complete token-provider example, and Lifecycle supplies
-`viewModelScope` in the first-request example.
+Pin an exact SDK version in production builds. Coroutines are used by the
+complete token-provider example, and Lifecycle supplies `viewModelScope` in the
+first-request example.
 
-## 4. Verify resolution
+## 3. Verify resolution
 
 ```bash
-./gradlew :app:dependencies --configuration debugRuntimeClasspath
+./gradlew :app:dependencyInsight \
+  --dependency january-sdk-android \
+  --configuration debugRuntimeClasspath
 ./gradlew :app:assembleDebug
 ```
 
-The dependency report should map `ai.january:january-sdk-android:0.1.0` to the included
-`:sdk` project.
+The dependency report should show `ai.january:january-sdk-android:0.1.0` resolved
+from Maven Central.

@@ -2,10 +2,11 @@
 
 ## Gradle cannot find `ai.january:january-sdk-android:0.1.0`
 
-Confirm the SDK checkout exists at the path in `includeBuild`, and that
-`dependencySubstitution` maps the coordinate to
-`project(":sdk")`. Run the dependency-report command from the
-[installation guide](../getting-started/installation.md).
+Confirm your `settings.gradle.kts` has `mavenCentral()` inside the
+`dependencyResolutionManagement { repositories { ... } }` block. Confirm your
+Gradle dependency declaration references
+`ai.january:january-sdk-android:0.1.0`, then run the `dependencyInsight` command
+from the [installation guide](../getting-started/installation.md).
 
 ## Token provider fails
 
@@ -44,6 +45,6 @@ Use `PhotoScanImage.dataUri` rather than original camera bytes.
 
 ## Support diagnostics
 
-Provide the pinned commit, Android/AGP/Java versions, operation, exception
+Provide the SDK version, Android/AGP/Java versions, operation, exception
 category, HTTP status, and minimal reproduction. Exclude keys, tokens, images,
 nutrition records, and health profiles.
