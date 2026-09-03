@@ -107,6 +107,23 @@ class ScreenParityWorkflowTest {
         assertTrue(requests.any { it.first == "/v1.2/glucose/predictions" })
     }
 
+    @Test fun mealDescriptionShowsGlucosePredictionAndResets() {
+        click("Description")
+        ui.onNodeWithText("Describe what was eaten").performTextInput("pizza and pepper")
+        click("Parse meal")
+        waitText("Meal nutrition")
+        ui.onNodeWithTag("search-content").performScrollToNode(hasText("Show glucose prediction"))
+        click("Show glucose prediction")
+        waitText("LIKELY MEAL PEAK")
+        capture("meal-description-glucose")
+
+        ui.onNodeWithTag("search-content").performScrollToNode(hasText("Analyze another meal"))
+        click("Analyze another meal")
+        ui.onNodeWithText("Describe what was eaten").assertIsDisplayed()
+        ui.onNodeWithText("Meal nutrition").assertDoesNotExist()
+        capture("meal-description-reset")
+    }
+
     @Test fun photoPreviewResultsCorrectionAndUrlEntryWork() {
         clickDescription("Scan")
         click("Image URL")
