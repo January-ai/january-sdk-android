@@ -189,7 +189,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                     )
                 }
                 if (loading) Text("Complex meals can take a little longer. You can leave this screen while the request completes.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
-                if (client == null) ApiKeyRequiredCard()
+                if (client == null) AuthenticationRequiredCard()
                 error?.let { ErrorCard(it, ::analyze) }
                 Spacer(Modifier.height(24.dp))
             }

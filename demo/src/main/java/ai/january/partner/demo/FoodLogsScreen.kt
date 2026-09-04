@@ -166,7 +166,7 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                             )
                         }
                     }
-                    if (client == null) ApiKeyRequiredCard()
+                    if (client == null) AuthenticationRequiredCard()
                 }
             }
         }

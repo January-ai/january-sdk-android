@@ -14,6 +14,13 @@ fun demoConfiguration(gradleProperty: String, localProperty: String): String =
     providers.gradleProperty(gradleProperty).orNull
         ?: localProperties.getProperty(localProperty, "")
 
+fun String.asBuildConfigString(): String =
+    "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
+val apiKey = demoConfiguration("januaryApiKey", "january.apiKey")
+val partnerTokenUrl = demoConfiguration("januaryPartnerTokenUrl", "january.partnerTokenUrl")
+val partnerSessionToken = demoConfiguration("januaryPartnerSessionToken", "january.partnerSessionToken")
+
 android {
     namespace = "ai.january.partner.demo"
     compileSdk = 36
@@ -25,13 +32,21 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        val apiKey = demoConfiguration("januaryApiKey", "january.apiKey")
-        val partnerTokenUrl = demoConfiguration("januaryPartnerTokenUrl", "january.partnerTokenUrl")
-        val partnerSessionToken = demoConfiguration("januaryPartnerSessionToken", "january.partnerSessionToken")
-        buildConfigField("String", "JANUARY_API_KEY", "\"${apiKey.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
-        buildConfigField("String", "JANUARY_PARTNER_TOKEN_URL", "\"${partnerTokenUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
-        buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", "\"${partnerSessionToken.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField("String", "JANUARY_API_KEY", apiKey.asBuildConfigString())
+            buildConfigField("String", "JANUARY_PARTNER_TOKEN_URL", partnerTokenUrl.asBuildConfigString())
+            buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", partnerSessionToken.asBuildConfigString())
+        }
+        release {
+            // Never compile local demo credentials into a distributable APK.
+            buildConfigField("String", "JANUARY_API_KEY", "\"\"")
+            buildConfigField("String", "JANUARY_PARTNER_TOKEN_URL", "\"\"")
+            buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", "\"\"")
+        }
     }
 
     buildFeatures {
@@ -60,7 +75,7 @@ android {
 }
 
 dependencies {
-    implementation("ai.january:january-sdk-android:0.1.0")
+    implementation("ai.january:january-sdk-android:0.1.1")
 
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
