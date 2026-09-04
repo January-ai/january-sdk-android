@@ -24,9 +24,9 @@ fun ApiKeyRequiredCard() {
     DemoCard {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Outlined.Key, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-            Text("Add your API key", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            Text("Connect the token server", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
             Text(
-                "Add january.apiKey=YOUR_KEY to local.properties, then rebuild the demo.",
+                "Set january.partnerTokenUrl and january.partnerSessionToken in local.properties, then rebuild the demo.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )

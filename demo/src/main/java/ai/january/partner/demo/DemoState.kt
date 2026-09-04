@@ -24,7 +24,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
     private val hasConfiguredAuthentication =
         partnerTokenUrl.isNotEmpty() && partnerSessionToken.isNotEmpty() ||
             BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
-    private val defaultUserId = if (hasConfiguredAuthentication) "your-android-user-id" else ""
+    private val defaultUserId = if (hasConfiguredAuthentication) "january-sdk-demo-user" else ""
     private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", defaultUserId).orEmpty())
     var endUserId: String
         get() = endUserIdState.value
