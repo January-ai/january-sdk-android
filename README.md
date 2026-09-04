@@ -64,6 +64,11 @@ These static demo values are accepted only by Debug builds. A production app
 must create its token provider from its authenticated runtime session instead
 of compiling a session credential into `BuildConfig`.
 
+The local server intentionally maps every request to the fixed
+`january-sdk-demo-user`; it never accepts identity from the app. Separate
+January accounts remain isolated, but multiple demo installs using the same
+account share that test user's data. Do not enter sensitive data in the demo.
+
 Then start an Android Emulator and run:
 
 ```bash
