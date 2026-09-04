@@ -99,6 +99,7 @@ import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.JanuaryTokenProvider
 import ai.january.partner.PartnerUserId
 import ai.january.partner.foods.SearchFoodsRequest
+import kotlinx.coroutines.runBlocking
 
 val tokenProvider = JanuaryTokenProvider {
     val response = appBackend.fetchJanuaryClientToken()
@@ -111,8 +112,10 @@ val user = january.forUser(
     timezone = "America/New_York",
 )
 
-val foods = user.foods.search(SearchFoodsRequest(query = "banana"))
-println("Found ${foods.items.size} foods")
+runBlocking {
+    val foods = user.foods.search(SearchFoodsRequest(query = "banana"))
+    println("Found ${foods.items.size} foods")
+}
 ```
 
 `appBackend.fetchJanuaryClientToken()` represents your app's authenticated call
