@@ -41,7 +41,7 @@ untracked `local.properties`; the emulator reaches a service on the host machine
 through `10.0.2.2`:
 
 ```properties
-january.partnerTokenUrl=http://10.0.2.2:8787/january-token
+january.partnerTokenUrl=http://10.0.2.2:8787/api/january/token
 ```
 
 The public SDK always calls January production and exposes no environment switch.

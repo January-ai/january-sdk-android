@@ -220,7 +220,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                     enabled = foods.isNotEmpty() && client != null,
                     loading = loading,
                 )
-                if (client == null) ApiKeyRequiredCard()
+                if (client == null) AuthenticationRequiredCard()
                 Spacer(Modifier.height(24.dp))
             }
         }

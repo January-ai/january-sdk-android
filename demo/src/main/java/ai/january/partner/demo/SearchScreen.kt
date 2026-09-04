@@ -481,7 +481,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         loading = loading,
                     )
                 }
-                if (client == null) item { ApiKeyRequiredCard() }
+                if (client == null) item { AuthenticationRequiredCard() }
                 error?.let { message -> item { ErrorCard(message) { submit() } } }
                 if (foodResults.isNotEmpty()) {
                     item {

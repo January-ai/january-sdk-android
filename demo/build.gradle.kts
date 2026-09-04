@@ -42,6 +42,7 @@ android {
             buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", partnerSessionToken.asBuildConfigString())
         }
         release {
+            // Never compile local demo credentials into a distributable APK.
             buildConfigField("String", "JANUARY_API_KEY", "\"\"")
             buildConfigField("String", "JANUARY_PARTNER_TOKEN_URL", "\"\"")
             buildConfigField("String", "JANUARY_PARTNER_SESSION_TOKEN", "\"\"")

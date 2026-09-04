@@ -60,6 +60,10 @@ january.partnerTokenUrl=http://10.0.2.2:8787/api/january/token
 january.partnerSessionToken=january-local-demo
 ```
 
+These static demo values are accepted only by Debug builds. A production app
+must create its token provider from its authenticated runtime session instead
+of compiling a session credential into `BuildConfig`.
+
 Then start an Android Emulator and run:
 
 ```bash
@@ -67,7 +71,7 @@ Then start an Android Emulator and run:
 ```
 
 Open the installed app and search for `banana`. Android Emulator maps
-`10.0.2.2` to the Mac's localhost. See the
+`10.0.2.2` to your development machine's localhost. See the
 [example-app guide](Documentation/GitBook/getting-started/example-app.md) for
 physical-device networking and troubleshooting.
 
