@@ -29,7 +29,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         partnerTokenUrl.isNotEmpty() && !isLocalTokenRelay && partnerSessionToken.isEmpty()
     private val hasConfiguredAuthentication =
         partnerTokenUrl.isNotEmpty() && !isPartnerSessionTokenMissing ||
-            BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
+            partnerTokenUrl.isEmpty() && BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
     private val defaultUserId = if (hasConfiguredAuthentication) "january-sdk-demo-user" else ""
     private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", defaultUserId).orEmpty())
     var endUserId: String
