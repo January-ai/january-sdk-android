@@ -162,7 +162,9 @@ public class UserScopedClientTest {
 
         client.forUser(PartnerUserId("token-bound-user")).foods.search(SearchFoodsRequest("banana"))
 
-        assertEquals(null, server.takeRequest().getHeader("January-End-User-ID"))
+        val request = server.takeRequest()
+        assertEquals(null, request.getHeader("January-End-User-ID"))
+        assertEquals(null, request.getHeader("x-end-user-id"))
     }
 
     private fun jsonResponse(body: String): MockResponse = MockResponse()

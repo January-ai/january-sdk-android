@@ -331,7 +331,9 @@ public class AuthenticationTest {
             ),
         )
 
-        assertEquals(null, server.takeRequest().getHeader("January-End-User-ID"))
+        val request = server.takeRequest()
+        assertEquals(null, request.getHeader("January-End-User-ID"))
+        assertEquals(null, request.getHeader("x-end-user-id"))
     }
 
     @Test
