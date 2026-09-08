@@ -68,7 +68,11 @@ Then start an Android Emulator and run:
 ```
 
 Open the installed app and search for `banana`. Android Emulator maps
-`10.0.2.2` to your development machine's localhost. See the
+`10.0.2.2` to your development machine's localhost. For a physical device,
+start the relay with `HOST=0.0.0.0 ./start.sh`, use the Wi-Fi URL it prints for
+`january.partnerTokenUrl`, and set its generated relay token as
+`january.partnerSessionToken`. The demo sends that token as
+`Authorization: Bearer <token>`. See the
 [example-app guide](Documentation/GitBook/getting-started/example-app.md) for
 physical-device networking and troubleshooting.
 

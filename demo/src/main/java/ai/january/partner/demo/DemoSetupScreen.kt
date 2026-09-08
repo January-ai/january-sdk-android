@@ -23,7 +23,7 @@ internal fun DemoSetupScreen() {
         DemoCard {
             SetupOption("1", "Start the token relay", "Local", "In january-token-relay, run ./start.sh.")
             HorizontalDivider(Modifier.padding(vertical = 18.dp), color = JanuaryColors.Divider)
-            SetupOption("2", "Connect this app", "Client token", "Set january.partnerTokenUrl in local.properties.")
+            SetupOption("2", "Connect this app", "Client token", "Set january.partnerTokenUrl; for LAN or hosted relays, also set january.partnerSessionToken.")
         }
         DemoCard {
             SectionLabel("Where to configure")

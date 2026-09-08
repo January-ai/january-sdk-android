@@ -16,12 +16,15 @@ Add untracked values to the repository's `local.properties`:
 january.partnerTokenUrl=http://10.0.2.2:8787/api/january/client-token
 ```
 
-`10.0.2.2` reaches localhost on the host machine from the Android emulator. Use
-your machine's LAN address for a physical device. The token endpoint URL has no
-default. The demo sends a `POST` with the selected stable user ID in
-`January-End-User-ID`. A production provider instead sends the app's normal session
-to its authenticated backend, which derives the user ID server-side. The public
-SDK targets January production and exposes no API-origin override.
+`10.0.2.2` reaches localhost on the host machine from the Android emulator. For
+a physical device, start the relay with `HOST=0.0.0.0 ./start.sh`, use the Wi-Fi
+URL it prints, and set its generated token as `january.partnerSessionToken`.
+The token endpoint URL has no default. The demo sends a `POST` with the selected
+stable user ID in `January-End-User-ID`; for a LAN or hosted relay it also sends
+`Authorization: Bearer <january.partnerSessionToken>`. A production provider
+instead sends the app's normal session to its authenticated backend, which
+derives the user ID server-side. The public SDK targets January production and
+exposes no API-origin override.
 
 Never commit `local.properties`. For the fastest setup, clone the standalone
 [January Token Relay](https://github.com/January-ai/january-token-relay) and run

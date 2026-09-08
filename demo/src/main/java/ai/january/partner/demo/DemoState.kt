@@ -65,7 +65,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
 
     init {
         if (isPartnerSessionTokenMissing) {
-            authenticationDescription = "Missing january.partnerSessionToken for hosted relay"
+            authenticationDescription = "Missing january.partnerSessionToken for non-loopback relay"
         } else if (partnerTokenUrl.isNotEmpty()) {
             authenticationDescription = "Client token provider"
         } else {
