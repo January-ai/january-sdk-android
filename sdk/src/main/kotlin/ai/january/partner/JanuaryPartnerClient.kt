@@ -167,6 +167,7 @@ public class JanuaryPartnerClient private constructor(
                 val token = runBlocking { manager.token() }
                 val request = chain.request().newBuilder()
                     .removeHeader("January-End-User-ID")
+                    .removeHeader("x-end-user-id")
                     .header("Authorization", "Bearer ${token.token}")
                     .build()
                 val response = chain.proceed(request)
@@ -196,7 +197,12 @@ public class JanuaryPartnerClient private constructor(
                 omitEndUserId: Boolean = false,
             ): Interceptor = Interceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .apply { if (omitEndUserId) removeHeader("January-End-User-ID") }
+                    .apply {
+                        if (omitEndUserId) {
+                            removeHeader("January-End-User-ID")
+                            removeHeader("x-end-user-id")
+                        }
+                    }
                     .header("Authorization", "Bearer $value")
                     .build()
                 chain.proceed(

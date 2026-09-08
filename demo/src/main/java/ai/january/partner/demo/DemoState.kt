@@ -21,8 +21,15 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
     private val developmentApiKey = BuildConfig.JANUARY_API_KEY.trim()
     private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
     private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
+    private val localTokenRelayHosts = setOf("localhost", "127.0.0.1", "10.0.2.2", "::1")
+    private val isLocalTokenRelay = runCatching {
+        partnerTokenUrl.toHttpUrl().host in localTokenRelayHosts
+    }.getOrDefault(false)
+    private val isPartnerSessionTokenMissing =
+        partnerTokenUrl.isNotEmpty() && !isLocalTokenRelay && partnerSessionToken.isEmpty()
     private val hasConfiguredAuthentication =
-        partnerTokenUrl.isNotEmpty() || BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
+        partnerTokenUrl.isNotEmpty() && !isPartnerSessionTokenMissing ||
+            BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
     private val defaultUserId = if (hasConfiguredAuthentication) "january-sdk-demo-user" else ""
     private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", defaultUserId).orEmpty())
     var endUserId: String
@@ -57,7 +64,9 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         }
 
     init {
-        if (partnerTokenUrl.isNotEmpty()) {
+        if (isPartnerSessionTokenMissing) {
+            authenticationDescription = "Missing january.partnerSessionToken for hosted relay"
+        } else if (partnerTokenUrl.isNotEmpty()) {
             authenticationDescription = "Client token provider"
         } else {
             authenticationDescription = if (developmentApiKey.isEmpty()) {
@@ -71,7 +80,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
     }
 
     private fun createClient(userId: String): JanuaryPartnerClient? = when {
-        partnerTokenUrl.isNotEmpty() ->
+        partnerTokenUrl.isNotEmpty() && !isPartnerSessionTokenMissing ->
             JanuaryPartnerClient.withClientTokenProvider(
                 provider = { fetchClientToken(partnerTokenUrl, partnerSessionToken, userId) },
             )
