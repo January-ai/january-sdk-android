@@ -30,7 +30,7 @@ dashboard before starting it. The key stays in the relay's `.env` file and
 never enters the Android app.
 
 For a hosted development relay, follow the relay's
-[Vercel guide](https://github.com/January-ai/january-token-relay#optional-deploy-to-vercel),
+[Vercel guide](https://github.com/January-ai/january-token-relay#deploy),
 then set `january.partnerTokenUrl` to its HTTPS token URL and
 `january.partnerSessionToken` to its `RELAY_TOKEN`. This is for development and
 testing only; production must use your authenticated backend.
