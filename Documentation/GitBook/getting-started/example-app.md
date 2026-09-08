@@ -13,23 +13,21 @@ creates `local.properties` with `sdk.dir`; command-line users can set
 Add untracked values to the repository's `local.properties`:
 
 ```properties
-january.partnerTokenUrl=http://10.0.2.2:8787/api/january/token
-january.partnerSessionToken=january-local-demo
+january.partnerTokenUrl=http://10.0.2.2:8787/api/january/client-token
 ```
 
 `10.0.2.2` reaches localhost on the host machine from the Android emulator. Use
 your machine's LAN address for a physical device. The token endpoint URL has no
-default. The demo sends a `POST` with your app session in `Authorization` and
-the selected stable user ID in `x-end-user-id`; adapt those request details to
-your own backend contract. The public SDK targets January production and
-exposes no API-origin override.
+default. The demo sends a `POST` with the selected stable user ID in
+`x-end-user-id`. A production provider instead sends the app's normal session
+to its authenticated backend, which derives the user ID server-side. The public
+SDK targets January production and exposes no API-origin override.
 
-Never commit `local.properties`. For the fastest setup, run
-`npm run demo:token-server` in the
-[January Server SDK for Node.js](https://github.com/January-ai/january-server-sdk-node)
-repository. Create an API key and separately enable client tokens in the
-dashboard before starting it. In the recommended flow, the key stays in the
-local server's `.env` file and never enters the Android app.
+Never commit `local.properties`. For the fastest setup, clone the standalone
+[January Token Relay](https://github.com/January-ai/january-token-relay) and run
+`./start.sh`. Create an API key and separately enable client tokens in the
+dashboard before starting it. The key stays in the relay's `.env` file and
+never enters the Android app.
 
 ## Build and run
 

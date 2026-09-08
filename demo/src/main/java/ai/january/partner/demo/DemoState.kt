@@ -22,8 +22,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
     private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
     private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
     private val hasConfiguredAuthentication =
-        partnerTokenUrl.isNotEmpty() && partnerSessionToken.isNotEmpty() ||
-            BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
+        partnerTokenUrl.isNotEmpty() || BuildConfig.DEBUG && developmentApiKey.isNotEmpty()
     private val defaultUserId = if (hasConfiguredAuthentication) "january-sdk-demo-user" else ""
     private val endUserIdState = mutableStateOf(preferences.getString("end_user_id", defaultUserId).orEmpty())
     var endUserId: String
@@ -58,10 +57,8 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         }
 
     init {
-        if (partnerTokenUrl.isNotEmpty() && partnerSessionToken.isEmpty()) {
-            authenticationDescription = "Missing january.partnerSessionToken"
-        } else if (partnerTokenUrl.isNotEmpty()) {
-            authenticationDescription = "Partner backend token provider"
+        if (partnerTokenUrl.isNotEmpty()) {
+            authenticationDescription = "Client token provider"
         } else {
             authenticationDescription = if (developmentApiKey.isEmpty()) {
                 "Missing january.apiKey or january.partnerTokenUrl"
@@ -74,7 +71,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
     }
 
     private fun createClient(userId: String): JanuaryPartnerClient? = when {
-        partnerTokenUrl.isNotEmpty() && partnerSessionToken.isNotEmpty() ->
+        partnerTokenUrl.isNotEmpty() ->
             JanuaryPartnerClient.withClientTokenProvider(
                 provider = { fetchClientToken(partnerTokenUrl, partnerSessionToken, userId) },
             )
@@ -102,8 +99,10 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         val request = Request.Builder()
             .url(url.toHttpUrl())
             .post(ByteArray(0).toRequestBody())
-            .header("Authorization", "Bearer $sessionToken")
             .header("x-end-user-id", userId)
+            .apply {
+                if (sessionToken.isNotEmpty()) header("Authorization", "Bearer $sessionToken")
+            }
             .build()
         val response = try {
             tokenHttpClient.newCall(request).execute()

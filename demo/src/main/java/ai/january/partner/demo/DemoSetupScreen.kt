@@ -19,16 +19,16 @@ internal fun DemoSetupScreen() {
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(vertical = 40.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Surface(Modifier.size(48.dp), shape = CircleShape, color = JanuaryColors.TargetBand) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.AutoAwesome, null, tint = JanuaryColors.Green) } }
         Text("Welcome to January", style = MaterialTheme.typography.displaySmall)
-        Text("Start the local token server, then point this demo at it. Your January API key stays on the server.", color = JanuaryColors.Body)
+        Text("Start the local token relay, then point this demo at it. Your January API key stays on the relay.", color = JanuaryColors.Body)
         DemoCard {
-            SetupOption("1", "Start the token server", "Local", "In january-server-sdk-node, run npm run demo:token-server.")
+            SetupOption("1", "Start the token relay", "Local", "In january-token-relay, run ./start.sh.")
             HorizontalDivider(Modifier.padding(vertical = 18.dp), color = JanuaryColors.Divider)
-            SetupOption("2", "Connect this app", "Client token", "Set january.partnerTokenUrl and january.partnerSessionToken in local.properties.")
+            SetupOption("2", "Connect this app", "Client token", "Set january.partnerTokenUrl in local.properties.")
         }
         DemoCard {
             SectionLabel("Where to configure")
             Text("local.properties", style = MaterialTheme.typography.titleMedium)
-            Text("Copy the two values from the root README, then build again.", fontSize = 15.sp, color = JanuaryColors.Body)
+            Text("Copy the relay URL from the root README, then build again.", fontSize = 15.sp, color = JanuaryColors.Body)
         }
     }
 }
