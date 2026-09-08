@@ -28,6 +28,6 @@ Request models retain optional identity fields for source compatibility. New
 integrations should use the scoped client instead of repeating `endUserId` in
 individual calls.
 
-With client-token authentication, the transport removes `x-end-user-id`; the
+With client-token authentication, the transport removes `January-End-User-ID`; the
 token itself identifies the user. The scoped client still supplies the public
 request context consistently and supports other approved authentication modes.

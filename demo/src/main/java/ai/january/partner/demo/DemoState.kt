@@ -99,7 +99,7 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         val request = Request.Builder()
             .url(url.toHttpUrl())
             .post(ByteArray(0).toRequestBody())
-            .header("x-end-user-id", userId)
+            .header("January-End-User-ID", userId)
             .apply {
                 if (sessionToken.isNotEmpty()) header("Authorization", "Bearer $sessionToken")
             }

@@ -57,9 +57,9 @@ january.partnerTokenUrl=http://10.0.2.2:8787/api/january/client-token
 ```
 
 This static demo URL is accepted only by Debug builds. The local relay binds to
-your development machine and accepts the demo's `x-end-user-id`. A production
-app must call its authenticated backend, which derives the user ID from the
-verified session instead of trusting the app-supplied value.
+your development machine and accepts the demo's `January-End-User-ID`. A
+production app must call its authenticated backend, which derives the user ID
+from the verified session instead of trusting the app-supplied value.
 
 Then start an Android Emulator and run:
 
@@ -71,6 +71,20 @@ Open the installed app and search for `banana`. Android Emulator maps
 `10.0.2.2` to your development machine's localhost. See the
 [example-app guide](Documentation/GitBook/getting-started/example-app.md) for
 physical-device networking and troubleshooting.
+
+### 4. Optional: deploy the relay to Vercel
+
+If localhost is inconvenient, follow the relay's
+[Vercel deployment guide](https://github.com/January-ai/january-token-relay#optional-deploy-to-vercel).
+Set `JANUARY_API_KEY` and a long random `RELAY_TOKEN` in Vercel, then use:
+
+```properties
+january.partnerTokenUrl=https://YOUR-PROJECT.vercel.app/api/january/client-token
+january.partnerSessionToken=YOUR_RELAY_TOKEN
+```
+
+The hosted relay is also for development and testing only. Its relay token is
+not a substitute for authenticating your users.
 
 This relay is only for development. In production, keep the SDK token provider
 but point it to your authenticated backend.

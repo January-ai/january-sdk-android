@@ -166,7 +166,7 @@ public class JanuaryPartnerClient private constructor(
             override fun interceptor(): Interceptor = Interceptor { chain ->
                 val token = runBlocking { manager.token() }
                 val request = chain.request().newBuilder()
-                    .removeHeader("x-end-user-id")
+                    .removeHeader("January-End-User-ID")
                     .header("Authorization", "Bearer ${token.token}")
                     .build()
                 val response = chain.proceed(request)
@@ -196,7 +196,7 @@ public class JanuaryPartnerClient private constructor(
                 omitEndUserId: Boolean = false,
             ): Interceptor = Interceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .apply { if (omitEndUserId) removeHeader("x-end-user-id") }
+                    .apply { if (omitEndUserId) removeHeader("January-End-User-ID") }
                     .header("Authorization", "Bearer $value")
                     .build()
                 chain.proceed(

@@ -331,7 +331,7 @@ public class AuthenticationTest {
             ),
         )
 
-        assertEquals(null, server.takeRequest().getHeader("x-end-user-id"))
+        assertEquals(null, server.takeRequest().getHeader("January-End-User-ID"))
     }
 
     @Test
