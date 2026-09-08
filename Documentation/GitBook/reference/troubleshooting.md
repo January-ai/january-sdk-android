@@ -24,9 +24,10 @@ Concurrent refreshes normally share one call. Do not create a new
 
 ## Authentication is rejected
 
-Do not manually send `x-end-user-id` with a client token. Confirm the token was
-minted for the signed-in account and the public client is intended for the
-production API. Only `token_expired` is automatically refreshed and replayed.
+Do not manually send `January-End-User-ID` or the legacy `x-end-user-id` header
+with a client token. Confirm the token was minted for the signed-in account and
+the public client is intended for the production API. Only `token_expired` is
+automatically refreshed and replayed.
 
 ## Food picker has incomplete servings
 
