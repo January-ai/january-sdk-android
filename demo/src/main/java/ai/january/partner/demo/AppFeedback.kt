@@ -24,7 +24,7 @@ fun AuthenticationRequiredCard() {
     DemoCard {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Icon(Icons.Outlined.Key, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-            Text("Connect the token server", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+            Text("Connect the token relay", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
             Text(
                 "Set january.partnerTokenUrl in local.properties, then rebuild. For the Debug-only API-key shortcut, see the README.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
