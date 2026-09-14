@@ -164,7 +164,7 @@ public class JanuaryPartnerClient private constructor(
 
         data class RefreshingClientToken(val manager: ClientTokenManager) : Authentication {
             override fun interceptor(): Interceptor = Interceptor { chain ->
-                val token = runBlocking { manager.token() }
+                val token = acquireToken { manager.token() }
                 val request = chain.request().newBuilder()
                     .removeHeader("January-End-User-ID")
                     .removeHeader("x-end-user-id")
@@ -181,7 +181,7 @@ public class JanuaryPartnerClient private constructor(
                 } else {
                     response.close()
                     runBlocking { manager.invalidateIfMatching(token.token) }
-                    val refreshed = runBlocking { manager.token() }
+                    val refreshed = acquireToken { manager.token() }
                     chain.proceed(
                         request.newBuilder()
                             .header("Authorization", "Bearer ${refreshed.token}")
@@ -192,6 +192,17 @@ public class JanuaryPartnerClient private constructor(
         }
 
         companion object {
+            // OkHttp allows interceptors to throw only IOException; anything else
+            // is rethrown on the dispatcher thread and terminates the process.
+            // Carry the token failure across the interceptor boundary as an
+            // IOException so it reaches the caller as a JanuaryException.
+            private fun acquireToken(block: suspend () -> JanuaryClientToken): JanuaryClientToken =
+                try {
+                    runBlocking { block() }
+                } catch (error: Exception) {
+                    throw ClientTokenUnavailableException(error)
+                }
+
             private fun bearerInterceptor(
                 value: String,
                 omitEndUserId: Boolean = false,

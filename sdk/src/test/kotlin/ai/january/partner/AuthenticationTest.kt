@@ -140,6 +140,68 @@ public class AuthenticationTest {
     }
 
     @Test
+    public fun providerFailureSurfacesAsJanuaryExceptionInsteadOfCrashingOkHttp(): Unit = runBlocking {
+        server.enqueue(okResponse())
+        val client = JanuaryPartnerClient.testing(
+            provider = JanuaryTokenProvider {
+                throw JanuaryTokenProviderException("fetch failed: relay unreachable", retryable = false)
+            },
+            baseUrl = server.url("/").toString(),
+        )
+
+        try {
+            client.foods.search(SearchFoodsRequest("banana"))
+            fail("Expected token-provider failure")
+        } catch (error: JanuaryException) {
+            assertEquals(ErrorCategory.AUTHENTICATION, error.category)
+            assertTrue(error.message.orEmpty().contains("relay unreachable"))
+            assertTrue(error.cause is JanuaryTokenProviderException)
+        }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    public fun unexpectedProviderExceptionSurfacesAsJanuaryException(): Unit = runBlocking {
+        server.enqueue(okResponse())
+        val client = JanuaryPartnerClient.testing(
+            provider = JanuaryTokenProvider { throw IllegalStateException("session missing") },
+            baseUrl = server.url("/").toString(),
+        )
+
+        try {
+            client.foods.search(SearchFoodsRequest("banana"))
+            fail("Expected token-provider failure")
+        } catch (error: JanuaryException) {
+            assertEquals(ErrorCategory.AUTHENTICATION, error.category)
+            assertTrue(error.message.orEmpty().contains("session missing"))
+            assertTrue(error.cause is IllegalStateException)
+        }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    public fun exhaustedProviderRetriesSurfaceThroughTheClient(): Unit = runBlocking {
+        server.enqueue(okResponse())
+        val client = JanuaryPartnerClient.testing(
+            provider = JanuaryTokenProvider {
+                throw JanuaryTokenProviderException("partner backend unavailable", retryable = true)
+            },
+            baseUrl = server.url("/").toString(),
+            tokenRetryPolicy = JanuaryTokenRetryPolicy(maximumAttempts = 2, initialDelay = Duration.ZERO, jitterRatio = 0.0),
+            sleep = {},
+        )
+
+        try {
+            client.foods.search(SearchFoodsRequest("banana"))
+            fail("Expected token-provider failure")
+        } catch (error: JanuaryException) {
+            assertEquals(ErrorCategory.AUTHENTICATION, error.category)
+            assertTrue(error.message.orEmpty().contains("after 2 attempts"))
+        }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     public fun providerFetchStopsAfterMaximumAttempts(): Unit = runBlocking {
         val calls = AtomicInteger()
         val delays = mutableListOf<Duration>()
