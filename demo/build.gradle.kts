@@ -75,7 +75,7 @@ android {
 }
 
 dependencies {
-    implementation("ai.january:january-sdk-android:0.1.1")
+    implementation("ai.january:january-sdk-android:0.1.2")
 
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
