@@ -180,6 +180,26 @@ public class AuthenticationTest {
     }
 
     @Test
+    public fun cancelledProviderRequestSurfacesAsJanuaryException(): Unit = runBlocking {
+        server.enqueue(okResponse())
+        val client = JanuaryPartnerClient.testing(
+            provider = JanuaryTokenProvider {
+                throw kotlinx.coroutines.CancellationException("The January client was disposed.")
+            },
+            baseUrl = server.url("/").toString(),
+        )
+
+        try {
+            client.foods.search(SearchFoodsRequest("banana"))
+            fail("Expected token-provider failure")
+        } catch (error: JanuaryException) {
+            assertEquals(ErrorCategory.AUTHENTICATION, error.category)
+            assertTrue(error.message.orEmpty().contains("cancelled"))
+        }
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
     public fun exhaustedProviderRetriesSurfaceThroughTheClient(): Unit = runBlocking {
         server.enqueue(okResponse())
         val client = JanuaryPartnerClient.testing(

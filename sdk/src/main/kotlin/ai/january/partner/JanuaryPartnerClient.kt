@@ -13,6 +13,7 @@ import ai.january.partner.transport.apis.RestaurantsApi
 import ai.january.partner.transport.infrastructure.ApiClient
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -196,9 +197,22 @@ public class JanuaryPartnerClient private constructor(
             // is rethrown on the dispatcher thread and terminates the process.
             // Carry the token failure across the interceptor boundary as an
             // IOException so it reaches the caller as a JanuaryException.
+            //
+            // This runBlocking has no parent job, so a CancellationException here
+            // can only come from the provider (for example, a bridge cancelling a
+            // pending token request when its client is disposed). It is a failed
+            // token acquisition for this request, not caller cancellation, and
+            // must not cross into OkHttp either.
             private fun acquireToken(block: suspend () -> JanuaryClientToken): JanuaryClientToken =
                 try {
                     runBlocking { block() }
+                } catch (error: CancellationException) {
+                    throw ClientTokenUnavailableException(
+                        JanuaryTokenProviderException(
+                            "The client token request was cancelled before a token was returned.",
+                            cause = error,
+                        ),
+                    )
                 } catch (error: Exception) {
                     throw ClientTokenUnavailableException(error)
                 }
