@@ -53,4 +53,8 @@ cause)`. `ErrorCategory` cases are `VALIDATION`, `AUTHENTICATION`,
 `AUTHORIZATION`, `NOT_FOUND`, `RATE_LIMITED`, `TIMEOUT`, `TRANSPORT`, `DECODING`,
 and `SERVER`. Local argument APIs may throw `IllegalArgumentException`,
 `FoodPortionException`, date parsing exceptions, or `NoBarcodeMatchException`.
-Coroutine `CancellationException` propagates unchanged.
+Cancelling the coroutine that called the SDK propagates its
+`CancellationException` unchanged. A `CancellationException` thrown by the
+token provider itself is reported as `JanuaryException` with category
+`AUTHENTICATION`, because the provider runs inside the HTTP pipeline where
+cancellation cannot propagate.

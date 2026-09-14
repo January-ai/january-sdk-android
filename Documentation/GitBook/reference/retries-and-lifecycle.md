@@ -6,7 +6,8 @@ The provider-backed client handles credential lifecycle in memory:
 * refreshes 60 seconds before expiry;
 * coalesces concurrent refreshes into one provider call;
 * retries provider exceptions with bounded exponential backoff;
-* preserves coroutine cancellation;
+* preserves cancellation of the calling coroutine (a `CancellationException`
+  thrown by the provider itself is reported as `JanuaryException`);
 * refreshes and replays a January request once only for HTTP `401` with
   `code: "token_expired"`.
 
