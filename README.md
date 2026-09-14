@@ -10,71 +10,98 @@ You can try the Android SDK before your own backend is ready. The standalone
 January Token Relay keeps the January API key off the app and temporarily
 stands in for your production token endpoint.
 
-### 1. Create the credentials
+You need two terminal windows: one for the January Token Relay, which holds
+your API key and hands the app short-lived client tokens, and one for the
+demo. The first run takes about ten minutes.
 
-Complete both steps—they are on separate dashboard pages:
+### Terminal 1: start the token relay
 
-1. [Sign up](https://dashboard.january.ai/sign-up) or
-   [sign in](https://dashboard.january.ai/sign-in), then open
-   **API keys → Create key** and copy the full `sk-…` value.
-2. Open [Client tokens](https://dashboard.january.ai/dashboard/client-tokens)
-   and select **Enable client tokens**.
+1. Open a terminal.
+2. Download the relay and move into its folder. It needs Node.js 20.12 or
+   newer and nothing else:
 
-For production or any shared build, never put the `sk-…` key in an Android
-app. The private, debug-only shortcut at the end is the sole local exception.
+   ```bash
+   git clone https://github.com/January-ai/january-token-relay.git
+   cd january-token-relay
+   ```
 
-### 2. Start the local token relay
+3. Start it:
 
-Install Node.js 20.12 or newer. In a first terminal:
+   ```bash
+   ./start.sh
+   ```
 
-```bash
-git clone https://github.com/January-ai/january-token-relay.git
-cd january-token-relay
-./start.sh
-```
+   It checks your Node version and then asks
+   `Paste your API key (input is hidden):`. Leave it waiting and create the
+   key in the next two steps.
 
-Paste the API key when prompted and leave the relay running. It binds to your
-computer, uses port `8787`, and prints its status and token-endpoint URLs.
+4. Create the API key. In a browser,
+   [sign up](https://dashboard.january.ai/sign-up) or
+   [sign in](https://dashboard.january.ai/sign-in) to the January Developer
+   Dashboard, open **API keys → Create key**, and copy the full `sk-…` value.
+   It is shown once.
+5. Enable client tokens. Open
+   [Client tokens](https://dashboard.january.ai/dashboard/client-tokens) and
+   switch on **Enable client tokens**. Until this is on, January answers the
+   relay with `403`.
+6. Back in Terminal 1, paste the key and press Enter. Nothing appears while
+   you type. You should see:
 
-### 3. Run the Android demo
+   ```text
+   ✓ API key accepted by January (sk-abcd…wxyz)
+   ✓ Saved to .env (readable only by you; git ignores it)
 
-Install Android Studio with Android SDK 36 and JDK 17. Android Studio normally
-creates `local.properties` with your SDK path; command-line users can instead
-set `ANDROID_HOME`.
+   January Token Relay is running on this machine (development only).
+     Endpoint      http://localhost:8787/api/january/client-token
+   ```
 
-In a second terminal, clone the demo repository if needed:
+   Leave this window open for the whole session. The key is saved in a
+   git-ignored `.env`, so the next `./start.sh` starts without asking.
 
-```bash
-git clone https://github.com/January-ai/january-sdk-android.git
-cd january-sdk-android
-```
+### Terminal 2: run the Android demo
 
-Add these untracked values to `local.properties`, keeping any existing
-`sdk.dir` line:
+7. Open a second terminal.
+8. Download the SDK repository and move into it:
 
-```properties
-january.partnerTokenUrl=http://10.0.2.2:8787/api/january/client-token
-```
+   ```bash
+   git clone https://github.com/January-ai/january-sdk-android.git
+   cd january-sdk-android
+   ```
 
-This static demo URL is accepted only by Debug builds. The local relay binds to
-your development machine and accepts the demo's `January-End-User-ID`. A
-production app must call its authenticated backend, which derives the user ID
-from the verified session instead of trusting the app-supplied value.
+   You need Android Studio with Android SDK 36 and JDK 17. Android Studio
+   normally creates `local.properties` with your SDK path; command-line users
+   can set `ANDROID_HOME` instead.
 
-Then start an Android Emulator and run:
+9. Tell the demo where the relay is. Add this line to `local.properties`
+   (keep any existing `sdk.dir` line). `10.0.2.2` is how the emulator reaches
+   your computer:
 
-```bash
-./gradlew :demo:installDebug
-```
+   ```properties
+   january.partnerTokenUrl=http://10.0.2.2:8787/api/january/client-token
+   ```
 
-Open the installed app and search for `banana`. Android Emulator maps
-`10.0.2.2` to your development machine's localhost. For a physical device,
-start the relay with `HOST=0.0.0.0 ./start.sh`, use the Wi-Fi URL it prints for
-`january.partnerTokenUrl`, and set its generated relay token as
-`january.partnerSessionToken`. The demo sends that token as
+   This static demo URL is accepted only by Debug builds. A production app
+   calls its authenticated backend, which derives the user ID from the
+   verified session instead of trusting an app-supplied value.
+
+10. Start an Android Emulator, then build and install the demo:
+
+    ```bash
+    ./gradlew :demo:installDebug
+    ```
+
+11. Open the installed app and search for `banana`. Terminal 1 prints
+    `minted=true status=200` the first time the app asks for a token.
+
+For a physical device, start the relay with `HOST=0.0.0.0 ./start.sh`, use the
+Wi-Fi URL it prints for `january.partnerTokenUrl`, and set its generated relay
+token as `january.partnerSessionToken`. The demo sends that token as
 `Authorization: Bearer <token>`. See the
 [example-app guide](Documentation/GitBook/getting-started/example-app.md) for
 physical-device networking and troubleshooting.
+
+For production or any shared build, never put the `sk-…` key in an Android
+app. The private, debug-only shortcut at the end is the sole local exception.
 
 ### 4. Optional: deploy the relay to Vercel
 
