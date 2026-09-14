@@ -8,6 +8,24 @@ import com.squareup.moshi.JsonEncodingException
 import kotlinx.coroutines.CancellationException
 import retrofit2.Response
 
+/**
+ * Raised inside the OkHttp interceptor when the client token provider fails.
+ * OkHttp only lets interceptors throw IOException, so the real failure travels
+ * as the cause and is unwrapped by [executeApiCall] and [executeEmptyApiCall].
+ */
+internal class ClientTokenUnavailableException(
+    override val cause: Throwable,
+) : IOException(cause.message, cause) {
+    fun asJanuaryException(): JanuaryException = when (cause) {
+        is JanuaryException -> cause
+        else -> JanuaryException(
+            ErrorCategory.AUTHENTICATION,
+            "The app could not obtain a January client token: ${cause.message ?: cause::class.java.simpleName}",
+            cause = cause,
+        )
+    }
+}
+
 internal inline fun <reified Source, reified Target> bridgeModel(value: Source): Target {
     val moshi = Serializer.moshiBuilder.build()
     val sourceAdapter = moshi.adapter(Source::class.java)
@@ -46,6 +64,8 @@ internal suspend fun <Transport, Public> executeApiCall(
         throw error
     } catch (error: JanuaryException) {
         throw error
+    } catch (error: ClientTokenUnavailableException) {
+        throw error.asJanuaryException()
     } catch (error: SocketTimeoutException) {
         throw JanuaryException(ErrorCategory.TIMEOUT, "The request to the January API timed out.", cause = error)
     } catch (error: JsonDataException) {
@@ -77,6 +97,8 @@ internal suspend fun executeEmptyApiCall(operation: suspend () -> Response<Unit>
         throw error
     } catch (error: JanuaryException) {
         throw error
+    } catch (error: ClientTokenUnavailableException) {
+        throw error.asJanuaryException()
     } catch (error: SocketTimeoutException) {
         throw JanuaryException(ErrorCategory.TIMEOUT, "The request to the January API timed out.", cause = error)
     } catch (error: IOException) {
