@@ -75,7 +75,8 @@ android {
 }
 
 dependencies {
-    implementation("ai.january:january-sdk-android:0.1.2")
+    // The demo builds against the SDK in this repository so both stay in step; apps use the Maven Central artifact (see README).
+    implementation(project(":sdk"))
 
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
@@ -99,7 +100,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     testImplementation("junit:junit:4.13.2")
-    // UI tests use the local debug SDK to target the fixture server; the demo APK uses the Maven artifact above.
     androidTestImplementation(project(":sdk"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")

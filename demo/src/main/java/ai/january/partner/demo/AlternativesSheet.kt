@@ -86,7 +86,6 @@ import ai.january.partner.foods.FoodSuggestion
 import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
-import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
@@ -174,7 +173,7 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                                     Text(alternative.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
                                     alternative.brandName?.takeIf(String::isNotBlank)?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted) }
-                                    alternative.servings?.firstOrNull()?.let { Text("${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit.orEmpty()}", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted) }
+                                    alternative.servings.firstOrNull()?.let { Text("${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit.orEmpty()}", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted) }
                                     val n = alternative.nutrients
                                     Text(listOfNotNull(n.calories?.value?.let { "${it.toInt()} cal" }, n.protein?.value?.let { "P ${formatMetricNumber(it)}g" }, n.carbohydrates?.value?.let { "C ${formatMetricNumber(it)}g" }, n.totalFat?.value?.let { "F ${formatMetricNumber(it)}g" }).joinToString("  "), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = JanuaryColors.Muted)
                                 }
@@ -189,9 +188,9 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
     }
 }
 
-internal fun alternativeDetailFood(food: ai.january.partner.foods.DetectedFood): FoodSearchItem? {
+internal fun alternativeDetailFood(food: ai.january.partner.foods.AlternativeFood): FoodSearchItem? {
     val id = food.id ?: return null
-    val servings = food.servings?.takeIf { it.isNotEmpty() } ?: return null
+    val servings = food.servings.takeIf { it.isNotEmpty() } ?: return null
     val n = food.nutrients
     return FoodSearchItem(id = ai.january.partner.FoodId(id), name = food.name, brandName = food.brandName,
         calories = n.calories?.value, protein = n.protein?.value, carbohydrates = n.carbohydrates?.value,

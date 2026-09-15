@@ -24,7 +24,8 @@ class ScreenParityWorkflowTest {
     private val nutrients = """{"calories":{"value":100,"unit":"kcal"},"protein":{"value":4,"unit":"g"},"carbohydrates":{"value":20,"unit":"g"},"total_fat":{"value":2,"unit":"g"},"fiber":{"value":3,"unit":"g"},"sodium":{"value":10,"unit":"mg"}}"""
     private val servings = """[{"id":"11","quantity":1,"unit":"cup","scaling_factor":1,"weight_grams":100,"is_primary":true},{"id":"12","quantity":1,"unit":"oz","scaling_factor":0.2835,"weight_grams":28.35,"is_primary":false}]"""
     private fun food(id: String = "101", name: String = "Fixture oatmeal", complete: Boolean = true) = """{"id":"$id","type":"generic","name":"$name","brand_name":"January fixture","nutrients":$nutrients,"glycemic_index":52,"glycemic_load":12,"image_url":null,"barcode":null,"servings":${if (complete) servings else JSONArray(servings).let { JSONArray().put(it.get(0)).toString() }}}"""
-    private fun detected(id: String = "101", name: String = "Fixture oatmeal") = """{"id":"$id","name":"$name","brand_name":null,"nutrients":$nutrients,"servings":[{"id":"11","quantity":1,"unit":"cup","selected_quantity":1}]}"""
+    private fun alternative(id: String, name: String) = """{"id":"$id","name":"$name","brand_name":null,"nutrients":$nutrients,"servings":[{"id":"11","quantity":1,"unit":"cup"}]}"""
+    private fun detected(id: String = "101", name: String = "Fixture oatmeal") = """{"id":"$id","name":"$name","brand_name":null,"nutrients":$nutrients,"quantity":1,"serving":{"id":"11","quantity":1,"unit":"cup"}}"""
     private val prediction = """{"points":[{"minutes":0,"value":90},{"minutes":30,"value":125},{"minutes":60,"value":140},{"minutes":90,"value":115},{"minutes":120,"value":95}],"impact_score":"medium","chart":{"min":70,"max":140}}"""
     private fun scan(name: String) = """{"meal_name":"$name","detections":[{"food":${detected()},"confidence":"high"}],"total_nutrients":$nutrients}"""
 
@@ -36,7 +37,7 @@ class ScreenParityWorkflowTest {
                 requests += path to request.body.readUtf8()
                 val body = when {
                     path == "/v1.2/foods/autocomplete" -> """{"items":[]}"""
-                    path.endsWith("/alternatives") -> """{"alternatives":[${detected("102", "Fixture lentils")}] }"""
+                    path.endsWith("/alternatives") -> """{"alternatives":[${alternative("102", "Fixture lentils")}] }"""
                     path == "/v1.2/foods/101" -> food()
                     path == "/v1.2/foods/102" -> food("102", "Fixture lentils")
                     path == "/v1.2/foods" -> """{"items":[${food(complete = false)}]}"""

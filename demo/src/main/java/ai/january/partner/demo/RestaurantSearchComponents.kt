@@ -88,7 +88,6 @@ import ai.january.partner.foods.FoodSuggestion
 import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
-import ai.january.partner.foods.SearchFoodsByNaturalLanguageResponse
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
