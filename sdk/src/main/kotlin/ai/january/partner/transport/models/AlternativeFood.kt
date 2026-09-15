@@ -23,8 +23,8 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.AlternativeServing
 import ai.january.partner.transport.models.NutritionFacts
+import ai.january.partner.transport.models.ServingSummary
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -59,7 +59,7 @@ internal data class AlternativeFood (
 
     /* Servings to read the nutrition against. Empty when the recommender returned none — the key itself is always present. */
     @Json(name = "servings")
-    val servings: kotlin.collections.List<AlternativeServing>
+    val servings: kotlin.collections.List<ServingSummary>
 
 ) {
 

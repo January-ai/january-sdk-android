@@ -126,6 +126,21 @@ internal class BigDecimalAdapter {
     }
 }`);
 
+// Enum query parameters are generated as enum classes nested in the API
+// interface. nonPublicApi marks them `internal`, which Kotlin rejects there
+// (interface members take the interface's visibility), and Retrofit renders a
+// @Query enum with toString(), so without an override the wire value would be
+// the constant name (DAY) instead of the contract value (day).
+const apis = path.join(root, 'src/main/kotlin/ai/january/partner/transport/apis');
+const nestedEnum = /^([ \t]+)internal (enum class \w+\(val value: kotlin\.String\) \{\n[\s\S]*?)\n\1\}/gm;
+for (const entry of fs.readdirSync(apis)) {
+  const file = path.join(apis, entry);
+  const source = fs.readFileSync(file, 'utf8');
+  const fixed = source.replace(nestedEnum, (_match, indent, body) =>
+    `${indent}${body};\n\n${indent}    override fun toString(): kotlin.String = value\n${indent}}`);
+  if (fixed !== source) fs.writeFileSync(file, fixed);
+}
+
 const normalize = (directory) => {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
