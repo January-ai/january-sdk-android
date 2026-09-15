@@ -12,6 +12,12 @@ suspend fun create(
     name: String? = null,
 ): FoodLog
 suspend fun list(start: String, end: String): ListFoodLogsResponse
+suspend fun getSummary(
+    start: String,
+    end: String,
+    groupBy: FoodLogSummaryGrouping = FoodLogSummaryGrouping.DAY,
+    weekStart: WeekStart = WeekStart.MONDAY,
+): FoodLogSummary
 suspend fun update(
     id: String,
     foods: List<FoodSelection>? = null,
@@ -26,11 +32,19 @@ suspend fun delete(id: String): DeleteFoodLogResponse
 Log IDs must be UUID strings. `FoodLog` contains `id`, `foods`, `timestampUtc`,
 and optional `name`; list returns `totalCount` and items; delete returns `status`.
 
+`getSummary` aggregates the logs in the inclusive range (at most 366 days) into
+`buckets`, one per local calendar day or per week, each with `logsCount`,
+`daysWithLogs`, and summed `nutrients`. Empty periods are still returned with
+zero counts. `totals` covers the whole range and `averagePerLoggedDay` divides
+the totals by the number of days that have a log. `nutrients` is sparse: read
+`logsCount` to tell an empty bucket from one whose logs had no nutrition data.
+
 The unscoped `client.foodLogs` has corresponding request-object methods:
 
 ```kotlin
 suspend fun create(request: CreateFoodLogRequest): FoodLog
 suspend fun list(request: ListFoodLogsRequest): ListFoodLogsResponse
+suspend fun getSummary(request: GetFoodLogSummaryRequest): FoodLogSummary
 suspend fun update(request: UpdateFoodLogRequest): FoodLog
 suspend fun delete(request: DeleteFoodLogRequest): DeleteFoodLogResponse
 ```

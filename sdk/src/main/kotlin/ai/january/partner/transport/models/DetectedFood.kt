@@ -23,8 +23,8 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.DetectedServing
 import ai.january.partner.transport.models.NutritionFacts
+import ai.january.partner.transport.models.ServingSummary
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -35,8 +35,9 @@ import com.squareup.moshi.JsonClass
  * @param id Catalog food id, or null when the producer matched none.
  * @param name Null only when the producer sent a food with no name.
  * @param brandName Null for generic (non-branded) foods.
+ * @param quantity Number of catalog servings consumed, ready to use as food-log quantity. For 40 g from a 100 g serving this is 0.4. Null when the producer supplied no usable portion.
+ * @param serving
  * @param nutrients
- * @param servings Never empty: every detection producer guarantees at least one serving.
  */
 
 
@@ -54,12 +55,15 @@ internal data class DetectedFood (
     @Json(name = "brand_name")
     val brandName: kotlin.String?,
 
-    @Json(name = "nutrients")
-    val nutrients: NutritionFacts,
+    /* Number of catalog servings consumed, ready to use as food-log quantity. For 40 g from a 100 g serving this is 0.4. Null when the producer supplied no usable portion. */
+    @Json(name = "quantity")
+    val quantity: java.math.BigDecimal?,
 
-    /* Never empty: every detection producer guarantees at least one serving. */
-    @Json(name = "servings")
-    val servings: kotlin.collections.List<DetectedServing>
+    @Json(name = "serving")
+    val serving: ServingSummary,
+
+    @Json(name = "nutrients")
+    val nutrients: NutritionFacts
 
 ) {
 

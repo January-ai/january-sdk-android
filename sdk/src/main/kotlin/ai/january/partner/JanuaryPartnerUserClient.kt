@@ -4,6 +4,10 @@ import ai.january.partner.foodlogs.CreateFoodLogRequest
 import ai.january.partner.foodlogs.DeleteFoodLogRequest
 import ai.january.partner.foodlogs.DeleteFoodLogResponse
 import ai.january.partner.foodlogs.FoodLog
+import ai.january.partner.foodlogs.FoodLogSummary
+import ai.january.partner.foodlogs.FoodLogSummaryGrouping
+import ai.january.partner.foodlogs.GetFoodLogSummaryRequest
+import ai.january.partner.foodlogs.WeekStart
 import ai.january.partner.foodlogs.GetFoodLogRequest
 import ai.january.partner.foodlogs.FoodLogsResource
 import ai.january.partner.foodlogs.ListFoodLogsRequest
@@ -119,6 +123,13 @@ public class UserFoodLogsResource internal constructor(
         resource.list(ListFoodLogsRequest(start, end, context))
 
     public suspend fun get(id: String): FoodLog = resource.get(GetFoodLogRequest(id, context))
+
+    public suspend fun getSummary(
+        start: String,
+        end: String,
+        groupBy: FoodLogSummaryGrouping = FoodLogSummaryGrouping.DAY,
+        weekStart: WeekStart = WeekStart.MONDAY,
+    ): FoodLogSummary = resource.getSummary(GetFoodLogSummaryRequest(start, end, groupBy, weekStart, context))
 
     public suspend fun update(
         id: String,

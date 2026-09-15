@@ -103,13 +103,13 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
         },
         transform = { response ->
             SuggestFoodAlternativesResponse(response.alternatives.map { food ->
-                DetectedFood(
+                AlternativeFood(
                     id = food.id,
                     name = food.name,
                     brandName = food.brandName,
                     nutrients = food.nutrients.toPublicCompleteNutrition(),
                     servings = food.servings.map { serving ->
-                        DetectedServing(serving.id, serving.quantity?.toDouble(), serving.unit)
+                        ServingSummary(serving.id, serving.quantity?.toDouble(), serving.unit)
                     },
                 )
             })

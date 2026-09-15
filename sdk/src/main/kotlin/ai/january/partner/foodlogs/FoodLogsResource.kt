@@ -38,6 +38,26 @@ public class FoodLogsResource internal constructor(private val api: FoodLogsApi)
         transform = { ListFoodLogsResponse(it.items.size, it.items.map { log -> log.toPublic() }) },
     )
 
+    public suspend fun getSummary(request: GetFoodLogSummaryRequest): FoodLogSummary = executeApiCall(
+        operation = {
+            api.getFoodLogSummary(
+                startDate = LocalDate.parse(request.start),
+                endDate = LocalDate.parse(request.end),
+                timezone = request.user.timezone ?: "UTC",
+                januaryEndUserID = request.user.endUserId.value,
+                groupBy = when (request.groupBy) {
+                    FoodLogSummaryGrouping.DAY -> FoodLogsApi.GroupByGetFoodLogSummary.DAY
+                    FoodLogSummaryGrouping.WEEK -> FoodLogsApi.GroupByGetFoodLogSummary.WEEK
+                },
+                weekStart = when (request.weekStart) {
+                    WeekStart.MONDAY -> FoodLogsApi.WeekStartGetFoodLogSummary.MONDAY
+                    WeekStart.SUNDAY -> FoodLogsApi.WeekStartGetFoodLogSummary.SUNDAY
+                },
+            )
+        },
+        transform = { it.toPublic() },
+    )
+
     public suspend fun get(request: GetFoodLogRequest): FoodLog = executeApiCall(
         operation = { api.getFoodLog(UUID.fromString(request.id), request.user.endUserId.value) },
         transform = { it.toPublic() },
@@ -87,6 +107,32 @@ private fun ai.january.partner.transport.models.FoodLog.toPublic() = FoodLog(
     },
     timestampUtc = eatenAt.toString(),
     name = name,
+)
+
+private fun ai.january.partner.transport.models.FoodLogSummary.toPublic() = FoodLogSummary(
+    groupBy = when (groupBy) {
+        ai.january.partner.transport.models.FoodLogSummary.GroupBy.WEEK -> FoodLogSummaryGrouping.WEEK
+        else -> FoodLogSummaryGrouping.DAY
+    },
+    weekStart = when (weekStart) {
+        ai.january.partner.transport.models.FoodLogSummary.WeekStart.MONDAY -> WeekStart.MONDAY
+        ai.january.partner.transport.models.FoodLogSummary.WeekStart.SUNDAY -> WeekStart.SUNDAY
+        null -> null
+    },
+    timezone = timezone,
+    startDate = startDate.toString(),
+    endDate = endDate.toString(),
+    buckets = buckets.map { bucket ->
+        FoodLogSummaryBucket(
+            startDate = bucket.startDate.toString(),
+            endDate = bucket.endDate.toString(),
+            logsCount = bucket.logsCount,
+            daysWithLogs = bucket.daysWithLogs,
+            nutrients = bucket.nutrients.toPublic(),
+        )
+    },
+    totals = FoodLogSummaryTotals(totals.logsCount, totals.daysWithLogs, totals.nutrients.toPublic()),
+    averagePerLoggedDay = FoodLogSummaryAverage(averagePerLoggedDay.nutrients.toPublic()),
 )
 
 private fun ai.january.partner.transport.models.NutritionFacts.toPublic(): NutritionFacts {

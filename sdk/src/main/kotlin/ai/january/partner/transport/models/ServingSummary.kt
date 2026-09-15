@@ -36,7 +36,7 @@ import com.squareup.moshi.JsonClass
  */
 
 
-internal data class AlternativeServing (
+internal data class ServingSummary (
 
     /* Null only when the producer sent a serving with no id. */
     @Json(name = "id")

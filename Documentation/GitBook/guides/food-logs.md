@@ -20,5 +20,19 @@ user.foodLogs.update(log.id, name = "Post-workout breakfast")
 user.foodLogs.delete(log.id)
 ```
 
+For a weekly or daily overview, ask for a summary instead of paging through
+logs:
+
+```kotlin
+val summary = user.foodLogs.getSummary(
+    "2026-09-01", "2026-09-30",
+    groupBy = FoodLogSummaryGrouping.WEEK,
+)
+summary.buckets.forEach { week ->
+    println("${week.startDate}: ${week.logsCount} logs, ${week.nutrients.calories?.value} kcal")
+}
+val dailyAverage = summary.averagePerLoggedDay.nutrients
+```
+
 List boundaries are inclusive calendar dates in the supplied timezone. The host
 application owns and persists the identity; the SDK only applies it to requests.

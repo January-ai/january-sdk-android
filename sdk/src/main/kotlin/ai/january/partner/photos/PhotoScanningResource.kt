@@ -3,8 +3,9 @@ package ai.january.partner.photos
 import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
 import ai.january.partner.foods.DetectedFood
-import ai.january.partner.foods.DetectedServing
+import ai.january.partner.foods.ServingSummary
 import ai.january.partner.transport.apis.PhotoScanningApi
+import ai.january.partner.transport.models.AnalysisReasoning
 import ai.january.partner.transport.models.CorrectPhotoScanBody
 import ai.january.partner.transport.models.ScanFoodPhotoBody
 import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
@@ -12,7 +13,21 @@ import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
 /** Operations that analyze food from photos or natural-language descriptions. */
 public class FoodAnalysisResource internal constructor(private val api: PhotoScanningApi) {
     public suspend fun analyzePhoto(request: ScanFoodPhotoRequest): FoodScan = executeApiCall(
-        operation = { api.scanFoodPhoto(ScanFoodPhotoBody(request.image)) },
+        operation = {
+            api.scanFoodPhoto(
+                ScanFoodPhotoBody(
+                    image = request.image,
+                    reasoning = request.reasoningEffort?.let { effort ->
+                        AnalysisReasoning(
+                            when (effort) {
+                                AnalysisEffort.NONE -> AnalysisReasoning.Effort.NONE
+                                AnalysisEffort.XHIGH -> AnalysisReasoning.Effort.XHIGH
+                            },
+                        )
+                    },
+                ),
+            )
+        },
         transform = { it.toPublic() },
     )
 
@@ -50,14 +65,12 @@ private fun ai.january.partner.transport.models.FoodScan.toPublic() = FoodScan(
                 name = detection.food.name,
                 brandName = detection.food.brandName,
                 nutrients = bridgeModel(detection.food.nutrients),
-                servings = detection.food.servings.map { serving ->
-                    DetectedServing(
-                        serving.id,
-                        serving.quantity?.toDouble(),
-                        serving.unit,
-                        serving.selectedQuantity?.toDouble(),
-                    )
-                },
+                serving = ServingSummary(
+                    detection.food.serving.id,
+                    detection.food.serving.quantity?.toDouble(),
+                    detection.food.serving.unit,
+                ),
+                quantity = detection.food.quantity?.toDouble(),
             ),
         )
     },
@@ -74,14 +87,12 @@ private fun FoodScan.toTransport() = ai.january.partner.transport.models.FoodSca
                 name = detection.food.name,
                 brandName = detection.food.brandName,
                 nutrients = bridgeModel(detection.food.nutrients),
-                servings = detection.food.servings.orEmpty().map { serving ->
-                    ai.january.partner.transport.models.DetectedServing(
-                        id = serving.id,
-                        quantity = serving.quantity?.let(java.math.BigDecimal::valueOf),
-                        unit = serving.unit,
-                        selectedQuantity = serving.selectedQuantity?.let(java.math.BigDecimal::valueOf),
-                    )
-                },
+                serving = ai.january.partner.transport.models.ServingSummary(
+                    id = detection.food.serving.id,
+                    quantity = detection.food.serving.quantity?.let(java.math.BigDecimal::valueOf),
+                    unit = detection.food.serving.unit,
+                ),
+                quantity = detection.food.quantity?.let(java.math.BigDecimal::valueOf),
             ),
         )
     },
