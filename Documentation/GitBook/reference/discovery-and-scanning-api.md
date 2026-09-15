@@ -44,20 +44,30 @@ returns an empty response.
 suspend fun analyzePhoto(request: ScanFoodPhotoRequest): FoodScan
 suspend fun analyzeDescription(
     request: SearchFoodsByNaturalLanguageRequest,
-): SearchFoodsByNaturalLanguageResponse
+): FoodScan
 suspend fun correct(request: CorrectPhotoScanRequest): FoodScan
 ```
 
-`ScanFoodPhotoRequest` has `image: String` and optional `endUserId`. Use
+`ScanFoodPhotoRequest` has `image: String`, optional `endUserId`, and optional
+`reasoningEffort` (`AnalysisEffort.XHIGH` selects the reasoning-based analyzer;
+the result shape and cost are the same). Use
 `ScanFoodPhotoRequest.fromImageData(imageData, endUserId, maxDimension = 1000,
 jpegQuality = 70)` or `PhotoScanImage.dataUri(...)` to prepare camera bytes.
 
 `CorrectPhotoScanRequest` requires `mealName`, the current
 `List<FoodDetection>`, `userInput`, and optional `endUserId`.
 
-`FoodScan` contains optional `mealName`, `totalNutrients`, `detections`, and
-`glucoseImpact`. Each detection contains a `DetectedFood` and optional confidence
-score.
+`FoodScan` contains optional `mealName`, `totalNutrients`, and `detections`.
+Each detection contains a `DetectedFood` and an optional confidence score.
+`DetectedFood` has `id`, `name`, `brandName`, `nutrients`, `serving`, and
+`quantity`: `serving` is the selected catalog serving (`ServingSummary` with
+`id`, `quantity`, `unit`, where `quantity` is the size of one serving) and
+`quantity` is how many of that serving were eaten, so
+`FoodSelection(food.id, ServingSelection(food.serving.id, food.quantity))` logs
+the detection as is. `nutrients` are already scaled to `quantity`.
+
+Food alternatives (`foods.suggestAlternatives`) return `AlternativeFood` values
+with `servings: List<ServingSummary>` to read the nutrition against.
 
 ## Native scanner
 

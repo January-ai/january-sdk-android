@@ -23,6 +23,10 @@ cholesterol, calcium, iron, potassium, sodium, and vitamin D.
 `FoodSelection(id, serving)` uses `ServingSelection(id, quantity)` and is the
 input accepted by Food Logs and Glucose.
 
+* `FoodLogSummaryGrouping`: `DAY`, `WEEK`
+* `WeekStart`: `MONDAY`, `SUNDAY`
+* `AnalysisEffort`: `NONE`, `XHIGH`
+
 ## Glucose profile
 
 ```kotlin

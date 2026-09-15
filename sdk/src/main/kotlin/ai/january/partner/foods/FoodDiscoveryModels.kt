@@ -8,32 +8,6 @@ import com.squareup.moshi.JsonClass
 public data class LookupFoodByBarcodeRequest(public val upc: String, public val endUserId: PartnerUserId? = null)
 public data class SearchFoodsByNaturalLanguageRequest(public val query: String, public val endUserId: PartnerUserId? = null)
 
-@JsonClass(generateAdapter = false)
-public data class NaturalLanguageServing(
-    public val id: String?,
-    public val quantity: Double? = null,
-    public val unit: String?,
-    @Json(name = "selected_quantity") public val selectedQuantity: Double? = null,
-)
-
-@JsonClass(generateAdapter = false)
-public data class NaturalLanguageFood(
-    public val id: String? = null,
-    public val name: String?,
-    @Json(name = "brand_name") public val brandName: String? = null,
-    public val nutrients: CompleteScanNutritionFacts,
-    public val servings: List<NaturalLanguageServing>? = null,
-)
-
-@JsonClass(generateAdapter = false)
-public data class NaturalLanguageFoodDetection(public val food: NaturalLanguageFood)
-
-@JsonClass(generateAdapter = false)
-public data class SearchFoodsByNaturalLanguageResponse(
-    @Json(name = "total_nutrients") public val totalNutrients: CompleteScanNutritionFacts? = null,
-    public val detections: List<NaturalLanguageFoodDetection>,
-)
-
 public enum class DietRestriction(public val value: String) {
     GLUTEN("gluten"), LACTOSE("lactose"), YEAST("yeast"), TREE_NUTS("tree_nuts"),
     PEANUTS("peanuts"), DAIRY("dairy"), EGGS("eggs"), SULFITES("sulfites"),
@@ -62,30 +36,52 @@ public data class SuggestFoodAlternativesRequest(
     ) : this(foodId.toString(), dietRestrictions, dietPreferences, endUserId)
 }
 
+/** The catalog serving a detected or alternative food is expressed in. `quantity` is the size of one serving, not the amount eaten. */
 @JsonClass(generateAdapter = false)
-public data class DetectedServing(
-    public val id: String?, public val quantity: Double? = null, public val unit: String?,
-    public val selectedQuantity: Double? = null,
+public data class ServingSummary(
+    public val id: String?,
+    public val quantity: Double? = null,
+    public val unit: String?,
 ) {
-    public constructor(id: Long, quantity: Double? = null, unit: String) :
-        this(id.toString(), quantity, unit, null)
+    public constructor(id: Long, quantity: Double? = null, unit: String) : this(id.toString(), quantity, unit)
 }
 
+@Deprecated("Use ServingSummary. The amount eaten is now DetectedFood.quantity.", ReplaceWith("ServingSummary"))
+public typealias DetectedServing = ServingSummary
+
+/**
+ * A food recognized from a photo or a description.
+ *
+ * `serving` is the selected catalog serving and `quantity` is how many of that serving were eaten
+ * (`0.4` for 40 g of a 100 g serving); together they are ready to use as a food-log entry.
+ * `nutrients` are already scaled to `quantity`. `quantity` is null when no usable portion was found.
+ */
 @JsonClass(generateAdapter = false)
 public data class DetectedFood(
     public val id: String? = null,
     public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     public val nutrients: CompleteScanNutritionFacts,
-    public val servings: List<DetectedServing>? = null,
+    public val serving: ServingSummary,
+    public val quantity: Double? = null,
 ) {
     public constructor(
         id: Long?, name: String?, brandName: String? = null,
-        nutrients: CompleteScanNutritionFacts, servings: List<DetectedServing>? = null,
-    ) : this(id?.toString(), name, brandName, nutrients, servings)
+        nutrients: CompleteScanNutritionFacts, serving: ServingSummary, quantity: Double? = null,
+    ) : this(id?.toString(), name, brandName, nutrients, serving, quantity)
 }
 
-public typealias FoodAlternative = DetectedFood
+/** A healthier alternative to a food, with the servings its nutrition can be read against. */
+@JsonClass(generateAdapter = false)
+public data class AlternativeFood(
+    public val id: String? = null,
+    public val name: String?,
+    @Json(name = "brand_name") public val brandName: String? = null,
+    public val nutrients: CompleteScanNutritionFacts,
+    public val servings: List<ServingSummary> = emptyList(),
+)
+
+public typealias FoodAlternative = AlternativeFood
 
 @JsonClass(generateAdapter = false)
-public data class SuggestFoodAlternativesResponse(public val alternatives: List<FoodAlternative>)
+public data class SuggestFoodAlternativesResponse(public val alternatives: List<AlternativeFood>)

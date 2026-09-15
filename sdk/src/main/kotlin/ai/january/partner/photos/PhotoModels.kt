@@ -6,7 +6,15 @@ import ai.january.partner.models.CompleteScanNutritionFacts
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-public data class ScanFoodPhotoRequest(public val image: String, public val endUserId: PartnerUserId? = null) {
+/** How much analysis effort a photo scan uses. Both modes return the same [FoodScan] shape and cost the same. */
+public enum class AnalysisEffort { NONE, XHIGH }
+
+public data class ScanFoodPhotoRequest(
+    public val image: String,
+    public val endUserId: PartnerUserId? = null,
+    /** Null or [AnalysisEffort.NONE] uses the standard analyzer; [AnalysisEffort.XHIGH] uses the reasoning-based one. */
+    public val reasoningEffort: AnalysisEffort? = null,
+) {
     public companion object {
         /** Creates a request from local image bytes after resizing and JPEG compression. */
         @JvmStatic
@@ -15,9 +23,11 @@ public data class ScanFoodPhotoRequest(public val image: String, public val endU
             endUserId: PartnerUserId? = null,
             maxDimension: Int = PhotoScanImage.DEFAULT_MAX_DIMENSION,
             jpegQuality: Int = PhotoScanImage.DEFAULT_JPEG_QUALITY,
+            reasoningEffort: AnalysisEffort? = null,
         ): ScanFoodPhotoRequest = ScanFoodPhotoRequest(
             image = PhotoScanImage.dataUri(imageData, maxDimension, jpegQuality),
             endUserId = endUserId,
+            reasoningEffort = reasoningEffort,
         )
     }
 }

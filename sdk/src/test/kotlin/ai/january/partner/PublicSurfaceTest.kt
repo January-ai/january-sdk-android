@@ -21,7 +21,7 @@ import ai.january.partner.photos.CorrectPhotoScanRequest
 import ai.january.partner.photos.FoodDetection
 import ai.january.partner.photos.ScanFoodPhotoRequest
 import ai.january.partner.foods.DetectedFood
-import ai.january.partner.foods.DetectedServing
+import ai.january.partner.foods.ServingSummary
 import ai.january.partner.models.CompleteScanNutritionFacts
 import ai.january.partner.restaurants.SearchRestaurantsRequest
 import ai.january.partner.restaurants.GetRestaurantMenuItemsRequest
@@ -75,7 +75,8 @@ public class PublicSurfaceTest {
                 1,
                 "Banana",
                 nutrients = CompleteScanNutritionFacts(),
-                servings = listOf(DetectedServing(2, 1.0, "serving")),
+                serving = ServingSummary(2, 1.0, "serving"),
+                quantity = 1.0,
             ),
         )
 

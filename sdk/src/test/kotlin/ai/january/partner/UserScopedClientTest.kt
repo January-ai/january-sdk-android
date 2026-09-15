@@ -5,7 +5,7 @@ import ai.january.partner.glucose.PredictGlucoseRequest
 import ai.january.partner.glucose.Sex
 import ai.january.partner.foods.AutocompleteFoodsRequest
 import ai.january.partner.foods.DetectedFood
-import ai.january.partner.foods.DetectedServing
+import ai.january.partner.foods.ServingSummary
 import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.LookupFoodByBarcodeRequest
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
@@ -139,7 +139,8 @@ public class UserScopedClientTest {
                             id = 1,
                             name = "Banana",
                             nutrients = CompleteScanNutritionFacts(),
-                            servings = listOf(DetectedServing(2, 1.0, "serving")),
+                            serving = ServingSummary(2, 1.0, "serving"),
+                            quantity = 1.0,
                         ),
                     ),
                 ),
