@@ -10,7 +10,8 @@ NUTRIENTS = {k: {'value':v,'unit':u} for k,v,u in [('calories',100,'kcal'),('pro
 SERVINGS = [dict(id='11',quantity=1,unit='cup',scaling_factor=1,weight_grams=100,is_primary=True),dict(id='12',quantity=1,unit='oz',scaling_factor=0.2835,weight_grams=28.35,is_primary=False)]
 def food(id='101',name='Fixture oatmeal',full=True):return dict(id=str(id),type='generic',name=name,brand_name='January fixture',nutrients=NUTRIENTS,glycemic_index=52,glycemic_load=12,image_url=None,barcode=None,servings=SERVINGS if full else SERVINGS[:1])
 PREDICTION = dict(points=[dict(minutes=m,value=v) for m,v in [(0,90),(30,125),(60,140),(90,115),(120,95)]],impact_score='medium',chart=dict(min=70,max=140))
-def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=food(),confidence='high')],total_nutrients=NUTRIENTS)
+def detected(id='101',name='Fixture oatmeal'):return dict(id=str(id),name=name,brand_name='January fixture',nutrients=NUTRIENTS,quantity=1,serving=dict(id='11',quantity=1,unit='cup'))
+def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=detected(),confidence='high')],total_nutrients=NUTRIENTS)
 def log(name='Fixture breakfast'):
  f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
  return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at='2026-08-31T12:00:00Z',foods=[f])
@@ -54,7 +55,7 @@ class Handler(BaseHTTPRequestHandler):
   elif path.endswith('/glucose/predictions'):result=PREDICTION
   elif path.endswith('/food-analysis/image'):result=scan()
   elif path.endswith('/food-analysis/corrections'):result=scan('Corrected breakfast')
-  elif path.endswith('/food-analysis/text'):result=dict(meal_name=None,detections=[] if empty else [dict(food=food(),confidence=None)],total_nutrients=NUTRIENTS)
+  elif path.endswith('/food-analysis/text'):result=dict(meal_name=None,detections=[] if empty else [dict(food=detected(),confidence=None)],total_nutrients=NUTRIENTS)
   elif '/food-logs' in path:
    if self.command=='GET':result=dict(items=state['logs'])
    elif self.command=='DELETE':state['logs']=[];result=dict(status='success')

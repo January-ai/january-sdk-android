@@ -128,6 +128,11 @@ internal fun ScanResult(result: FoodScan, imageBytes: ByteArray?, imageInput: St
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(detection.food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
                     detection.food.brandName?.takeIf(String::isNotBlank)?.let { Text(it, color = JanuaryColors.Muted) }
+                    detection.food.serving.unit?.let { unit ->
+                        val eaten = formatDemoNumber(detection.food.quantity ?: 1.0)
+                        val size = formatDemoNumber(detection.food.serving.quantity ?: 1.0)
+                        Text("$eaten × $size $unit", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted)
+                    }
                 }
                 detection.confidenceScore?.let {
                     val confidenceColor = when (it.lowercase()) { "high" -> JanuaryColors.Green; "medium" -> JanuaryColors.Gold; else -> JanuaryColors.Rust }

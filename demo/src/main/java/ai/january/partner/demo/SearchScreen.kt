@@ -176,14 +176,8 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     fun naturalFoodSelections(result: FoodScan): List<FoodSelection> =
         result.detections.orEmpty().mapNotNull { detection ->
             val foodId = detection.food.id ?: return@mapNotNull null
-            val serving = detection.food.servings?.firstOrNull { it.id != null } ?: return@mapNotNull null
-            FoodSelection(
-                foodId,
-                ServingSelection(
-                    requireNotNull(serving.id),
-                    serving.selectedQuantity ?: serving.quantity ?: 1.0,
-                ),
-            )
+            val servingId = detection.food.serving.id ?: return@mapNotNull null
+            FoodSelection(foodId, ServingSelection(servingId, detection.food.quantity ?: 1.0))
         }
 
     fun predictNaturalMeal() {

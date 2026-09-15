@@ -8,6 +8,9 @@ import com.squareup.moshi.JsonClass
 public data class LookupFoodByBarcodeRequest(public val upc: String, public val endUserId: PartnerUserId? = null)
 public data class SearchFoodsByNaturalLanguageRequest(public val query: String, public val endUserId: PartnerUserId? = null)
 
+@Deprecated("analyzeDescription returns FoodScan.", ReplaceWith("FoodScan", "ai.january.partner.photos.FoodScan"))
+public typealias SearchFoodsByNaturalLanguageResponse = ai.january.partner.photos.FoodScan
+
 public enum class DietRestriction(public val value: String) {
     GLUTEN("gluten"), LACTOSE("lactose"), YEAST("yeast"), TREE_NUTS("tree_nuts"),
     PEANUTS("peanuts"), DAIRY("dairy"), EGGS("eggs"), SULFITES("sulfites"),
