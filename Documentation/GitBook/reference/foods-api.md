@@ -24,7 +24,7 @@ suspend fun suggestAlternatives(
 | Request | Fields |
 | --- | --- |
 | `AutocompleteFoodsRequest` | `query: String`; `category: AutocompleteFoodCategory? = null`; `limit: Int = 8`; `endUserId: PartnerUserId? = null` |
-| `SearchFoodsRequest` | `query: String`; `category: FoodCategory? = null`; `limit: Int = 10` (1–50); `offset: Int = 0`; `endUserId: PartnerUserId? = null` |
+| `SearchFoodsRequest` | `query: String`; `category: FoodCategory? = null`; `limit: Int = 10` (1–50); `endUserId: PartnerUserId? = null`; `offset: Int = 0` (last, so positional calls keep working) |
 | `GetFoodRequest` | `foodId: FoodId`; `endUserId: PartnerUserId? = null` |
 | `LookupFoodByBarcodeRequest` | `upc: String`; `endUserId: PartnerUserId? = null` |
 | `SuggestFoodAlternativesRequest` | `foodId: Long`; `dietRestrictions: List<DietRestriction> = emptyList()`; `dietPreferences: List<DietPreference> = emptyList()`; `endUserId: PartnerUserId? = null` |
