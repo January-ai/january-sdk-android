@@ -3,6 +3,13 @@
 All notable changes to the January SDK for Android are documented here. This
 project uses Semantic Versioning.
 
+## [0.2.2] - Unreleased
+
+- Voice capture waits two seconds of silence before ending a capture (the
+  platform default cut people off between words). `VoiceCaptureSession` takes
+  an `endOfSpeechSilence` duration to tune it; the value is a hint that some
+  recognizers ignore.
+
 ## [0.2.1] - 2026-09-16
 
 - Lower the minimum Android version from API 26 to API 24. The SDK uses

@@ -11,6 +11,8 @@ import java.util.Locale
 internal class AndroidVoiceRecognitionEngine(
     private val context: Context,
     private val locale: Locale,
+    /** How long the recognizer waits in silence before it treats the utterance as finished. */
+    private val endOfSpeechSilenceMillis: Long,
 ) : VoiceRecognitionEngine, RecognitionListener {
     override var listener: VoiceRecognitionListener? = null
     private var recognizer: SpeechRecognizer? = null
@@ -28,6 +30,10 @@ internal class AndroidVoiceRecognitionEngine(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale.toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            // The platform default ends a capture after a very short pause, which cuts people off
+            // between words. These are hints; recognizers that ignore them keep their own timing.
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, endOfSpeechSilenceMillis)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, endOfSpeechSilenceMillis)
         }
         activeRecognizer.startListening(intent)
     }

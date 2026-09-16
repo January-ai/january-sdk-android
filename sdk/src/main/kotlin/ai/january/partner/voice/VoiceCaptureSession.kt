@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Looper
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import java.time.Duration
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,12 +53,19 @@ public class VoiceCaptureSession private constructor(
     /** Most recent failure. Clear it with [clearError] after presenting it. */
     public val error: StateFlow<VoiceCaptureException?> = mutableError.asStateFlow()
 
-    /** Creates a session backed by the device's default speech recognizer. */
+    /**
+     * Creates a session backed by the device's default speech recognizer.
+     *
+     * [endOfSpeechSilence] is how long the recognizer should wait in silence before it decides the
+     * person has finished (default two seconds). It is passed to the recognizer as a hint; some
+     * recognizers keep their own timing.
+     */
     public constructor(
         context: Context,
         locale: Locale = Locale.getDefault(),
+        endOfSpeechSilence: Duration = Duration.ofSeconds(2),
     ) : this(
-        engine = AndroidVoiceRecognitionEngine(context.applicationContext, locale),
+        engine = AndroidVoiceRecognitionEngine(context.applicationContext, locale, endOfSpeechSilence.toMillis()),
         hasRecordPermission = {
             ContextCompat.checkSelfPermission(context.applicationContext, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
