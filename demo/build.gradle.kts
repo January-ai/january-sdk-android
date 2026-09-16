@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "ai.january.partner.demo"
-        minSdk = 26
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -71,10 +71,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by the SDK below API 26 (java.time); every consuming app does the same.
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     // The demo builds against the SDK in this repository so both stay in step; apps use the Maven Central artifact (see README).
     implementation(project(":sdk"))
 

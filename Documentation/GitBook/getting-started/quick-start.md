@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.januaryquickstart"
-        minSdk = 26
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -39,11 +39,14 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required while minSdk is below 26: the SDK uses java.time.
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
 dependencies {
-    implementation("ai.january:january-sdk-android:0.2.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    implementation("ai.january:january-sdk-android:0.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
 ```

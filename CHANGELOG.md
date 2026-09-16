@@ -3,6 +3,15 @@
 All notable changes to the January SDK for Android are documented here. This
 project uses Semantic Versioning.
 
+## [0.2.1] - Unreleased
+
+- Lower the minimum Android version from API 26 to API 24. The SDK uses
+  `java.time`, so apps whose `minSdk` is below 26 must enable core library
+  desugaring (`isCoreLibraryDesugaringEnabled = true` plus the
+  `com.android.tools:desugar_jdk_libs` dependency); the AAR metadata makes a
+  build without it fail with a clear message instead of crashing at runtime on
+  API 24 and 25 devices.
+
 ## [0.2.0] - 2026-09-16
 
 - `SearchFoodsRequest` gains `offset` for paging and accepts `limit` up to 50,

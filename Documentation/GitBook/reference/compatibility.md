@@ -2,14 +2,14 @@
 
 | Requirement | Current preview |
 | --- | --- |
-| Minimum Android | API 26 |
+| Minimum Android | API 24 (apps with `minSdk` below 26 must enable core library desugaring; see Installation) |
 | Compile SDK used by source | 36 |
 | Gradle | 9.5.1 |
 | Android Gradle Plugin | 9.2.1 |
 | Java source/target | 17 |
 | Build system | Gradle Kotlin DSL |
 | Network API | Kotlin `suspend` functions |
-| Distribution | Maven Central (`ai.january:january-sdk-android:0.2.0`) |
+| Distribution | Maven Central (`ai.january:january-sdk-android:0.2.1`) |
 
 The SDK manifest declares `android.permission.INTERNET`,
 `android.permission.CAMERA`, and `android.permission.RECORD_AUDIO`. The camera permission is needed by
