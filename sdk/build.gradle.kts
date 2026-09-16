@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "ai.january"
-version = "0.2.0"
+version = "0.2.1"
 
 mavenPublishing {
     configure(
@@ -63,7 +63,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
         consumerProguardFiles("consumer-rules.pro")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Single source of truth for the version the User-Agent header reports.
@@ -78,6 +78,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // java.time is used throughout the SDK; desugaring makes it available below API 26.
+        // Consuming apps with minSdk < 26 must enable core library desugaring as well; the
+        // AAR metadata makes their build fail with a clear message if they do not.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     testOptions {
@@ -89,6 +93,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
     implementation(composeBom)
     implementation("androidx.activity:activity-compose:1.12.4")
@@ -113,5 +118,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:5.3.2")
     androidTestImplementation("androidx.test:runner:1.7.0")
 }

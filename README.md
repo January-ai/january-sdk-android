@@ -1,7 +1,7 @@
 # January SDK for Android
 
 The official Kotlin SDK for January food discovery, restaurants, meal scanning,
-food logs, and glucose prediction. It supports Android API 26+, Java 17, and
+food logs, and glucose prediction. It supports Android API 24+ (with core library desugaring below API 26), Java 17, and
 Kotlin coroutines.
 
 ## Quick start: run the demo with client tokens
@@ -129,7 +129,20 @@ the SDK to `app/build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("ai.january:january-sdk-android:0.2.0")
+    implementation("ai.january:january-sdk-android:0.2.1")
+}
+```
+
+If your app's `minSdk` is 24 or 25, also enable core library desugaring (the
+SDK uses `java.time`, which Android added in API 26):
+
+```kotlin
+android {
+    compileOptions { isCoreLibraryDesugaringEnabled = true }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 ```
 
