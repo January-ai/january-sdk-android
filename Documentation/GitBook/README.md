@@ -32,7 +32,7 @@ Android app ◀──── { token, expiresIn } ─────┘
 
 ## Requirements
 
-* Android API 26+ with compile SDK 36
+* Android API 24+ with compile SDK 36 (core library desugaring below API 26)
 * Gradle 9.5.1 and Android Gradle Plugin 9.2.1 for the current source checkout
 * Java 17
 * Kotlin coroutines
