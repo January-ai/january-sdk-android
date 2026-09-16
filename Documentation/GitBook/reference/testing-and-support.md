@@ -30,8 +30,9 @@ Test at least these partner-controlled conditions before shipping:
 ## Versioning and updates
 
 Releases are published to Maven Central as
-`ai.january:january-sdk-android:<version>`; `0.2.0` is the current release. Pin
-an exact version, review the repository changelog and public API diff, rerun the
+`ai.january:january-sdk-android:<version>` when the matching `v<version>` tag is
+pushed; the changelog marks a version as released once that has happened. Pin
+an exact released version, review the changelog and public API diff, rerun the
 checks above, and update the pin deliberately.
 
 ## Support report
