@@ -31,7 +31,7 @@ Test at least these partner-controlled conditions before shipping:
 
 Releases are published to Maven Central as
 `ai.january:january-sdk-android:<version>` when the matching `v<version>` tag is
-pushed; the changelog marks a version as released once that has happened. Pin
+pushed; the repository's GitHub Releases page lists the versions that exist. Pin
 an exact released version, review the changelog and public API diff, rerun the
 checks above, and update the pin deliberately.
 

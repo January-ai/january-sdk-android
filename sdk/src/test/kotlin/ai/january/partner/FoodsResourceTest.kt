@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 
@@ -65,5 +66,36 @@ public class FoodsResourceTest {
         assertEquals("branded", request.requestUrl!!.queryParameter("type"))
         assertEquals("10", request.requestUrl!!.queryParameter("limit"))
         assertEquals("20", request.requestUrl!!.queryParameter("offset"))
+    }
+
+    @Test
+    public fun searchAcceptsTheMaximumLimitAndRejectsPaginationOutsideTheRangeBeforeSending(): Unit = runBlocking {
+        val client = JanuaryPartnerClient.testing(
+            apiKey = "fixture-api-key",
+            baseUrl = server.url("/").toString(),
+            clientBuilder = OkHttpClient.Builder(),
+        )
+        for (request in listOf(
+            SearchFoodsRequest("banana", limit = 0),
+            SearchFoodsRequest("banana", limit = 51),
+            SearchFoodsRequest("banana", offset = -1),
+        )) {
+            try {
+                client.foods.search(request)
+                fail("Expected validation failure for $request")
+            } catch (error: JanuaryException) {
+                assertEquals(ErrorCategory.VALIDATION, error.category)
+            }
+        }
+        assertEquals(0, server.requestCount)
+
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""{"items":[]}"""),
+        )
+        client.foods.search(SearchFoodsRequest("banana", limit = 50))
+        assertEquals("50", server.takeRequest().requestUrl!!.queryParameter("limit"))
     }
 }
