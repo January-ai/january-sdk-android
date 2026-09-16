@@ -76,7 +76,8 @@ public class JanuaryPartnerClient private constructor(
     ): JanuaryPartnerUserClient = forUser(PartnerUserContext(endUserId, timezone))
 
     public companion object {
-        internal const val SDK_VERSION = "0.1.0"
+        /** The published artifact version, generated from the Gradle project version. */
+        internal const val SDK_VERSION: String = BuildConfig.SDK_VERSION
         private const val PRODUCTION_BASE_URL = "https://partners.january.ai"
 
         /** Creates a client with a short-lived token managed by the integrating app. */

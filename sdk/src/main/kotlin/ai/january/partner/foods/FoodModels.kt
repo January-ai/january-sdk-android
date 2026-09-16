@@ -43,8 +43,11 @@ public data class GetFoodRequest(
 public data class SearchFoodsRequest(
     public val query: String,
     public val category: FoodCategory? = null,
+    /** Results per call, 1 through 50. */
     public val limit: Int = 10,
     public val endUserId: PartnerUserId? = null,
+    /** Results to skip for paging; a page shorter than [limit] is the last one. */
+    public val offset: Int = 0,
 )
 
 public data class FoodSearchResults(

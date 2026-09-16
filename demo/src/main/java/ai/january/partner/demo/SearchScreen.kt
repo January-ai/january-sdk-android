@@ -177,7 +177,9 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
         result.detections.orEmpty().mapNotNull { detection ->
             val foodId = detection.food.id ?: return@mapNotNull null
             val servingId = detection.food.serving.id ?: return@mapNotNull null
-            FoodSelection(foodId, ServingSelection(servingId, detection.food.quantity ?: 1.0))
+            // A detection the API could not size is left out rather than counted as one serving.
+            val quantity = detection.food.quantity ?: return@mapNotNull null
+            FoodSelection(foodId, ServingSelection(servingId, quantity))
         }
 
     fun predictNaturalMeal() {

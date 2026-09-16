@@ -29,9 +29,11 @@ Test at least these partner-controlled conditions before shipping:
 
 ## Versioning and updates
 
-There is no published Android release yet. Pin an approved Git commit, review
-the repository changelog and public API diff, rerun the checks above, and update
-the pin deliberately. Do not infer compatibility from the `0.1.0` source value.
+Releases are published to Maven Central as
+`ai.january:january-sdk-android:<version>` when the matching `v<version>` tag is
+pushed; the repository's GitHub Releases page lists the versions that exist. Pin
+an exact released version, review the changelog and public API diff, rerun the
+checks above, and update the pin deliberately.
 
 ## Support report
 

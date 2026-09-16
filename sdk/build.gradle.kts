@@ -66,9 +66,12 @@ android {
         minSdk = 26
         consumerProguardFiles("consumer-rules.pro")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Single source of truth for the version the User-Agent header reports.
+        buildConfigField("String", "SDK_VERSION", "\"${project.version}\"")
     }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 
