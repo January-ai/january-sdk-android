@@ -44,13 +44,23 @@ class DesugaredJavaTimeInstrumentedTest {
     @Test
     fun tokenLifecycleSummaryAndGlucoseWorkOnThisApiLevel(): Unit = runBlocking {
         val now = Instant.parse("2026-09-16T12:00:00Z")
+        val policy = JanuaryTokenRetryPolicy()
+        val sleeps = mutableListOf<Duration>()
         var fetches = 0
         val client = JanuaryPartnerClient.testing(
-            provider = { fetches += 1; JanuaryClientToken("fixture-client-token-$fetches", 3600) },
+            provider = {
+                fetches += 1
+                // The first attempt fails retryably so the backoff Duration path runs on-device.
+                if (fetches == 1) throw JanuaryTokenProviderException("backend busy", retryable = true)
+                JanuaryClientToken("fixture-client-token-$fetches", 3600)
+            },
             baseUrl = server.url("/").toString(),
             clientBuilder = OkHttpClient.Builder(),
             refreshLeeway = Duration.ofSeconds(60),
+            tokenRetryPolicy = policy,
             now = { now },
+            sleep = { sleeps += it },
+            unitRandom = { 0.5 },
         )
         val user = client.forUser(PartnerUserId("api-level-${Build.VERSION.SDK_INT}"), "America/Chicago")
 
@@ -70,12 +80,14 @@ class DesugaredJavaTimeInstrumentedTest {
         assertEquals(5, prediction.prediction.size)
 
         val summaryRequest = server.takeRequest()
-        assertEquals("Bearer fixture-client-token-1", summaryRequest.getHeader("Authorization"))
+        assertEquals("Bearer fixture-client-token-2", summaryRequest.getHeader("Authorization"))
         assertEquals("2026-09-14", summaryRequest.requestUrl!!.queryParameter("start_date"))
         val predictRequest = server.takeRequest()
         assertTrue(predictRequest.body.readUtf8().contains("2026-09-16T08:30:00-05:00"))
-        // One token fetch served both calls: the cached expiry (Instant + Duration) was honoured.
-        assertEquals(1, fetches)
+        // One retry with the policy's first backoff delay, then a single token served both
+        // calls: the cached expiry (Instant + Duration) was honoured.
+        assertEquals(2, fetches)
+        assertEquals(listOf(policy.delayAfterFailedAttempt(1, 0.5)), sleeps)
     }
 
     private companion object {

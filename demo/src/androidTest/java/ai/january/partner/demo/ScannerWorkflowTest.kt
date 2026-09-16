@@ -43,7 +43,10 @@ class ScannerWorkflowTest {
     @Test fun capturedPhotoReachesApiAndCanBeRetriedAfterFailure() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         // UiAutomation.grantRuntimePermission needs API 28; `pm grant` works on every supported level.
-        instrumentation.uiAutomation.executeShellCommand("pm grant ${instrumentation.targetContext.packageName} ${Manifest.permission.CAMERA}").close()
+        // Reading the command's output to EOF waits for the grant to finish before the camera opens.
+        android.os.ParcelFileDescriptor.AutoCloseInputStream(
+            instrumentation.uiAutomation.executeShellCommand("pm grant ${instrumentation.targetContext.packageName} ${Manifest.permission.CAMERA}"),
+        ).use { it.readBytes() }
         server.enqueue(json("""{"message":"Temporary scan failure"}""", 500).setBodyDelay(2, TimeUnit.SECONDS))
         server.enqueue(json("""{"meal_name":"Camera fixture","total_nutrients":{},"detections":[]}"""))
         val client = JanuaryPartnerClient.forJanuaryDevelopment(

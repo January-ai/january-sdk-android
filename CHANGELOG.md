@@ -3,7 +3,7 @@
 All notable changes to the January SDK for Android are documented here. This
 project uses Semantic Versioning.
 
-## [0.2.1] - Unreleased
+## [0.2.1] - 2026-09-16
 
 - Lower the minimum Android version from API 26 to API 24. The SDK uses
   `java.time`, so apps whose `minSdk` is below 26 must enable core library

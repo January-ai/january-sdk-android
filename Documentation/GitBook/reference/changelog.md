@@ -6,7 +6,7 @@
 * Food-log summaries per day or week with `foodLogs.getSummary`
 * Optional reasoning-based photo analysis with `ScanFoodPhotoRequest.reasoningEffort`
 * Reusable microphone speech recognition with live RMS, partial text, and stable lifecycle state
-* Coroutine-first Android SDK for API 26+
+* Coroutine-first Android SDK for API 24+ (core library desugaring below API 26)
 * Provider-managed short-lived tokens with single-flight refresh
 * Nine-attempt bounded exponential backoff with jitter
 * User-scoped Foods, Restaurants, Photo Scanning, Food Logs, and Glucose clients
