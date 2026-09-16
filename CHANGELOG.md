@@ -3,7 +3,7 @@
 All notable changes to the January SDK for Android are documented here. This
 project uses Semantic Versioning.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-09-16
 
 - `SearchFoodsRequest` gains `offset` for paging and accepts `limit` up to 50,
   matching the API.
