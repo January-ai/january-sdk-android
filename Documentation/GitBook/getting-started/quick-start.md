@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-    implementation("ai.january:january-sdk-android:0.1.0")
+    implementation("ai.january:january-sdk-android:0.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
 ```

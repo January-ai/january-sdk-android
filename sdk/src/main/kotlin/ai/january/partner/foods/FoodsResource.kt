@@ -60,10 +60,16 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
                 "Food search query must contain between 1 and 256 characters.",
             )
         }
-        if (request.limit !in 1..40) {
+        if (request.limit !in 1..50) {
             throw JanuaryException(
                 ErrorCategory.VALIDATION,
-                "Food search limit must be between 1 and 40.",
+                "Food search limit must be between 1 and 50.",
+            )
+        }
+        if (request.offset < 0) {
+            throw JanuaryException(
+                ErrorCategory.VALIDATION,
+                "Food search offset must be 0 or more.",
             )
         }
 
@@ -73,6 +79,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
                     query = request.query,
                     type = request.category?.toTransport(),
                     limit = request.limit,
+                    offset = request.offset,
                 )
             },
             transform = { it.toPublic() },

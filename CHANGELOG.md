@@ -5,6 +5,10 @@ project uses Semantic Versioning.
 
 ## [0.2.0] - Unreleased
 
+- `SearchFoodsRequest` gains `offset` for paging and accepts `limit` up to 50,
+  matching the API.
+- The `User-Agent` header reports the SDK version 0.2.0.
+
 Breaking: the Partner API changed the shape of a detected food, and `0.1.x`
 clients now fail to decode photo scans and description analyses with a
 decoding error. Update to this version to restore them.

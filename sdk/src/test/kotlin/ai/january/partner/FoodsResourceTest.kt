@@ -47,6 +47,7 @@ public class FoodsResourceTest {
                 query = "banana",
                 category = FoodCategory.BRANDED,
                 limit = 10,
+                offset = 20,
                 endUserId = PartnerUserId("test-user-123"),
             ),
         )
@@ -58,10 +59,11 @@ public class FoodsResourceTest {
         val request = server.takeRequest()
         assertEquals("Bearer fixture-api-key", request.getHeader("Authorization"))
         assertEquals(null, request.getHeader("January-End-User-ID"))
-        assertTrue(request.getHeader("User-Agent")!!.startsWith("JanuaryPartnerSDK-Android/0.1.0"))
+        assertTrue(request.getHeader("User-Agent")!!.startsWith("JanuaryPartnerSDK-Android/0.2.0"))
         assertEquals("/v1.2/foods", request.requestUrl!!.encodedPath)
         assertEquals("banana", request.requestUrl!!.queryParameter("query"))
         assertEquals("branded", request.requestUrl!!.queryParameter("type"))
         assertEquals("10", request.requestUrl!!.queryParameter("limit"))
+        assertEquals("20", request.requestUrl!!.queryParameter("offset"))
     }
 }
