@@ -35,10 +35,10 @@ tags:
     id: food-log-name
 - inputText: Afternoon snack
 - pressKey: Enter
-- scrollUntilVisible:
-    element:
-      id: food-log-add-food
-    direction: DOWN
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-add-food
 - tapOn:
     id: food-log-add-food
 - assertVisible:
