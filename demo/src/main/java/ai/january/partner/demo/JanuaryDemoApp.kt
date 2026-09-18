@@ -12,6 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -25,7 +28,8 @@ fun JanuaryDemoApp(providedState: DemoState? = null) {
     if (state.client == null) { DemoSetupScreen(); return }
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        // Expose Compose testTags as resource-ids so UiAutomator/Maestro can address them.
+        modifier = Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }.testTag("app-root"),
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {

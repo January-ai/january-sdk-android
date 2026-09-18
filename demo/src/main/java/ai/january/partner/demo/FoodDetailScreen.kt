@@ -73,6 +73,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -131,11 +132,11 @@ internal fun FoodDetailScreen(state: DemoState, food: FoodSearchItem, onBack: ()
             .onFailure { detailLoadFailed = true }
     }
     AppScreenScaffold(
-        title = "Food details", modifier = modifier,
+        title = "Food details", modifier = modifier.testTag("food-detail-screen"),
         leading = {
             AppNavigationButton(
                 if (isModal) AppNavigationButtonKind.Close else AppNavigationButtonKind.Back,
-                title = if (isModal) "Close Food details" else "Back from Food details", onClick = onBack,
+                title = if (isModal) "Close Food details" else "Back from Food details", testTag = "food-detail-back", onClick = onBack,
             )
         },
     ) {
@@ -148,8 +149,8 @@ internal fun FoodDetailScreen(state: DemoState, food: FoodSearchItem, onBack: ()
                     Text(detailFood.name ?: "Unnamed food", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                     detailFood.brandName?.let { Text(it, color = JanuaryColors.Muted) }
                 }
-                ServingControls(detailFood.servings, serving, quantity, { serving = it; quantity = it.quantity ?: 1.0 }, { quantity = it })
-                DemoCard { ScanStyleMacroStrip(portion?.nutrition?.calories?.value, portion?.nutrition?.protein?.value, portion?.nutrition?.carbohydrates?.value, portion?.nutrition?.totalFat?.value) }
+                ServingControls(detailFood.servings, serving, quantity, { serving = it; quantity = it.quantity ?: 1.0 }, { quantity = it }, modifier = Modifier.testTag("food-serving-controls"))
+                DemoCard(Modifier.testTag("food-macros")) { ScanStyleMacroStrip(portion?.nutrition?.calories?.value, portion?.nutrition?.protein?.value, portion?.nutrition?.carbohydrates?.value, portion?.nutrition?.totalFat?.value) }
                 val facts = listOf(
                     "Net carbohydrates" to portion?.nutrition?.netCarbohydrates,
                     "Saturated fat" to portion?.nutrition?.saturatedFat,
@@ -163,13 +164,13 @@ internal fun FoodDetailScreen(state: DemoState, food: FoodSearchItem, onBack: ()
                     portion?.glycemicIndex?.let { NutritionValue("Glycemic index", formatDemoNumber(it)) },
                     portion?.glycemicLoad?.let { NutritionValue("Glycemic load", formatDemoNumber(it)) },
                 )
-                if (facts.isNotEmpty()) DemoCard {
+                if (facts.isNotEmpty()) DemoCard(Modifier.testTag("food-nutrition")) {
                     Text("Nutrition facts", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     NutritionList(facts)
                 }
-                DemoPrimaryButton("Check glucose", { showGlucose = true }, Modifier.fillMaxWidth(), enabled = serving != null && state.client != null,
+                DemoPrimaryButton("Check glucose", { showGlucose = true }, Modifier.fillMaxWidth().testTag("food-check-glucose"), enabled = serving != null && state.client != null,
                     icon = { Icon(Icons.Outlined.MonitorHeart, null) })
-                DemoPrimaryButton("Find alternatives", { showAlternatives = true }, Modifier.fillMaxWidth())
+                DemoPrimaryButton("Find alternatives", { showAlternatives = true }, Modifier.fillMaxWidth().testTag("food-alternatives"))
                 DetailDisclosure {
                     NutritionList(listOf(NutritionValue("Food ID", detailFood.id.value.toString()), NutritionValue("Serving ID", serving?.id?.value?.toString() ?: "—")))
                 }

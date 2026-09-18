@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +70,7 @@ internal fun HeightInput(
                 label = { it.label },
                 onSelect = { displayUnit = it },
                 modifier = Modifier.width(170.dp),
+                testTag = { if (it == HeightDisplayUnit.IMPERIAL) "glucose-height-unit-imperial" else "glucose-height-unit-metric" },
             )
         }
 
@@ -76,6 +78,7 @@ internal fun HeightInput(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 HeightNumberField(
                     label = "Feet",
+                    fieldTestTag = "glucose-height-feet",
                     value = imperial.feet.toString(),
                     onValueChange = { feet ->
                         onHeightInchesChange((feet.toInt() * 12 + imperial.inches).toDouble().coerceIn(36.0, 96.0))
@@ -84,6 +87,7 @@ internal fun HeightInput(
                 )
                 HeightNumberField(
                     label = "Inches",
+                    fieldTestTag = "glucose-height-inches",
                     value = imperial.inches.toString(),
                     onValueChange = { inches ->
                         onHeightInchesChange((imperial.feet * 12 + inches.toInt()).toDouble().coerceIn(36.0, 96.0))
@@ -94,6 +98,7 @@ internal fun HeightInput(
         } else {
             HeightNumberField(
                 label = "Centimeters",
+                fieldTestTag = "glucose-height-centimeters",
                 value = formatMetricNumber(inchesToCentimeters(heightInches)),
                 allowsDecimal = true,
                 onValueChange = { centimeters ->
@@ -109,8 +114,9 @@ private fun HeightNumberField(
     label: String,
     value: String,
     onValueChange: (Double) -> Unit,
-    allowsDecimal: Boolean = false,
     modifier: Modifier = Modifier,
+    allowsDecimal: Boolean = false,
+    fieldTestTag: String? = null,
 ) {
     var text by rememberSaveable { mutableStateOf(value.toString()) }
     var isFocused by rememberSaveable { mutableStateOf(false) }
@@ -136,7 +142,8 @@ private fun HeightNumberField(
                     isFocused = it.isFocused
                     if (!it.isFocused) text = value.toString()
                 }
-                .padding(horizontal = 12.dp, vertical = 12.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp)
+                .then(fieldTestTag?.let { Modifier.testTag(it) } ?: Modifier),
             textStyle = TextStyle(
                 color = JanuaryColors.Ink,
                 fontSize = 20.sp,

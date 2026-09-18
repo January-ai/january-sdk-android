@@ -1,0 +1,32 @@
+appId: ai.january.partner.demo
+env:
+  # Where the app reaches the fixture server: the emulator's alias for the host.
+  # The scripts under scripts/ reach the same server's control endpoints from
+  # the host at FIXTURE_CONTROL (default http://127.0.0.1:18766).
+  FIXTURE_ORIGIN: http://10.0.2.2:18766
+---
+# Every flow starts here: reset the fixture server, then launch the demo in
+# fixture mode (a debug-only intent extra, see MainActivity) and wait for the
+# search screen.
+- runScript:
+    file: scripts/reset-fixture.js
+- retry:
+    maxRetries: 2
+    commands:
+      # Kill a previous flow's app before anything else talks to the device;
+      # a hung app has stalled the next launch on hosted emulators.
+      - stopApp
+      - launchApp:
+          clearState: false
+          stopApp: true
+          arguments:
+            januaryFixtureOrigin: ${FIXTURE_ORIGIN}
+      # A freshly booted hosted emulator sometimes shows a "<launcher> isn't
+      # responding" dialog over the app.
+      - tapOn:
+          text: "Close app"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: search-screen
+          timeout: 120000

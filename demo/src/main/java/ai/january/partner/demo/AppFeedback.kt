@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -48,9 +49,13 @@ internal fun errorTitle(error: Throwable): String = when ((error as? ai.january.
     null -> "Couldn’t complete that request"
 }
 
+/**
+ * [testTag] tags the card; its technical-details disclosure becomes "$testTag-details" and the
+ * disclosed body "$testTag-details-body". [retryTestTag] tags the retry button.
+ */
 @Composable
-fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null) {
-    DemoCard {
+fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null, testTag: String? = null, retryTestTag: String? = null) {
+    DemoCard(testTag?.let { Modifier.testTag(it) } ?: Modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Outlined.ErrorOutline, null, tint = JanuaryColors.Rust)
@@ -59,7 +64,10 @@ fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null) {
             Text(error.localizedMessage ?: "The request could not be completed.", color = JanuaryColors.Body)
             (error as? ai.january.partner.JanuaryException)?.let { failure ->
                 if (failure.httpStatus != null || failure.requestId != null) {
-                    DetailDisclosure {
+                    DetailDisclosure(
+                        modifier = testTag?.let { Modifier.testTag("$it-details") } ?: Modifier,
+                        bodyTestTag = testTag?.let { "$it-details-body" },
+                    ) {
                         NutritionList(listOfNotNull(
                             failure.httpStatus?.let { NutritionValue("HTTP status", it.toString()) },
                             failure.code?.let { NutritionValue("Error code", it) },
@@ -68,7 +76,11 @@ fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null) {
                     }
                 }
             }
-            retry?.let { androidx.compose.material3.TextButton(onClick = it) { Text("Try again", style = MaterialTheme.typography.titleMedium) } }
+            retry?.let {
+                androidx.compose.material3.TextButton(onClick = it, modifier = retryTestTag?.let { tag -> Modifier.testTag(tag) } ?: Modifier) {
+                    Text("Try again", style = MaterialTheme.typography.titleMedium)
+                }
+            }
         }
     }
 }

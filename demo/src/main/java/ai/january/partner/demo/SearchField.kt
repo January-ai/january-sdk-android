@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -71,6 +72,8 @@ fun SearchField(
     modifier: Modifier = Modifier,
     onClear: (() -> Unit)? = null,
     voiceCaptureEnabled: Boolean = true,
+    clearTestTag: String? = null,
+    voiceTestTag: String? = null,
 ) {
     val context = LocalContext.current
     val voiceCapture = remember { VoiceCaptureSession(context) }
@@ -159,7 +162,7 @@ fun SearchField(
                 {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (onClear != null && value.isNotEmpty()) {
-                            IconButton(onClick = onClear) {
+                            IconButton(onClick = onClear, modifier = clearTestTag?.let { Modifier.testTag(it) } ?: Modifier) {
                                 Icon(Icons.Outlined.Clear, contentDescription = "Clear search")
                             }
                         }
@@ -172,7 +175,7 @@ fun SearchField(
                                         permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 },
-                                modifier = Modifier.semantics { contentDescription = "Use voice input" },
+                                modifier = Modifier.semantics { contentDescription = "Use voice input" }.then(voiceTestTag?.let { Modifier.testTag(it) } ?: Modifier),
                             ) {
                                 Icon(Icons.Outlined.Mic, contentDescription = null, tint = JanuaryColors.Green)
                             }

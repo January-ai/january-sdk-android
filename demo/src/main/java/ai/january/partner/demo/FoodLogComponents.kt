@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -35,10 +36,10 @@ internal fun FoodLogCard(modifier: Modifier = Modifier, content: @Composable () 
 }
 
 @Composable
-internal fun FoodLogUserCard(userId: String?, timezone: String, onSave: (String) -> Unit, onSettings: () -> Unit) {
+internal fun FoodLogUserCard(userId: String?, timezone: String, onSave: (String) -> Unit, onSettings: () -> Unit, modifier: Modifier = Modifier) {
     var draft by remember(userId) { mutableStateOf(userId.orEmpty()) }
     val gold = Color(0xFF6E5613)
-    Surface(shape = RoundedCornerShape(28.dp), color = JanuaryColors.GoldContainer, border = BorderStroke(1.5.dp, gold.copy(alpha = 0.28f))) {
+    Surface(modifier, shape = RoundedCornerShape(28.dp), color = JanuaryColors.GoldContainer, border = BorderStroke(1.5.dp, gold.copy(alpha = 0.28f))) {
         Column(Modifier.fillMaxWidth().padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 Icon(if (userId == null) Icons.Outlined.PersonOutline else Icons.Filled.AccountCircle, null, Modifier.size(24.dp), tint = gold)
@@ -73,7 +74,16 @@ internal fun FoodLogUserCard(userId: String?, timezone: String, onSave: (String)
 internal fun FoodLogTimeSpanPicker(span: FoodLogTimeSpan, range: FoodLogDateRange, onSelect: (FoodLogTimeSpan) -> Unit) {
     FoodLogCard {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            SegmentedControl(FoodLogTimeSpan.entries, span, { it.title }, onSelect)
+            SegmentedControl(
+                FoodLogTimeSpan.entries, span, { it.title }, onSelect,
+                testTag = {
+                    when (it) {
+                        FoodLogTimeSpan.TODAY -> "logs-range-today"
+                        FoodLogTimeSpan.CURRENT_WEEK -> "logs-range-week"
+                        FoodLogTimeSpan.LAST_MONTH -> "logs-range-month"
+                    }
+                },
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                 Text("Dates", style = MaterialTheme.typography.titleMedium)
                 Text(range.displayText(), Modifier.weight(1f), fontFamily = FontFamily.Monospace, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold, color = JanuaryColors.Muted, textAlign = TextAlign.End)

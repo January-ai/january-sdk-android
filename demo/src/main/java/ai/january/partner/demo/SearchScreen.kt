@@ -25,6 +25,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -342,8 +343,9 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     }
 
     AppScreenScaffold(
-        title = "Search", modifier = modifier, style = AppNavigationTitleStyle.Leading,
-        trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, onClick = settingsAction) },
+        // Mirrors the React Native example, which has a separate restaurant search screen.
+        title = "Search", modifier = modifier.testTag(if (scope == SearchScope.RESTAURANTS) "restaurant-search-screen" else "search-screen"), style = AppNavigationTitleStyle.Leading,
+        trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, testTag = "settings-button", onClick = settingsAction) },
     ) {
         DemoScreen {
             LazyColumn(
@@ -353,6 +355,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                 item {
                     SearchField(
                         value = query,
+                        modifier = Modifier.testTag(if (scope == SearchScope.RESTAURANTS) "restaurant-search-input" else "search-input"),
                         onValueChange = {
                             query = it
                             if (it != autocompleteSuppressedQuery) autocompleteSuppressedQuery = null
@@ -366,11 +369,12 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         },
                         onSearch = { submit() },
                         voiceCaptureEnabled = foodMode != FoodMode.BARCODE,
+                        voiceTestTag = "search-voice",
                     )
                 }
                 if (foodSuggestions.isNotEmpty()) {
                     item {
-                        FoodSuggestionList(foodSuggestions) { suggestion ->
+                        FoodSuggestionList(foodSuggestions, modifier = Modifier.testTag("autocomplete-suggestions"), itemTestTag = { "autocomplete-result-$it" }) { suggestion ->
                             val suggestionName = suggestion.name ?: return@FoodSuggestionList
                             autocompleteSuppressedQuery = suggestionName
                             query = suggestionName
@@ -385,6 +389,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         selected = scope,
                         label = { if (it == SearchScope.FOODS) "Foods" else "Restaurants" },
                         onSelect = { scope = it; clearResults() },
+                        testTag = { if (it == SearchScope.FOODS) "search-scope-foods" else "search-scope-restaurants" },
                     )
                 }
                 if (scope == SearchScope.FOODS) {
@@ -394,16 +399,17 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                             selected = foodMode,
                             label = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
                             onSelect = { foodMode = it; clearResults() },
+                            testTag = { "search-mode-${it.name.lowercase()}" },
                         )
                     }
                     if (foodMode == FoodMode.NAME) {
                         item {
                             ChipSelector(
                                 options = listOf(
-                                    ChipOption(null, "All"),
-                                    ChipOption(FoodCategory.GENERIC, "General"),
-                                    ChipOption(FoodCategory.BRANDED, "Branded"),
-                                    ChipOption(FoodCategory.RECIPE, "Recipe"),
+                                    ChipOption(null, "All", "category-all"),
+                                    ChipOption(FoodCategory.GENERIC, "General", "category-general"),
+                                    ChipOption(FoodCategory.BRANDED, "Branded", "category-branded"),
+                                    ChipOption(FoodCategory.RECIPE, "Recipe", "category-recipe"),
                                 ),
                                 selected = category,
                                 onSelect = { category = it },
@@ -420,7 +426,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                                         }
                                         .addOnFailureListener { error = it }
                                 },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().testTag("scan-barcode-button"),
                                 icon = { Icon(Icons.Outlined.QrCodeScanner, contentDescription = null) },
                             )
                         }
@@ -434,10 +440,11 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                             selected = restaurantMode,
                             label = { if (it == RestaurantMode.RESTAURANTS) "Restaurants" else "Menu items" },
                             onSelect = { restaurantMode = it; clearResults() },
+                            testTag = { if (it == RestaurantMode.RESTAURANTS) "restaurant-mode-restaurants" else "restaurant-mode-menu" },
                         )
                     }
                     item {
-                        DemoCard(Modifier.clickable { showFilters = true }) {
+                        DemoCard(Modifier.clickable { showFilters = true }.testTag("restaurant-filters-button")) {
                             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Icon(Icons.Outlined.LocationOn, null, tint = JanuaryColors.Green)
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -461,6 +468,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                             message = if (scope == SearchScope.RESTAURANTS) "Find restaurants or dishes around a location." else if (foodMode == FoodMode.DESCRIPTION) {
                                 "January will identify foods, servings, and nutrition from a sentence."
                             } else "Search January's database, then choose a serving and quantity.",
+                            modifier = Modifier.testTag(if (scope == SearchScope.RESTAURANTS) "restaurants-initial" else "search-prompt"),
                         )
                     }
                 }
@@ -472,13 +480,28 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                             FoodMode.BARCODE -> "Look up barcode"
                         },
                         onClick = { submit() },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag(
+                            when {
+                                scope == SearchScope.RESTAURANTS && loading -> "restaurants-loading"
+                                scope == SearchScope.RESTAURANTS -> "restaurant-search-submit"
+                                loading -> "search-loading"
+                                else -> "search-submit"
+                            },
+                        ),
                         enabled = client != null,
                         loading = loading,
                     )
                 }
                 if (client == null) item { AuthenticationRequiredCard() }
-                error?.let { message -> item { ErrorCard(message) { submit() } } }
+                error?.let { message ->
+                    item {
+                        ErrorCard(
+                            message, { submit() },
+                            testTag = if (scope == SearchScope.RESTAURANTS) "restaurants-error" else "search-error",
+                            retryTestTag = if (scope == SearchScope.RESTAURANTS) "restaurants-error-retry" else "search-retry",
+                        )
+                    }
+                }
                 if (foodResults.isNotEmpty()) {
                     item {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -492,9 +515,9 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                                 }
                             }
                         }
-                        DemoCard(contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
+                        DemoCard(Modifier.testTag("search-results"), contentPadding = PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
                             foodResults.forEachIndexed { index, food ->
-                                FoodResultCard(food, onClick = { selectedFood = food })
+                                FoodResultCard(food, onClick = { selectedFood = food }, modifier = Modifier.testTag("food-result-$index"))
                                 if (index < foodResults.lastIndex) HorizontalDivider(color = JanuaryColors.Divider)
                             }
                         }
@@ -505,7 +528,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     natural.totalNutrients?.let { nutrients ->
                         item {
                             Text("Meal nutrition", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                            DemoCard { ScanStyleMacroStrip(nutrients.calories?.value, nutrients.protein?.value, nutrients.carbohydrates?.value, nutrients.totalFat?.value) }
+                            DemoCard(Modifier.testTag("description-results")) { ScanStyleMacroStrip(nutrients.calories?.value, nutrients.protein?.value, nutrients.carbohydrates?.value, nutrients.totalFat?.value) }
                         }
                     }
                     items(natural.detections) { detection ->
@@ -548,15 +571,15 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                     }
                 }
                 if (restaurants.isNotEmpty()) {
-                    item { Text("Nearby restaurants", style = MaterialTheme.typography.titleLarge) }
-                    items(restaurants, key = { it.id }) { restaurant ->
-                        RestaurantResultCard(restaurant) { selectedRestaurant = restaurant }
+                    item { Text("Nearby restaurants", Modifier.testTag("restaurant-results"), style = MaterialTheme.typography.titleLarge) }
+                    itemsIndexed(restaurants, key = { _, it -> it.id }) { index, restaurant ->
+                        RestaurantResultCard(restaurant, Modifier.testTag("restaurant-result-$index")) { selectedRestaurant = restaurant }
                     }
                 }
                 if (menuItems.isNotEmpty()) {
-                    item { Text("Nearby menu items", style = MaterialTheme.typography.titleLarge) }
-                    items(menuItems, key = { it.id }) { item ->
-                        MenuItemResultCard(item) { selectedMenuItem = item }
+                    item { Text("Nearby menu items", Modifier.testTag("menu-results"), style = MaterialTheme.typography.titleLarge) }
+                    itemsIndexed(menuItems, key = { _, it -> it.id }) { index, item ->
+                        MenuItemResultCard(item, Modifier.testTag("menu-result-$index")) { selectedMenuItem = item }
                     }
                 }
                 if (!loading && error == null && query.isNotBlank() && foodResults.isEmpty() && naturalResult == null && restaurants.isEmpty() && menuItems.isEmpty()) {
@@ -564,6 +587,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         EmptySearchCard(
                             if (scope == SearchScope.FOODS) "No foods found" else "No nearby matches",
                             if (scope == SearchScope.FOODS) "Try another name or broaden the selected food category." else "Try another name, location, or search radius.",
+                            Modifier.testTag(if (scope == SearchScope.FOODS) "empty-results" else "restaurants-empty"),
                         )
                     }
                 }

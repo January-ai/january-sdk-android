@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -16,14 +17,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-data class ChipOption<T>(val value: T, val label: String)
+data class ChipOption<T>(val value: T, val label: String, val testTag: String? = null)
 
 @Composable
 fun <T> ChipSelector(options: List<ChipOption<T>>, selected: T, onSelect: (T) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         options.chunked(3).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { option -> DemoChoiceChip(option.label, option.value == selected, { onSelect(option.value) }) }
+                row.forEach { option -> DemoChoiceChip(option.label, option.value == selected, { onSelect(option.value) }, option.testTag?.let { Modifier.testTag(it) } ?: Modifier) }
             }
         }
     }

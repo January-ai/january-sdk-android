@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -78,9 +79,9 @@ import kotlinx.coroutines.launch
 private const val SAMPLE_ASSET = "fixtures/photo-scanning/burger-and-fries.png"
 
 @Composable
-internal fun MealPreview(imageBytes: ByteArray?, imageInput: String, square: Boolean = false) {
+internal fun MealPreview(imageBytes: ByteArray?, imageInput: String, modifier: Modifier = Modifier, square: Boolean = false) {
     Box(
-        modifier = Modifier.fillMaxWidth().then(if (square) Modifier.aspectRatio(1f) else Modifier.height(240.dp)).clip(RoundedCornerShape(28.dp))
+        modifier = modifier.fillMaxWidth().then(if (square) Modifier.aspectRatio(1f) else Modifier.height(240.dp)).clip(RoundedCornerShape(28.dp))
             .background(JanuaryColors.Control),
         contentAlignment = Alignment.Center,
     ) {
@@ -94,8 +95,8 @@ internal fun MealPreview(imageBytes: ByteArray?, imageInput: String, square: Boo
 }
 
 @Composable
-internal fun ScanPhotoInstructions() {
-    DemoCard {
+internal fun ScanPhotoInstructions(modifier: Modifier = Modifier) {
+    DemoCard(modifier) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Box(Modifier.size(44.dp).background(JanuaryColors.Green.copy(alpha = 0.1f), RoundedCornerShape(14.dp)), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.CameraAlt, null, Modifier.size(20.dp), tint = JanuaryColors.Green)
@@ -196,10 +197,10 @@ internal fun ImageUrlSheet(initialValue: String, onDismiss: () -> Unit, onUse: (
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SectionLabel("Image address")
-                DemoInput(value, { value = it }, "https://example.com/meal.jpg")
+                DemoInput(value, { value = it }, "https://example.com/meal.jpg", Modifier.testTag("image-url-input"))
                 Text("The server must be able to download the image without signing in.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
             }
-            DemoPrimaryButton("Use image URL", { onUse(value.trim()) }, Modifier.fillMaxWidth(), enabled = valid, icon = { Icon(Icons.Outlined.DownloadForOffline, null) })
+            DemoPrimaryButton("Use image URL", { onUse(value.trim()) }, Modifier.fillMaxWidth().testTag("image-url-use"), enabled = valid, icon = { Icon(Icons.Outlined.DownloadForOffline, null) })
         }
     }
 }
@@ -234,7 +235,7 @@ internal fun CorrectionSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             SectionLabel("Meal")
-            DemoInput(mealName, { mealName = it }, "Meal name")
+            DemoInput(mealName, { mealName = it }, "Meal name", Modifier.testTag("correction-meal-name"))
             SectionLabel("Current detections")
             DemoCard {
                 initial.detections.orEmpty().forEachIndexed { index, detection ->
@@ -243,13 +244,13 @@ internal fun CorrectionSheet(
                 }
             }
             SectionLabel("What should change?")
-            OutlinedTextField(instruction, { instruction = it }, Modifier.fillMaxWidth().height(150.dp), placeholder = { Text("Describe the correction") }, shape = RoundedCornerShape(24.dp))
+            OutlinedTextField(instruction, { instruction = it }, Modifier.fillMaxWidth().height(150.dp).testTag("scan-correction-input"), placeholder = { Text("Describe the correction") }, shape = RoundedCornerShape(24.dp))
             Text("For example: The oatmeal was steel-cut, about 2 cups, and there was no honey.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
-            error?.let { ErrorCard(it, ::submitCorrection) }
+            error?.let { ErrorCard(it, ::submitCorrection, testTag = "scan-correction-error", retryTestTag = "scan-correction-error-retry") }
             DemoPrimaryButton(
                 "Submit correction",
                 ::submitCorrection,
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().testTag("scan-correction-submit"),
                 enabled = instruction.trim().isNotEmpty(),
                 loading = submitting,
             )

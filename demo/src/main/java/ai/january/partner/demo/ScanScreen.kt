@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -121,8 +122,8 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
     }
 
     AppScreenScaffold(
-        title = "Scan a meal", modifier = modifier, style = AppNavigationTitleStyle.Leading,
-        trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, onClick = settingsAction) },
+        title = "Scan a meal", modifier = modifier.testTag("scan-screen"), style = AppNavigationTitleStyle.Leading,
+        trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, testTag = "settings-button", onClick = settingsAction) },
     ) {
         DemoScreen {
             Column(
@@ -130,19 +131,19 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 if (imageInput.isBlank()) {
-                    ScanPhotoInstructions()
+                    ScanPhotoInstructions(Modifier.testTag("scan-guide"))
                 } else {
-                    MealPreview(imageBytes, imageInput)
+                    MealPreview(imageBytes, imageInput, modifier = Modifier.testTag("scan-preview"))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         DemoSecondaryButton(
                             text = "Change photo",
                             onClick = { photoPicker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).testTag("scan-change"),
                         )
                         DemoOutlinedButton(
                             text = "Remove",
                             onClick = { imageInput = ""; imageBytes = null; result = null; error = null },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).testTag("scan-remove"),
                         )
                     }
                 }
@@ -150,13 +151,13 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                 DemoPrimaryButton(
                     text = "Take photo",
                     onClick = { showCameraScanner = true },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("scan-camera"),
                     icon = { Icon(Icons.Outlined.CameraAlt, null) },
                 )
                 DemoSecondaryButton(
                     text = "Choose from library",
                     onClick = { photoPicker.launch(PickVisualMediaRequest(PickVisualMedia.ImageOnly)) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("scan-library"),
                     icon = { Icon(Icons.Outlined.Image, null) },
                 )
                 SectionLabel("Other ways")
@@ -168,13 +169,13 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                                 .onSuccess(::selectBytes)
                                 .onFailure { error = IllegalStateException("The sample meal could not be loaded.") }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).testTag("scan-sample"),
                         icon = { Icon(Icons.Outlined.Restaurant, null) },
                     )
                     DemoOutlinedButton(
                         text = "Image URL",
                         onClick = { showUrlSheet = true },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).testTag("scan-image-url"),
                         icon = { Icon(Icons.Outlined.Link, null) },
                     )
                 }
@@ -183,14 +184,14 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                     DemoPrimaryButton(
                         text = if (loading) "Analyzing this meal…" else "Analyze meal",
                         onClick = ::analyze,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().testTag("scan-analyze"),
                         enabled = client != null,
                         loading = loading,
                     )
                 }
                 if (loading) Text("Complex meals can take a little longer. You can leave this screen while the request completes.", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
                 if (client == null) AuthenticationRequiredCard()
-                error?.let { ErrorCard(it, ::analyze) }
+                error?.let { ErrorCard(it, ::analyze, testTag = "scan-error", retryTestTag = "scan-error-retry") }
                 Spacer(Modifier.height(24.dp))
             }
         }
@@ -227,7 +228,7 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
         }
     }
     result?.let { analysis ->
-        AppModalSheet(title = "Meal analysis", onDismiss = { result = null }) {
+        AppModalSheet(title = "Meal analysis", onDismiss = { result = null }, testTag = "scan-results") {
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                     .padding(horizontal = DemoScreenPadding).padding(top = 16.dp, bottom = 32.dp),
@@ -237,9 +238,9 @@ fun ScanScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier 
                 DemoPrimaryButton(
                     "Correct result",
                     { showCorrection = true },
-                    Modifier.fillMaxWidth(),
+                    Modifier.fillMaxWidth().testTag("scan-correct"),
                 )
-                DemoSecondaryButton("Scan another meal", { result = null; imageInput = ""; imageBytes = null; error = null }, Modifier.fillMaxWidth())
+                DemoSecondaryButton("Scan another meal", { result = null; imageInput = ""; imageBytes = null; error = null }, Modifier.fillMaxWidth().testTag("scan-another"))
             }
         }
     }

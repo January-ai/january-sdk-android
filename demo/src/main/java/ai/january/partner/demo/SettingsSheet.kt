@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -22,7 +23,7 @@ import java.time.ZoneId
 internal fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
     var zoneMenu by remember { mutableStateOf(false) }
     val zones = remember { ZoneId.getAvailableZoneIds().sorted() }
-    AppModalSheet(title = "Settings", onDismiss = onDismiss, expanded = false) {
+    AppModalSheet(title = "Settings", onDismiss = onDismiss, expanded = false, testTag = "settings-sheet", closeTestTag = "settings-close") {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(top = 28.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             SectionLabel("Connection")
             DemoCard {
@@ -40,7 +41,7 @@ internal fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
             SectionLabel("Request context")
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("End user ID", style = MaterialTheme.typography.titleMedium)
-                DemoInput(state.endUserId, { state.endUserId = it }, "Partner user identifier")
+                DemoInput(state.endUserId, { state.endUserId = it }, "Partner user identifier", Modifier.testTag("settings-user-id"))
                 Text("Food Logs requires a stable ID. Other requests include it when available.", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
             }
             DemoCard {

@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -73,10 +74,11 @@ internal fun FoodSearchField(
     SearchField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).testTag("food-picker-input"),
         placeholder = "Search foods",
         onSearch = onSearch,
         onClear = { onQueryChange("") },
+        voiceTestTag = "food-picker-voice",
     )
 }
 
@@ -93,16 +95,19 @@ internal fun DemoEmptyFoodState(modifier: Modifier = Modifier) {
 @Composable
 internal fun FoodSuggestionList(
     suggestions: List<FoodSuggestion>,
+    modifier: Modifier = Modifier,
     loadingFoodId: String? = null,
+    itemTestTag: ((Int) -> String)? = null,
     onSelect: (FoodSuggestion) -> Unit,
 ) {
-    DemoCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
+    DemoCard(modifier, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 22.dp, vertical = 4.dp)) {
         suggestions.forEachIndexed { index, suggestion ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
-                    .clickable(enabled = loadingFoodId == null) { onSelect(suggestion) },
+                    .clickable(enabled = loadingFoodId == null) { onSelect(suggestion) }
+                    .then(itemTestTag?.let { Modifier.testTag(it(index)) } ?: Modifier),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -131,6 +136,7 @@ internal fun FoodSuggestionList(
 @Composable
 internal fun FoodResultRow(
     food: FoodSearchItem,
+    modifier: Modifier = Modifier,
     loading: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
@@ -146,6 +152,7 @@ internal fun FoodResultRow(
         loading = loading,
         enabled = enabled,
         onClick = onClick,
+        modifier = modifier,
     )
 }
 
@@ -173,7 +180,7 @@ internal fun ServingSelectionSheet(
     var servingMenuOpen by remember { mutableStateOf(false) }
     val scale = quantity * serving.scalingFactor / serving.quantity.takeUnless { it == 0.0 }.orEmptyOne()
 
-    AppModalSheet(title = "Choose serving", onDismiss = onDismiss, expanded = false) {
+    AppModalSheet(title = "Choose serving", onDismiss = onDismiss, expanded = false, testTag = "food-serving-sheet") {
         Column(
             modifier = Modifier.fillMaxWidth().padding(horizontal = DemoScreenPadding).padding(top = 16.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -234,7 +241,7 @@ internal fun ServingSelectionSheet(
             DemoPrimaryButton(
                 text = "Add to meal",
                 onClick = { onSelect(DemoSelectedFood(food, serving, quantity)) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("food-serving-add"),
                 enabled = serving.id?.value != "0",
             )
         }
