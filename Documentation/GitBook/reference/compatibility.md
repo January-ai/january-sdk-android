@@ -9,7 +9,7 @@
 | Java source/target | 17 |
 | Build system | Gradle Kotlin DSL |
 | Network API | Kotlin `suspend` functions |
-| Distribution | Maven Central (`ai.january:january-sdk-android:0.2.2`) |
+| Distribution | Maven Central (`ai.january:january-sdk-android:0.2.3`) |
 
 The SDK manifest declares `android.permission.INTERNET`,
 `android.permission.CAMERA`, and `android.permission.RECORD_AUDIO`. The camera permission is needed by
