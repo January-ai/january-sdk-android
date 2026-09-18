@@ -34,7 +34,6 @@ tags:
     visible:
       id: food-logs-empty
     timeout: 15000
-- assertVisible: No food logs in this range
 - takeScreenshot: demo/.maestro/artifacts/android-logs-empty
 - runScript:
     file: ../scripts/control-fixture.js

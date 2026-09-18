@@ -15,13 +15,7 @@ tags:
 - tapOn:
     id: search-input
 - inputText: a bowl of oatmeal with honey and a banana
-- hideKeyboard
-- scrollUntilVisible:
-    element:
-      id: search-submit
-    direction: DOWN
-- tapOn:
-    id: search-submit
+- pressKey: Enter
 - extendedWaitUntil:
     visible:
       id: description-results

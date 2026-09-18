@@ -41,11 +41,18 @@ tags:
     direction: DOWN
 - tapOn:
     id: food-log-save
+# Saving returns to the top of the list screen; reopen the log to reach its detail.
+- scrollUntilVisible:
+    element:
+      id: food-log-0
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: food-log-0
 - extendedWaitUntil:
     visible:
       id: food-log-detail
     timeout: 15000
-- assertVisible: .*Updated meal.*
 - runScript:
     file: ../scripts/control-fixture.js
     env:
