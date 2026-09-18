@@ -2,6 +2,7 @@
 No credentials and no proxying to production. Control routes are test-only.
 """
 import json, time, threading
+from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from pathlib import Path
@@ -12,9 +13,12 @@ def food(id='101',name='Fixture oatmeal',full=True):return dict(id=str(id),type=
 PREDICTION = dict(points=[dict(minutes=m,value=v) for m,v in [(0,90),(30,125),(60,140),(90,115),(120,95)]],impact_score='medium',chart=dict(min=70,max=140))
 def detected(id='101',name='Fixture oatmeal'):return dict(id=str(id),name=name,brand_name='January fixture',nutrients=NUTRIENTS,quantity=1,serving=dict(id='11',quantity=1,unit='cup'))
 def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=detected(),confidence='high')],total_nutrients=NUTRIENTS)
+def seeded_eaten_at():
+ # An hour ago, so the seeded log always falls in the demo's default date range.
+ return (datetime.now(timezone.utc)-timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
 def log(name='Fixture breakfast'):
  f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
- return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at='2026-08-31T12:00:00Z',foods=[f])
+ return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at=seeded_eaten_at(),foods=[f])
 state={'rules':{},'logs':[],'requests':[]}
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass

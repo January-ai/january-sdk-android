@@ -17,12 +17,6 @@ tags:
 - takeScreenshot: demo/.maestro/artifacts/android-logs-initial
 - scrollUntilVisible:
     element:
-      id: logs-range-month
-    direction: DOWN
-- tapOn:
-    id: logs-range-month
-- scrollUntilVisible:
-    element:
       id: food-log-0
     direction: DOWN
     timeout: 30000
