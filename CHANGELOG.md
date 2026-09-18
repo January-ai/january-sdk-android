@@ -3,7 +3,13 @@
 All notable changes to the January SDK for Android are documented here. This
 project uses Semantic Versioning.
 
-## [0.2.2] - Unreleased
+## [0.2.3] - 2026-09-18
+
+- No changes to the SDK. The demo app gains an end-to-end UI suite that
+  exercises every screen against a local fixture server, and its screens carry
+  stable test identifiers shared with the other January demos.
+
+## [0.2.2] - 2026-09-16
 
 - Voice capture waits two seconds of silence before ending a capture (the
   platform default cut people off between words). `VoiceCaptureSession` takes
