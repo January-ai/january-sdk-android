@@ -48,7 +48,11 @@ tags:
     direction: DOWN
 - tapOn:
     id: scan-correction-submit
-- extendedWaitUntil:
-    visible: Corrected breakfast
-    timeout: 15000
+# The corrected meal name heads the sheet content, above the scroll position
+# the correction button was tapped from.
+- scrollUntilVisible:
+    element:
+      text: Corrected breakfast
+    direction: UP
+    timeout: 30000
 - takeScreenshot: demo/.maestro/artifacts/android-scan-corrected

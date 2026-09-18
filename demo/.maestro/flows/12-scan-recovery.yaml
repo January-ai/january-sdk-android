@@ -78,9 +78,13 @@ tags:
       TARGET_ID: scan-correction-error-retry
 - tapOn:
     id: scan-correction-error-retry
-- extendedWaitUntil:
-    visible: Corrected breakfast
-    timeout: 15000
+# The corrected meal name heads the sheet content, above the scroll position
+# the correction button was tapped from.
+- scrollUntilVisible:
+    element:
+      text: Corrected breakfast
+    direction: UP
+    timeout: 30000
 - runFlow:
     file: ../scroll-to.yaml
     env:

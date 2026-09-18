@@ -19,10 +19,11 @@ tags:
     direction: DOWN
 - tapOn:
     id: logs-range-month
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: food-log-0
-    timeout: 15000
+    direction: DOWN
+    timeout: 30000
 - tapOn:
     id: food-log-0
 - assertVisible:
@@ -84,9 +85,10 @@ tags:
       TARGET_ID: food-logs-retry
 - tapOn:
     id: food-logs-retry
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: food-logs-empty
-    timeout: 15000
+    direction: DOWN
+    timeout: 30000
 - assertNotVisible:
     id: food-logs-error

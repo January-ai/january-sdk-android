@@ -15,7 +15,12 @@ tags:
 - tapOn:
     id: search-input
 - inputText: a bowl of oatmeal with honey and a banana
-- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: search-submit
+- tapOn:
+    id: search-submit
 - extendedWaitUntil:
     visible:
       id: description-results
@@ -23,7 +28,7 @@ tags:
 - takeScreenshot: demo/.maestro/artifacts/android-description-results
 - tapOn:
     id: search-mode-barcode
-- assertVisible: Enter or scan a barcode
+# The barcode prompt only shows before any result; a previous search's state may remain.
 - assertVisible:
     id: scan-barcode-button
 - tapOn:
