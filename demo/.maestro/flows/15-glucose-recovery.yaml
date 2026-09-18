@@ -55,7 +55,7 @@ tags:
     visible:
       id: glucose-error
     timeout: 15000
-- assertVisible: The test request could not be completed.
+- assertVisible: January couldn.t complete the request
 - assertVisible:
     id: glucose-food-0
 - takeScreenshot: demo/.maestro/artifacts/android-glucose-error
