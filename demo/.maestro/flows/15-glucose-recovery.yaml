@@ -21,10 +21,10 @@ tags:
 - eraseText: 10
 - inputText: 42
 - pressKey: Enter
-- scrollUntilVisible:
-    element:
-      id: glucose-add-food
-    direction: DOWN
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-add-food
 - tapOn:
     id: glucose-add-food
 - tapOn:
