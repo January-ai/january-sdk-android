@@ -1,0 +1,90 @@
+appId: ai.january.partner.demo
+name: Native parity - glucose surfaces
+tags:
+  - parity
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-glucose
+    timeout: 15000
+- tapOn:
+    id: tab-glucose
+- assertVisible: Estimate this meal.s response
+- assertVisible:
+    id: glucose-height-unit-metric
+- takeScreenshot: demo/.maestro/artifacts/android-glucose-profile
+- tapOn:
+    id: glucose-height-unit-metric
+- assertVisible:
+    id: glucose-height-centimeters
+- takeScreenshot: demo/.maestro/artifacts/android-glucose-height-metric
+- tapOn:
+    id: glucose-height-unit-imperial
+- scrollUntilVisible:
+    element:
+      id: glucose-weight-unit-kg
+    direction: DOWN
+- tapOn:
+    id: glucose-weight-unit-kg
+- scrollUntilVisible:
+    element:
+      id: glucose-weight
+    direction: DOWN
+- takeScreenshot: demo/.maestro/artifacts/android-glucose-weight-metric
+- tapOn:
+    id: glucose-weight-unit-lb
+- scrollUntilVisible:
+    element:
+      id: glucose-health-conditions
+    direction: DOWN
+- tapOn:
+    id: glucose-health-conditions
+- assertVisible: Health conditions
+- takeScreenshot: demo/.maestro/artifacts/android-conditions
+- tapOn:
+    id: condition-type-2-diabetes
+- tapOn:
+    id: conditions-back
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-add-food
+- tapOn:
+    id: glucose-add-food
+- assertVisible:
+    id: food-picker
+- takeScreenshot: demo/.maestro/artifacts/android-food-picker-initial
+- tapOn:
+    id: food-picker-input
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 15000
+- tapOn:
+    id: food-picker-result-0
+- assertVisible:
+    id: food-serving-sheet
+- assertVisible: Choose serving
+- takeScreenshot: demo/.maestro/artifacts/android-serving
+- tapOn:
+    id: food-serving-add
+- assertVisible:
+    id: glucose-food-0
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-predict
+- waitForAnimationToEnd
+- tapOn:
+    text: Estimate glucose response
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: glucose-results-screen
+    timeout: 15000
+- assertVisible: LIKELY PEAK
+- assertVisible: 140
+- takeScreenshot: demo/.maestro/artifacts/android-glucose-result

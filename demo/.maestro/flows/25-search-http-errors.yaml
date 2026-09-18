@@ -1,0 +1,133 @@
+appId: ai.january.partner.demo
+name: Native parity - categorized food search errors
+tags:
+  - fixture
+  - parity
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: search-input
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      STATUS: "401"
+- tapOn:
+    id: search-input
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: Couldn.t use the configured credentials
+- tapOn:
+    id: search-error-details
+- assertVisible:
+    id: search-error-details-body
+- assertVisible: 401
+- takeScreenshot: demo/.maestro/artifacts/android-search-error-401
+- tapOn:
+    id: search-error-details
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      STATUS: "403"
+- scrollUntilVisible:
+    element:
+      id: search-input
+    direction: UP
+- tapOn:
+    id: search-input
+- eraseText: 40
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: Couldn.t use the configured credentials
+- takeScreenshot: demo/.maestro/artifacts/android-search-error-403
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      STATUS: "404"
+- scrollUntilVisible:
+    element:
+      id: search-input
+    direction: UP
+- tapOn:
+    id: search-input
+- eraseText: 40
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: No matching result was found
+- takeScreenshot: demo/.maestro/artifacts/android-search-error-404
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      STATUS: "422"
+- scrollUntilVisible:
+    element:
+      id: search-input
+    direction: UP
+- tapOn:
+    id: search-input
+- eraseText: 40
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: Check the information you entered
+- takeScreenshot: demo/.maestro/artifacts/android-search-error-422
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      STATUS: "429"
+- scrollUntilVisible:
+    element:
+      id: search-input
+    direction: UP
+- tapOn:
+    id: search-input
+- eraseText: 40
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: Too many requests
+- takeScreenshot: demo/.maestro/artifacts/android-search-error-429
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      STATUS: "504"
+- scrollUntilVisible:
+    element:
+      id: search-input
+    direction: UP
+- tapOn:
+    id: search-input
+- eraseText: 40
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: The request took too long
+- takeScreenshot: demo/.maestro/artifacts/android-search-error-504

@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -120,7 +121,7 @@ internal fun RestaurantFiltersSheet(selectedCity: SearchCity, onCity: (SearchCit
     var cityMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val hasLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    AppModalSheet(title = "Search filters", onDismiss = onDismiss) {
+    AppModalSheet(title = "Search filters", onDismiss = onDismiss, testTag = "restaurant-filters", closeTestTag = "restaurant-filters-close") {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(top = 28.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             SectionLabel("Location")
             DemoCard {
@@ -177,7 +178,7 @@ internal fun RestaurantFiltersSheet(selectedCity: SearchCity, onCity: (SearchCit
                     QuantityStepper(limit.toDouble(), { onLimit(it.toInt()) }, minimum = 1.0, maximum = 100.0, step = 1.0)
                 }
             }
-            DemoPrimaryButton("Apply filters", onDismiss, Modifier.fillMaxWidth())
+            DemoPrimaryButton("Apply filters", onDismiss, Modifier.fillMaxWidth().testTag("restaurant-filters-apply"))
         }
     }
 }
@@ -231,8 +232,8 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
     }
     selected?.let { MenuItemDetailScreen(state, it, { selected = null }, modifier); return }
     AppScreenScaffold(
-        title = "Restaurant", modifier = modifier,
-        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Restaurant", onClick = onBack) },
+        title = "Restaurant", modifier = modifier.testTag("restaurant-detail-screen"),
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Restaurant", testTag = "restaurant-detail-back", onClick = onBack) },
     ) {
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -247,12 +248,12 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
                 }
                 SectionLabel("Menu items")
                 when {
-                    loading -> DemoCard { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { LoadingSpinner(color = JanuaryColors.Green); Text("Loading menu", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Muted) } }
-                    error != null -> ErrorCard(error!!) { attempt++ }
-                    items.isEmpty() -> EmptySearchCard("No menu items found", "January did not return menu items for this restaurant.")
+                    loading -> DemoCard(Modifier.testTag("menu-loading")) { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { LoadingSpinner(color = JanuaryColors.Green); Text("Loading menu", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Muted) } }
+                    error != null -> ErrorCard(error!!, { attempt++ }, testTag = "menu-error", retryTestTag = "menu-error-retry")
+                    items.isEmpty() -> EmptySearchCard("No menu items found", "January did not return menu items for this restaurant.", Modifier.testTag("menu-empty"))
                     else -> DemoCard {
                         items.forEachIndexed { index, item ->
-                            MenuItemRow(item, Modifier.clickable { selected = item }.padding(vertical = 12.dp))
+                            MenuItemRow(item, Modifier.clickable { selected = item }.testTag("restaurant-menu-item-$index").padding(vertical = 12.dp))
                             if (index < items.lastIndex) HorizontalDivider(color = JanuaryColors.Divider)
                         }
                     }
@@ -283,8 +284,8 @@ internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, on
     val foodId = item.id.toLongOrNull()?.let { ai.january.partner.FoodId(it) }
     androidx.activity.compose.BackHandler(onBack = onBack)
     AppScreenScaffold(
-        title = "Menu item", modifier = modifier,
-        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Menu item", onClick = onBack) },
+        title = "Menu item", modifier = modifier.testTag("menu-item-detail-screen"),
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Menu item", testTag = "menu-item-detail-back", onClick = onBack) },
     ) {
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -302,8 +303,8 @@ internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, on
                     item.glycemicIndex?.let { NutritionValue("Glycemic index", formatNumber(it)) },
                     item.glycemicLoad?.let { NutritionValue("Glycemic load", formatNumber(it)) },
                 )) }
-                ServingControls(item.servings, serving, quantity, { serving = it; quantity = it.quantity ?: 1.0 }, { quantity = it }, menuItem = true)
-                DemoPrimaryButton("See glucose impact", { showGlucose = true }, Modifier.fillMaxWidth(), enabled = serving != null && foodId != null && state.client != null,
+                ServingControls(item.servings, serving, quantity, { serving = it; quantity = it.quantity ?: 1.0 }, { quantity = it }, menuItem = true, modifier = Modifier.testTag("food-serving-controls"))
+                DemoPrimaryButton("See glucose impact", { showGlucose = true }, Modifier.fillMaxWidth().testTag("menu-glucose-button"), enabled = serving != null && foodId != null && state.client != null,
                     icon = { Icon(Icons.Outlined.MonitorHeart, null) })
                 DetailDisclosure { Text("Menu item ID · ${item.id}", style = MaterialTheme.typography.bodySmall) }
                 Spacer(Modifier.height(24.dp))

@@ -43,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -112,12 +114,12 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     }
 
     AppScreenScaffold(
-        title = "Food logs", modifier = modifier, style = AppNavigationTitleStyle.Leading,
+        title = "Food logs", modifier = modifier.testTag("food-logs-screen"), style = AppNavigationTitleStyle.Leading,
         trailing = {
             if (userContext != null && client != null) {
-                AppNavigationButton(AppNavigationButtonKind.Add, title = "Add food log", onClick = { showEditor = true })
+                AppNavigationButton(AppNavigationButtonKind.Add, title = "Add food log", testTag = "food-log-add", onClick = { showEditor = true })
             }
-            AppNavigationButton(AppNavigationButtonKind.Settings, onClick = settingsAction)
+            AppNavigationButton(AppNavigationButtonKind.Settings, testTag = "settings-button", onClick = settingsAction)
         },
     ) {
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
@@ -139,30 +141,32 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                     SectionLabel("User identity")
                     FoodLogUserCard(
                         userId = state.partnerUserId?.value,
+                        modifier = Modifier.testTag("food-log-user-card"),
                         timezone = state.timezone,
                         onSave = { state.endUserId = it },
                         onSettings = settingsAction,
                     )
                     if (userContext != null) {
-                        DemoPrimaryButton("Create a food log", { showEditor = true }, Modifier.fillMaxWidth(), enabled = client != null,
+                        DemoPrimaryButton("Create a food log", { showEditor = true }, Modifier.fillMaxWidth().testTag("food-log-create"), enabled = client != null,
                             icon = { Icon(Icons.Outlined.Add, null) })
                         SectionLabel("Browse saved logs")
                         Text("Food logs are fetched for the selected user ID and date range.", fontSize = 15.sp, lineHeight = 20.sp, color = JanuaryColors.Body)
                         FoodLogTimeSpanPicker(span, range) { span = it }
-                        DemoPrimaryButton("Refresh food logs", ::load, Modifier.fillMaxWidth(), enabled = userClient != null && !loading, loading = loading && logs.isEmpty())
+                        DemoPrimaryButton("Refresh food logs", ::load, Modifier.fillMaxWidth().testTag("food-logs-refresh"), enabled = userClient != null && !loading, loading = loading && logs.isEmpty())
                         if (loading && logs.isEmpty()) {
-                            Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.padding(16.dp).testTag("food-logs-loading"), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 LoadingSpinner(color = JanuaryColors.Green)
                                 Text("Loading food logs…", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Muted)
                             }
                         }
-                        error?.let { ErrorCard(it, ::load) }
-                        logs.forEach { log -> FoodLogRow(log) { selectedLog = log } }
+                        error?.let { ErrorCard(it, ::load, testTag = "food-logs-error", retryTestTag = "food-logs-retry") }
+                        logs.forEachIndexed { index, log -> FoodLogRow(log, Modifier.testTag("food-log-$index")) { selectedLog = log } }
                         if (!loading && error == null && logs.isEmpty()) {
                             EmptyStateCard(
                                 Icons.Outlined.Assignment,
                                 "No food logs in this range",
                                 "Create a log, add one or more foods to the meal, then save it for this user.",
+                                Modifier.testTag("food-logs-empty"),
                             )
                         }
                     }
@@ -178,8 +182,8 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
 }
 
 @Composable
-private fun FoodLogRow(log: FoodLog, onClick: () -> Unit) {
-    FoodLogCard(Modifier.clickable(onClick = onClick)) {
+private fun FoodLogRow(log: FoodLog, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    FoodLogCard(modifier.clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             FoodLogMealIcon()
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -225,9 +229,9 @@ private fun FoodLogDetailScreen(
 
     androidx.activity.compose.BackHandler(onBack = onDismiss)
     AppScreenScaffold(
-        title = "Food log", modifier = modifier,
-        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Food log", onClick = onDismiss) },
-        trailing = { AppNavigationButton(AppNavigationButtonKind.Edit, onClick = { editing = true }) },
+        title = "Food log", modifier = modifier.testTag("food-log-detail"),
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Food log", testTag = "food-log-detail-back", onClick = onDismiss) },
+        trailing = { AppNavigationButton(AppNavigationButtonKind.Edit, testTag = "food-log-edit", onClick = { editing = true }) },
     ) {
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -243,13 +247,14 @@ private fun FoodLogDetailScreen(
                 }
                 androidx.compose.material3.OutlinedButton(
                     onClick = { confirmingDelete = true },
-                    modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp),
+                    modifier = Modifier.align(Alignment.CenterHorizontally).heightIn(min = 48.dp).testTag("food-log-delete"),
                     enabled = !deleting,
                     shape = RoundedCornerShape(18.dp),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, JanuaryColors.Rust.copy(alpha = 0.35f)),
                     colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFFAEBE1), contentColor = Color(0xFF8C4A2F)),
                 ) { Text("Delete food log", fontSize = 15.sp, fontWeight = FontWeight.Bold) }
-                error?.let { ErrorCard(it, ::deleteLog) }
+                // Same ids as the list-level error: the React Native example surfaces a failed delete there.
+                error?.let { ErrorCard(it, ::deleteLog, testTag = "food-logs-error", retryTestTag = "food-logs-retry") }
                 Spacer(Modifier.height(24.dp))
             }
         }
@@ -260,6 +265,8 @@ private fun FoodLogDetailScreen(
     if (confirmingDelete) {
         AlertDialog(
             onDismissRequest = { confirmingDelete = false },
+            // Dialogs are separate windows; expose their testTags to UiAutomator/Maestro too.
+            modifier = Modifier.semantics { testTagsAsResourceId = true }.testTag("food-log-delete-dialog"),
             title = { Text("Delete this food log?") },
             text = { Text("This action can't be undone.") },
             dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text("Cancel") } },

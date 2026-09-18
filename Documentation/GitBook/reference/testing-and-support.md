@@ -14,6 +14,10 @@ For camera and Android-runtime coverage, connect an emulator or device and run:
 ./gradlew :demo:connectedDebugAndroidTest
 ```
 
+The demo app also has an end-to-end suite of Maestro flows that exercise every
+screen against a local fixture server; see `demo/.maestro/README.md` in the
+repository for how to run it.
+
 ## Verify an integration
 
 Test at least these partner-controlled conditions before shipping:

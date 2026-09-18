@@ -71,6 +71,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -160,14 +161,14 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
                     SectionLabel("Dietary preferences")
                     DietChoices(DietPreference.entries, preferences, { preferences = it }) { it.value.dietLabel() }
                 }
-                DemoPrimaryButton(if (result == null) "Find alternatives" else "Refresh alternatives", ::load, Modifier.fillMaxWidth(), enabled = !loading, loading = loading && result == null, icon = { Icon(Icons.Outlined.Eco, null) })
-                error?.let { ErrorCard(it, ::load) }
+                DemoPrimaryButton(if (result == null) "Find alternatives" else "Refresh alternatives", ::load, Modifier.fillMaxWidth().testTag(if (loading) "alternatives-loading" else "alternatives-refresh"), enabled = !loading, loading = loading && result == null, icon = { Icon(Icons.Outlined.Eco, null) })
+                error?.let { ErrorCard(it, ::load, testTag = "alternatives-error", retryTestTag = "alternatives-error-retry") }
                 result?.let { response ->
-                    if (response.alternatives.isEmpty()) EmptyStateCard(Icons.Outlined.Eco, "No suitable alternatives", "No foods matched every selected dietary need.")
-                    else SectionLabel("Suggestions · ${response.alternatives.size}")
-                    response.alternatives.forEach { alternative ->
+                    if (response.alternatives.isEmpty()) EmptyStateCard(Icons.Outlined.Eco, "No suitable alternatives", "No foods matched every selected dietary need.", Modifier.testTag("alternatives-empty"))
+                    else SectionLabel("Suggestions · ${response.alternatives.size}", Modifier.testTag("alternatives-results"))
+                    response.alternatives.forEachIndexed { index, alternative ->
                         val detail = alternative.id?.let(details::get) ?: alternativeDetailFood(alternative)
-                        DemoCard(if (detail != null) Modifier.clickable { selected = detail } else Modifier) {
+                        DemoCard((if (detail != null) Modifier.clickable { selected = detail } else Modifier).testTag("alternative-result-$index")) {
                             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 NetworkImage(detail?.photoUrl, null, Modifier.size(58.dp))
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {

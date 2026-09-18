@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -146,7 +147,7 @@ internal fun FoodPickerSheet(
         }.getOrDefault(emptyList())
     }
 
-    AppModalSheet(title = "Add food", onDismiss = onDismiss) {
+    AppModalSheet(title = "Add food", onDismiss = onDismiss, testTag = "food-picker", closeTestTag = "food-picker-close") {
         Column(
             modifier = Modifier.fillMaxSize().padding(top = 28.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -172,6 +173,8 @@ internal fun FoodPickerSheet(
                 Box(Modifier.padding(horizontal = DemoScreenPadding)) {
                     FoodSuggestionList(
                         suggestions = suggestions,
+                        modifier = Modifier.testTag("food-picker-suggestions"),
+                        itemTestTag = { "food-picker-suggestion-$it" },
                         onSelect = { suggestion ->
                             val suggestionName = suggestion.name ?: return@FoodSuggestionList
                             autocompleteSuppressedQuery = suggestionName
@@ -184,17 +187,17 @@ internal fun FoodPickerSheet(
             }
             when {
                 loading -> {
-                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Box(Modifier.fillMaxWidth().padding(24.dp).testTag("food-picker-loading"), contentAlignment = Alignment.Center) {
                         LoadingSpinner(color = JanuaryColors.Green)
                     }
                 }
                 error != null -> {
                     Box(Modifier.padding(horizontal = DemoScreenPadding)) {
-                        ErrorCard(error!!) { failedFoodId?.let(::hydrate) ?: search() }
+                        ErrorCard(error!!, { failedFoodId?.let(::hydrate) ?: search() }, testTag = "food-picker-error", retryTestTag = "food-picker-retry")
                     }
                 }
                 suggestions.isEmpty() && results.isEmpty() -> {
-                    EmptyStateCard(Icons.Outlined.RestaurantMenu, "Find a food", "Start typing for suggestions, or search January’s food database.", Modifier.padding(horizontal = DemoScreenPadding))
+                    EmptyStateCard(Icons.Outlined.RestaurantMenu, "Find a food", "Start typing for suggestions, or search January’s food database.", Modifier.padding(horizontal = DemoScreenPadding).testTag("food-picker-empty"))
                 }
                 results.isNotEmpty() -> {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -214,6 +217,7 @@ internal fun FoodPickerSheet(
                                         food = food,
                                         loading = hydratingFoodId == food.id,
                                         enabled = hydratingFoodId == null,
+                                        modifier = Modifier.testTag("food-picker-result-$index"),
                                         onClick = { hydrate(food.id) },
                                     )
                                     if (index < results.lastIndex) {

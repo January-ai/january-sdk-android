@@ -1,0 +1,24 @@
+appId: ai.january.partner.demo
+name: Settings shows SDK configuration
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: settings-button
+    timeout: 15000
+- tapOn:
+    id: tab-glucose
+- tapOn:
+    id: settings-button
+- assertVisible: Settings
+- assertVisible: January SDK
+- assertVisible: Connected
+- assertVisible: End user ID
+- assertVisible: parity-user
+- takeScreenshot: demo/.maestro/artifacts/android-settings
+- tapOn:
+    id: settings-close
+- assertNotVisible:
+    id: settings-sheet

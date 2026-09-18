@@ -1,0 +1,69 @@
+appId: ai.january.partner.demo
+name: Native parity - restaurants and menu surfaces
+tags:
+  - parity
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-search
+    timeout: 15000
+- tapOn:
+    id: search-scope-restaurants
+- assertVisible:
+    id: restaurant-search-screen
+- tapOn:
+    id: restaurant-filters-button
+- assertVisible:
+    id: restaurant-filters
+- takeScreenshot: demo/.maestro/artifacts/android-restaurant-filters
+- tapOn:
+    id: restaurant-filters-close
+- tapOn:
+    id: restaurant-search-input
+- inputText: Fixture Cafe
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: restaurant-result-0
+    timeout: 8000
+- takeScreenshot: demo/.maestro/artifacts/android-restaurants-results
+- tapOn:
+    id: restaurant-result-0
+- assertVisible:
+    id: restaurant-detail-screen
+- takeScreenshot: demo/.maestro/artifacts/android-restaurant-detail
+- extendedWaitUntil:
+    visible:
+      id: restaurant-menu-item-0
+    timeout: 15000
+- tapOn:
+    id: restaurant-menu-item-0
+- assertVisible:
+    id: menu-item-detail-screen
+- takeScreenshot: demo/.maestro/artifacts/android-menu-detail
+- tapOn:
+    id: menu-item-detail-back
+- extendedWaitUntil:
+    visible:
+      id: restaurant-detail-screen
+    timeout: 15000
+- tapOn:
+    id: restaurant-detail-back
+- extendedWaitUntil:
+    visible:
+      id: restaurant-search-screen
+    timeout: 15000
+- tapOn:
+    id: restaurant-mode-menu
+- tapOn:
+    id: restaurant-search-input
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: menu-result-0
+    timeout: 15000
+- tapOn:
+    id: menu-result-0
+- assertVisible:
+    id: menu-item-detail-screen

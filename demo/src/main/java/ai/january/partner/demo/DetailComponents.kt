@@ -13,6 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,14 +31,16 @@ import java.time.OffsetDateTime
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun DetailDisclosure(title: String = "Technical details", content: @Composable () -> Unit) {
+internal fun DetailDisclosure(modifier: Modifier = Modifier, title: String = "Technical details", bodyTestTag: String? = null, content: @Composable () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Column {
-        Row(Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
             Icon(if (expanded) Icons.Outlined.ExpandMore else Icons.Outlined.ChevronRight, if (expanded) "Collapse $title" else "Expand $title", Modifier.size(18.dp), tint = JanuaryColors.Muted)
         }
-        if (expanded) content()
+        if (expanded) {
+            if (bodyTestTag != null) Box(Modifier.testTag(bodyTestTag)) { content() } else content()
+        }
     }
 }
 
@@ -49,23 +54,24 @@ internal fun QuantityStepper(quantity: Double, onChange: (Double) -> Unit, minim
 }
 
 @Composable
-internal fun ServingControls(servings: List<ServingOption>, serving: ServingOption?, quantity: Double, onServing: (ServingOption) -> Unit, onQuantity: (Double) -> Unit, menuItem: Boolean = false) {
+internal fun ServingControls(servings: List<ServingOption>, serving: ServingOption?, quantity: Double, onServing: (ServingOption) -> Unit, onQuantity: (Double) -> Unit, modifier: Modifier = Modifier, menuItem: Boolean = false) {
     var expanded by remember { mutableStateOf(false) }
     if (servings.isEmpty()) return
-    DemoCard {
+    DemoCard(modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (menuItem) SectionLabel("Serving")
             Box {
-                Row(Modifier.fillMaxWidth().clickable { expanded = true }, verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().clickable { expanded = true }.testTag("food-serving-unit"), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         if (!menuItem) Text("Serving unit", style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted)
                         Text(serving?.let(::servingLabel) ?: "Choose a serving", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Green)
                     }
                     Icon(Icons.Outlined.UnfoldMore, "Choose a serving", Modifier.size(18.dp), tint = JanuaryColors.Green)
                 }
-                DropdownMenu(expanded, { expanded = false }) {
-                    servings.forEach { option ->
-                        DropdownMenuItem(text = { Text(servingLabel(option)) }, trailingIcon = { if (serving?.id == option.id) Icon(Icons.Outlined.Check, null) }, onClick = { onServing(option); expanded = false })
+                // The dropdown is a popup window, so it carries its own testTagsAsResourceId.
+                DropdownMenu(expanded, { expanded = false }, modifier = Modifier.semantics { testTagsAsResourceId = true }) {
+                    servings.forEachIndexed { index, option ->
+                        DropdownMenuItem(text = { Text(servingLabel(option)) }, trailingIcon = { if (serving?.id == option.id) Icon(Icons.Outlined.Check, null) }, onClick = { onServing(option); expanded = false }, modifier = Modifier.testTag("food-serving-option-$index"))
                     }
                 }
             }
@@ -109,14 +115,14 @@ internal fun FoodGlucoseSheet(client: JanuaryPartnerClient, foodId: FoodId, food
                 Text("${formatDemoNumber(quantity)} ${serving.unit}", fontSize = 15.sp, color = JanuaryColors.Muted)
             }
             when {
-                loading -> DemoCard {
+                loading -> DemoCard(Modifier.testTag("food-glucose-loading")) {
                     Column(Modifier.fillMaxWidth().padding(vertical = 42.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         LoadingSpinner(color = JanuaryColors.Green)
                         Text("Predicting your glucose response…", style = MaterialTheme.typography.titleMedium)
                         Text("This usually takes a few seconds.", fontSize = 15.sp, color = JanuaryColors.Muted)
                     }
                 }
-                error != null -> ErrorCard(error!!, ::predict)
+                error != null -> ErrorCard(error!!, ::predict, testTag = "food-glucose-error", retryTestTag = "food-glucose-error-retry")
                 result != null -> FoodGlucoseResult(result!!)
             }
             DemoCard {
@@ -134,7 +140,7 @@ private fun Modifier.androidxScroll(): Modifier = this.then(Modifier.verticalScr
 
 @Composable
 private fun FoodGlucoseResult(result: GlucosePrediction) {
-    DemoCard {
+    DemoCard(Modifier.testTag("food-glucose-result")) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val impact = result.impact?.value ?: "unknown"
             Icon(Icons.Outlined.MonitorHeart, null, tint = glucoseImpactColor(impact))
@@ -155,7 +161,7 @@ private fun FoodGlucoseResult(result: GlucosePrediction) {
         }
     }
     DemoCard {
-        DetailDisclosure("Prediction data") {
+        DetailDisclosure(title = "Prediction data") {
             NutritionList(result.prediction.map { NutritionValue("+${formatMetricNumber(it.minutes)} min", "${formatMetricNumber(it.value)} mg/dL") })
         }
     }

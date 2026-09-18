@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -135,8 +136,8 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
     }
     if (result == null) {
         AppScreenScaffold(
-            title = "Glucose", modifier = modifier, style = AppNavigationTitleStyle.Leading,
-            trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, onClick = settingsAction) },
+            title = "Glucose", modifier = modifier.testTag("glucose-screen"), style = AppNavigationTitleStyle.Leading,
+            trailing = { AppNavigationButton(AppNavigationButtonKind.Settings, testTag = "settings-button", onClick = settingsAction) },
         ) {
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -151,7 +152,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                 )
 
                 FormSection("Prediction profile", "Age, sex, body measurements, and health conditions influence the estimated response.") {
-                    MeasurementRow("Age", age, { age = numericText(it) }, "years")
+                    MeasurementRow("Age", age, { age = numericText(it) }, "years", testTag = "glucose-age")
                     HorizontalDivider(color = JanuaryColors.Divider)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
@@ -165,6 +166,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                             label = { if (it == Sex.FEMALE) "Female" else "Male" },
                             onSelect = { sex = it },
                             modifier = Modifier.weight(2f),
+                            testTag = { if (it == Sex.FEMALE) "glucose-sex-female" else "glucose-sex-male" },
                         )
                     }
                     HorizontalDivider(color = JanuaryColors.Divider)
@@ -173,7 +175,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                     WeightInput(weightPounds = weightPounds, onWeightPoundsChange = { weightPounds = it })
                     HorizontalDivider(color = JanuaryColors.Divider)
                     Row(
-                        modifier = Modifier.fillMaxWidth().clickable { showConditions = true }.padding(vertical = 14.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { showConditions = true }.testTag("glucose-health-conditions").padding(vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
@@ -190,6 +192,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                         HorizontalDivider(color = JanuaryColors.Divider)
                         SelectedFoodRow(
                             selected = selected,
+                            modifier = Modifier.testTag("glucose-food-$index"),
                             onServingChange = { serving ->
                                 foods = foods.toMutableList().also { it[index] = selected.copy(serving = serving) }
                             },
@@ -206,17 +209,17 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                     HorizontalDivider(color = JanuaryColors.Divider)
                     TextButton(
                         onClick = { showFoodPicker = true },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("glucose-add-food"),
                     ) {
                         Text("＋  Add food to prediction", color = GoldText, style = MaterialTheme.typography.titleMedium)
                     }
                 }
 
-                error?.let { ErrorCard(it, ::predict) }
+                error?.let { ErrorCard(it, ::predict, testTag = "glucose-error", retryTestTag = "glucose-retry") }
                 DemoPrimaryButton(
                     text = "Estimate glucose response",
                     onClick = ::predict,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag(if (loading) "glucose-loading" else "glucose-predict"),
                     enabled = foods.isNotEmpty() && client != null,
                     loading = loading,
                 )
@@ -226,8 +229,8 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
         }
     } else {
         AppScreenScaffold(
-            title = "Estimated response", modifier = modifier,
-            leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Estimated response", onClick = { result = null }) },
+            title = "Estimated response", modifier = modifier.testTag("glucose-results-screen"),
+            leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Estimated response", testTag = "glucose-result-back", onClick = { result = null }) },
         ) {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding, vertical = 16.dp),
@@ -235,8 +238,8 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
             ) {
                 GlucosePredictionResult(result!!, foods)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DemoSecondaryButton("Adjust meal", { result = null }, Modifier.weight(1f))
-                    DemoPrimaryButton("Start over", { result = null; foods = emptyList() }, Modifier.weight(1f))
+                    DemoSecondaryButton("Adjust meal", { result = null }, Modifier.weight(1f).testTag("glucose-adjust"))
+                    DemoPrimaryButton("Start over", { result = null; foods = emptyList() }, Modifier.weight(1f).testTag("glucose-start-over"))
                 }
                 Spacer(Modifier.height(24.dp))
             }

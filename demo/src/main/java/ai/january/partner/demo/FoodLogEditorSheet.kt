@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -100,7 +101,7 @@ internal fun FoodLogEditorSheet(
         }
     }
 
-    AppModalSheet(title = if (existing == null) "New food log" else "Edit food log", onDismiss = onDismiss) {
+    AppModalSheet(title = if (existing == null) "New food log" else "Edit food log", onDismiss = onDismiss, testTag = "food-log-editor") {
         Column(Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
@@ -119,7 +120,7 @@ internal fun FoodLogEditorSheet(
                     TextField(
                         value = name,
                         onValueChange = { name = it },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp).testTag("food-log-name"),
                         placeholder = { Text("Optional name") },
                         shape = RoundedCornerShape(18.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Control, unfocusedContainerColor = JanuaryColors.Control, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
@@ -129,7 +130,7 @@ internal fun FoodLogEditorSheet(
                 FoodLogCard { StartTimeRow(timestamp, label = "Date and time") { timestamp = it } }
                 SectionLabel("Foods in this meal · ${foods.size}")
                 if (foods.isEmpty()) {
-                    EmptyStateCard(Icons.Outlined.AddCircleOutline, "No foods added", "Start with one food, then keep adding until the complete meal is represented.")
+                    EmptyStateCard(Icons.Outlined.AddCircleOutline, "No foods added", "Start with one food, then keep adding until the complete meal is represented.", Modifier.testTag("food-log-editor-empty"))
                 }
                 foods.forEachIndexed { index, selected ->
                     FoodLogSelectedFoodCard(
@@ -140,12 +141,12 @@ internal fun FoodLogEditorSheet(
                     )
                 }
                 DemoOutlinedButton(
-                    if (foods.isEmpty()) "Add first food" else "Add another food", { showFoodPicker = true }, Modifier.fillMaxWidth(),
+                    if (foods.isEmpty()) "Add first food" else "Add another food", { showFoodPicker = true }, Modifier.fillMaxWidth().testTag("food-log-add-food"),
                     icon = { Icon(Icons.Outlined.Add, null) },
                 )
 
-                error?.let { ErrorCard(it, ::save) }
-                DemoPrimaryButton(if (existing == null) "Save food log" else "Update food log", ::save, Modifier.fillMaxWidth(), enabled = foods.isNotEmpty(), loading = saving)
+                error?.let { ErrorCard(it, ::save, testTag = "food-log-save-error", retryTestTag = "food-log-save-retry") }
+                DemoPrimaryButton(if (existing == null) "Save food log" else "Update food log", ::save, Modifier.fillMaxWidth().testTag(if (saving) "food-log-save-loading" else "food-log-save"), enabled = foods.isNotEmpty(), loading = saving)
                 Spacer(Modifier.height(88.dp))
             }
         }

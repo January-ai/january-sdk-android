@@ -111,24 +111,25 @@ import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.PartnerUserId
 
 @Composable
-internal fun EmptySearchCard(title: String, message: String) {
-    EmptyStateCard(Icons.Outlined.Restaurant, title, message)
+internal fun EmptySearchCard(title: String, message: String, modifier: Modifier = Modifier) {
+    EmptyStateCard(Icons.Outlined.Restaurant, title, message, modifier)
 }
 @Composable
-internal fun FoodResultCard(food: FoodSearchItem, onClick: () -> Unit) {
+internal fun FoodResultCard(food: FoodSearchItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
     FoodRow(
         name = food.name ?: "Unnamed food",
         subtitle = food.brandName,
         meta = listOfNotNull(food.calories?.let { "${it.toInt()} cal" }, primaryServing(food)?.let { "${formatDemoNumber(it.quantity ?: 1.0)} ${it.unit.orEmpty()}" }).joinToString(" · "),
         imageUrl = food.photoUrl,
         onClick = onClick,
+        modifier = modifier,
         contentPadding = PaddingValues(vertical = 12.dp),
     )
 }
 
 @Composable
-internal fun RestaurantResultCard(restaurant: Restaurant, onClick: () -> Unit) {
-    DemoCard(modifier = Modifier.clickable(onClick = onClick)) {
+internal fun RestaurantResultCard(restaurant: Restaurant, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    DemoCard(modifier = modifier.clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             FoodLogMealIcon()
             Column(Modifier.weight(1f)) {
@@ -149,8 +150,8 @@ internal fun SimpleResultCard(title: String, subtitle: String) {
 }
 
 @Composable
-internal fun MenuItemResultCard(item: RestaurantMenuItem, onClick: () -> Unit) {
-    DemoCard(Modifier.clickable(onClick = onClick)) { MenuItemRow(item) }
+internal fun MenuItemResultCard(item: RestaurantMenuItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    DemoCard(modifier.clickable(onClick = onClick)) { MenuItemRow(item) }
 }
 
 @Composable

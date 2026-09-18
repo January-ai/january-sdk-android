@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -91,7 +92,7 @@ internal fun FormSection(title: String, detail: String? = null, content: @Compos
 }
 
 @Composable
-internal fun MeasurementRow(label: String, value: String, onChange: (String) -> Unit, unit: String) {
+internal fun MeasurementRow(label: String, value: String, onChange: (String) -> Unit, unit: String, testTag: String? = null) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -101,7 +102,7 @@ internal fun MeasurementRow(label: String, value: String, onChange: (String) -> 
         BasicTextField(
             value = value,
             onValueChange = onChange,
-            modifier = Modifier.width(72.dp),
+            modifier = Modifier.width(72.dp).then(testTag?.let { Modifier.testTag(it) } ?: Modifier),
             textStyle = TextStyle(
                 color = JanuaryColors.Ink,
                 fontSize = 20.sp,
@@ -173,10 +174,11 @@ internal fun SelectedFoodRow(
     onServingChange: (ServingOption) -> Unit,
     onQuantityChange: (Double) -> Unit,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -212,16 +214,16 @@ internal fun SelectedFoodRow(
 internal fun ConditionsScreen(selected: Set<MedicalCondition>, onChange: (Set<MedicalCondition>) -> Unit, onDismiss: () -> Unit, modifier: Modifier) {
     androidx.activity.compose.BackHandler(onBack = onDismiss)
     AppScreenScaffold(
-        title = "Health conditions", modifier = modifier,
+        title = "Health conditions", modifier = modifier.testTag("conditions-screen"),
         style = AppNavigationTitleStyle.Leading,
-        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Health conditions", onClick = onDismiss) },
+        leading = { AppNavigationButton(AppNavigationButtonKind.Back, title = "Back from Health conditions", testTag = "conditions-back", onClick = onDismiss) },
     ) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text("Select all that apply. Leave both unselected if neither condition applies.", fontSize = 15.sp, color = JanuaryColors.Muted)
             DemoCard {
-                ConditionRow("Type 2 diabetes", MedicalCondition.TYPE_2_DIABETES, selected, onChange)
+                ConditionRow("Type 2 diabetes", MedicalCondition.TYPE_2_DIABETES, selected, onChange, testTag = "condition-type-2-diabetes")
                 HorizontalDivider(color = JanuaryColors.Divider)
-                ConditionRow("Prediabetes", MedicalCondition.PREDIABETES, selected, onChange)
+                ConditionRow("Prediabetes", MedicalCondition.PREDIABETES, selected, onChange, testTag = "condition-prediabetes")
             }
         }
     }
@@ -233,12 +235,13 @@ internal fun ConditionRow(
     condition: MedicalCondition,
     selected: Set<MedicalCondition>,
     onChange: (Set<MedicalCondition>) -> Unit,
+    testTag: String? = null,
 ) {
     val isSelected = condition in selected
     Row(
         modifier = Modifier.fillMaxWidth().clickable {
             onChange(if (isSelected) selected - condition else selected + condition)
-        }.padding(vertical = 12.dp),
+        }.then(testTag?.let { Modifier.testTag(it) } ?: Modifier).padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(label, modifier = Modifier.weight(1f))
@@ -262,11 +265,12 @@ internal fun GlucosePredictionResult(result: GlucosePrediction, foods: List<Demo
     PredictionChart(
         points = result.prediction.map { PredictionPoint(it.minutes, it.value) },
         minimum = result.minimum, maximum = result.maximum, lineColor = impactColor,
+        modifier = Modifier.testTag("glucose-chart"),
         summaryValue = peak?.value,
         summaryDetail = "${glucoseImpactLabel(impact).lowercase()} · $peakWindow",
         summaryDelta = "+${kotlin.math.round(delta).toInt()} above meal start",
     )
-    DemoCard {
+    DemoCard(Modifier.testTag("glucose-result")) {
         foods.forEachIndexed { index, food ->
             if (index > 0) HorizontalDivider(color = JanuaryColors.Divider)
             Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {

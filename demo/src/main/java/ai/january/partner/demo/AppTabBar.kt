@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -50,7 +51,8 @@ internal fun AppTabBar(selected: AppDestination, onSelect: (AppDestination) -> U
                 Column(
                     Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(50))
                         .background(if (item == selected) androidx.compose.ui.graphics.Color(0xFFEBE9E6) else androidx.compose.ui.graphics.Color.Transparent)
-                        .selectable(selected = item == selected, role = Role.Tab, onClick = { onSelect(item) }),
+                        .selectable(selected = item == selected, role = Role.Tab, onClick = { onSelect(item) })
+                        .testTag("tab-${item.label.lowercase().replace(' ', '-')}"),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {

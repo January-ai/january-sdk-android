@@ -216,6 +216,9 @@ To work on the SDK itself:
 ./gradlew :sdk:testDebugUnitTest :sdk:assembleRelease
 ```
 
+The demo's end-to-end Maestro suite and how to run it locally are described in
+[demo/.maestro/README.md](demo/.maestro/README.md).
+
 ## Optional: fastest debug-only shortcut
 
 If you only want to make a request immediately, the demo can use a server API

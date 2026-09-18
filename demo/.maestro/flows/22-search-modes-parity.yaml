@@ -1,0 +1,47 @@
+appId: ai.january.partner.demo
+name: Native parity - description and barcode search
+tags:
+  - parity
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-search
+    timeout: 15000
+- tapOn:
+    id: search-mode-description
+- assertVisible: Describe a meal
+- tapOn:
+    id: search-input
+- inputText: a bowl of oatmeal with honey and a banana
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: search-submit
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible:
+      id: description-results
+    timeout: 15000
+- takeScreenshot: demo/.maestro/artifacts/android-description-results
+- tapOn:
+    id: search-mode-barcode
+# The barcode prompt only shows before any result; a previous search's state may remain.
+- assertVisible:
+    id: scan-barcode-button
+- tapOn:
+    id: search-input
+- eraseText: 40
+- inputText: 012345678905
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-result-0
+    timeout: 15000
+- takeScreenshot: demo/.maestro/artifacts/android-barcode-result
+- tapOn:
+    id: search-mode-name
+- assertVisible:
+    id: search-input
