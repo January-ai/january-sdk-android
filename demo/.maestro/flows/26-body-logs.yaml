@@ -1,0 +1,88 @@
+appId: ai.january.partner.demo
+name: Body log water and weight, then delete the water entry
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-body
+    timeout: 15000
+- tapOn:
+    id: tab-body
+- assertVisible:
+    id: body-screen
+- assertVisible: Track water and weight
+- extendedWaitUntil:
+    visible:
+      id: water-empty
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible: Logged 8 fl oz
+- scrollUntilVisible:
+    element:
+      id: water-day-0
+    direction: DOWN
+    timeout: 15000
+- assertVisible: 8 fl oz
+- takeScreenshot: demo/.maestro/artifacts/android-body-water
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- extendedWaitUntil:
+    visible:
+      text: 236.6 ml
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-delete-last
+- tapOn:
+    id: water-delete-last
+- extendedWaitUntil:
+    visible:
+      id: water-empty
+    timeout: 15000
+- assertNotVisible:
+    id: water-day-0
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-kg
+- tapOn:
+    id: weight-unit-kg
+- tapOn:
+    id: weight-value
+- eraseText
+- inputText: "70.5"
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 15000
+- assertVisible: Logged 70.5 kg
+- scrollUntilVisible:
+    element:
+      id: weight-day-0
+    direction: DOWN
+    timeout: 15000
+- assertVisible: 70.5 kg
+- takeScreenshot: demo/.maestro/artifacts/android-body-weight

@@ -19,7 +19,15 @@ def seeded_eaten_at():
 def log(name='Fixture breakfast'):
  f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
  return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at=seeded_eaten_at(),foods=[f])
-state={'rules':{},'logs':[],'requests':[]}
+ML_PER_FL_OZ=29.5735
+def volume(ml,unit):return dict(value=round(ml/ML_PER_FL_OZ if unit=='fl_oz' else ml,1),unit=unit)
+def stamp(value):
+ # Any ISO-8601 offset in, UTC with milliseconds out, like the API.
+ if value:
+  parsed=datetime.fromisoformat(value.replace('Z','+00:00'))
+ else:parsed=datetime.now(timezone.utc)
+ return parsed.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.')+'%03dZ'%(parsed.microsecond//1000)
+state={'rules':{},'logs':[],'water':[],'weights':[],'requests':[]}
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):self.handle_request()
@@ -31,7 +39,7 @@ class Handler(BaseHTTPRequestHandler):
   parsed=urlparse(self.path);path=parsed.path;q={k:v[0] for k,v in parse_qs(parsed.query).items()}
   raw=self.rfile.read(int(self.headers.get('Content-Length',0)))
   body=json.loads(raw) if raw and 'application/json' in self.headers.get('Content-Type','') else {}
-  if path=='/__reset':state.update(rules={},logs=[],requests=[]);return self.respond({})
+  if path=='/__reset':state.update(rules={},logs=[],water=[],weights=[],requests=[]);return self.respond({})
   if path=='/__control':state['rules'][q['route']]=q;return self.respond({})
   if path=='/__seed':state['logs']=[log()];return self.respond({})
   if path=='/__requests':return self.respond(state['requests'])
@@ -60,6 +68,25 @@ class Handler(BaseHTTPRequestHandler):
   elif path.endswith('/food-analysis/image'):result=scan()
   elif path.endswith('/food-analysis/corrections'):result=scan('Corrected breakfast')
   elif path.endswith('/food-analysis/text'):result=dict(meal_name=None,detections=[] if empty else [dict(food=detected(),confidence=None)],total_nutrients=NUTRIENTS)
+  elif '/water-logs' in path:
+   if self.command=='POST':
+    amount=body.get('amount',{});ml=float(amount.get('value',0))*(ML_PER_FL_OZ if amount.get('unit')=='fl_oz' else 1)
+    result=dict(id=str(__import__('uuid').uuid4()),amount=dict(value=amount.get('value'),unit=amount.get('unit')),consumed_at=stamp(body.get('consumed_at')))
+    state['water'].append(dict(id=result['id'],ml=ml,date=result['consumed_at'][:10]));return self.respond(result,201)
+   if self.command=='DELETE':
+    state['water']=[w for w in state['water'] if w['id']!=path.rsplit('/',1)[1]];return self.respond(None,204)
+   totals={}
+   for w in state['water']:totals[w['date']]=totals.get(w['date'],0)+w['ml']
+   result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items())])
+  elif '/weight-logs' in path:
+   if self.command=='POST':
+    result=dict(weight=body.get('weight'),measured_at=stamp(body.get('measured_at')))
+    state['weights'].append(result);return self.respond(result,201)
+   latest={}
+   for w in state['weights']:
+    day=w['measured_at'][:10]
+    if day not in latest or w['measured_at']>=latest[day]['measured_at']:latest[day]=w
+   result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items())])
   elif '/food-logs' in path:
    if self.command=='GET':result=dict(items=state['logs'])
    elif self.command=='DELETE':state['logs']=[];result=dict(status='success')
@@ -68,6 +95,7 @@ class Handler(BaseHTTPRequestHandler):
   else:return self.respond(dict(message='Unmapped fixture route '+path),404)
   self.respond(result)
  def respond(self,body,status=200):
+  if status==204:self.send_response(status);self.send_header('Content-Length','0');self.end_headers();return
   data=json.dumps(body).encode();self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.end_headers()
   try:self.wfile.write(data)
   except (BrokenPipeError,ConnectionResetError):pass

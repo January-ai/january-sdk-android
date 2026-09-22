@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -31,6 +32,7 @@ internal enum class AppDestination(val label: String, val icon: ImageVector) {
     SCAN("Scan", Icons.Filled.CenterFocusWeak),
     FOOD_LOGS("Food Logs", Icons.Filled.ListAlt),
     GLUCOSE("Glucose", Icons.Filled.ShowChart),
+    BODY("Body", Icons.Filled.WaterDrop),
 }
 
 

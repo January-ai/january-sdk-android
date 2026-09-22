@@ -24,6 +24,11 @@ tags:
     id: glucose-screen
 - assertVisible: Estimate this meal.s response
 - tapOn:
+    id: tab-body
+- assertVisible:
+    id: body-screen
+- assertVisible: Track water and weight
+- tapOn:
     id: tab-search
 - assertVisible:
     id: search-screen

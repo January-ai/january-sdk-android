@@ -1,0 +1,72 @@
+appId: ai.january.partner.demo
+name: Body logs failure and retry
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-body
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "400"
+- tapOn:
+    id: tab-body
+- extendedWaitUntil:
+    visible:
+      id: water-error
+    timeout: 15000
+- assertVisible: Check the information you entered
+- takeScreenshot: demo/.maestro/artifacts/android-body-water-error
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "200"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-retry
+- tapOn:
+    id: water-retry
+- extendedWaitUntil:
+    visible:
+      id: water-empty
+    timeout: 15000
+- assertNotVisible:
+    id: water-error
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "500"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-error
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "200"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 15000
+- assertNotVisible:
+    id: weight-error
