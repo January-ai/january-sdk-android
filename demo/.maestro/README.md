@@ -32,7 +32,8 @@ maestro test -e FIXTURE_ORIGIN=http://127.0.0.1:18766 demo/.maestro/flows
 
 Flows change the fixture server's behaviour through `scripts/control-fixture.js`
 (HTTP status, delay, empty collections per route), `seed-fixture.js` (one saved
-food log) and `reset-fixture.js`, which the bootstrap runs first so no flow
+food log), `seed-history.js` (about 13 months of water and weight ending today)
+and `reset-fixture.js`, which the bootstrap runs first so no flow
 inherits another's configuration.
 
 ## Conventions
@@ -48,7 +49,13 @@ inherits another's configuration.
   (`logs-day-previous`, `logs-day-next`, `logs-day-today`, `logs-day-label`)
   showing that day's food logs and totals (`food-logs-totals`), water
   (`water-total` or `water-empty`, `water-log`, `water-delete-last`) and weight
-  (`weight-day` or `weight-empty`, `weight-log`). The Logs tab
+  (`weight-day` or `weight-empty`, `weight-log`). Each of the water and weight
+  cards ends with a history chart that always runs to today (`water-chart` or
+  `water-chart-empty`, `weight-chart` or `weight-chart-empty`) and its range
+  switch (`water-chart-range-week`, `-month`, `-year`, and the same for
+  `weight-chart-range-*`); the chart's accessibility summary names the range
+  and what it shows. The fixture's water and weight lists return at most the
+  100 most recent days, like the API, so a Year chart takes several requests. The Logs tab
   (`tab-food-logs`, `food-logs-screen`) lists food logs over a date range. `seed-fixture.js` dates its saved food log an hour ago, so it
   falls on today; the fixture server buckets logs, water and weight by the
   request's timezone, like the API.
@@ -56,7 +63,7 @@ inherits another's configuration.
 ## In CI
 
 `.github/workflows/quality.yml` builds the APK once, then `ui-test-android`
-runs four shards (27 flows, dealt round-robin by `shard.mjs`) through
+runs four shards (28 flows, dealt round-robin by `shard.mjs`) through
 `.github/scripts/android-ui-suite.sh`. Failed flows are
 rerun once and named in a workflow warning; each shard uploads its JUnit report
 and Maestro's failure screenshots and view hierarchies as `maestro-android-N`.

@@ -33,12 +33,28 @@ tags:
       TARGET_ID: water-retry
 - tapOn:
     id: water-retry
-- extendedWaitUntil:
-    visible:
+# The day's total sits at the top of the water card, above the retry button.
+- scrollUntilVisible:
+    element:
       id: water-empty
+    direction: UP
     timeout: 15000
 - assertNotVisible:
     id: water-error
+# The water chart failed with the same request and retries on its own.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-retry
+- tapOn:
+    id: water-chart-retry
+- scrollUntilVisible:
+    element:
+      id: water-chart-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: water-chart-error
 - runScript:
     file: ../scripts/control-fixture.js
     env:
@@ -50,9 +66,10 @@ tags:
       TARGET_ID: weight-log
 - tapOn:
     id: weight-log
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: weight-error
+    direction: DOWN
     timeout: 15000
 - runScript:
     file: ../scripts/control-fixture.js

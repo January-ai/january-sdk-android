@@ -93,11 +93,13 @@ tags:
     timeout: 15000
 - assertVisible: 150 kg
 - takeScreenshot: demo/.maestro/artifacts/android-tracking-weight
-# The previous day has nothing: no food logs, no water, no weight.
+# The previous day has nothing: no food logs, no water, no weight. Center the
+# day picker so the tap cannot land on the navigation bar above it.
 - scrollUntilVisible:
     element:
       id: logs-day-previous
     direction: UP
+    centerElement: true
 - tapOn:
     id: logs-day-previous
 - assertVisible:
@@ -112,12 +114,16 @@ tags:
       id: weight-empty
     direction: DOWN
     timeout: 15000
-- assertVisible:
-    id: water-empty
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
 - scrollUntilVisible:
     element:
       id: logs-day-today
     direction: UP
+    centerElement: true
 - tapOn:
     id: logs-day-today
 - scrollUntilVisible:

@@ -56,6 +56,19 @@ def stamp(value):
   parsed=datetime.fromisoformat(value.replace('Z','+00:00'))
  else:parsed=datetime.now(timezone.utc)
  return parsed.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.')+'%03dZ'%(parsed.microsecond//1000)
+def history():
+ # About 13 months of water and weight ending today (noon UTC, so the same calendar day in
+ # any timezone within 11 hours of UTC): water on three days in four, a weight every third
+ # day drifting down toward today, every fourth weight logged in pounds.
+ today=datetime.now(timezone.utc).replace(hour=12,minute=0,second=0,microsecond=0);water=[];weights=[]
+ for i in range(400):
+  at=(today-timedelta(days=i)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+  if i%4!=3:water.append(dict(id='history-%d'%i,ml=1400+(i*137)%900,consumed_at=at))
+  if i%3==0:
+   kg=round(70+i*0.012+((i*7)%5)*0.1,1)
+   weights.append(dict(weight=dict(value=round(kg/0.45359237,1),unit='lb') if i%12==0 else dict(value=kg,unit='kg'),measured_at=at))
+ return water,weights
+LIST_LIMIT=100
 state={'rules':{},'logs':[],'water':[],'weights':[],'requests':[]}
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
@@ -71,6 +84,7 @@ class Handler(BaseHTTPRequestHandler):
   if path=='/__reset':state.update(rules={},logs=[],water=[],weights=[],requests=[]);return self.respond({})
   if path=='/__control':state['rules'][q['route']]=q;return self.respond({})
   if path=='/__seed':state['logs']=[log()];return self.respond({})
+  if path=='/__seed_history':state['water'],state['weights']=history();return self.respond({})
   if path=='/__requests':return self.respond(state['requests'])
   state['requests'].append(dict(method=self.command,path=path,query=q,body=body))
   rule=state['rules'].get(path,{})
@@ -106,7 +120,7 @@ class Handler(BaseHTTPRequestHandler):
     state['water']=[w for w in state['water'] if w['id']!=path.rsplit('/',1)[1]];return self.respond(None,204)
    totals={}
    for w in state['water']:day=local_day(w['consumed_at'],q);totals[day]=totals.get(day,0)+w['ml']
-   result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items()) if in_range(d,q)])
+   result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items()) if in_range(d,q)][-LIST_LIMIT:])
   elif '/weight-logs' in path:
    if self.command=='POST':
     result=dict(weight=body.get('weight'),measured_at=stamp(body.get('measured_at')))
@@ -115,7 +129,7 @@ class Handler(BaseHTTPRequestHandler):
    for w in state['weights']:
     day=local_day(w['measured_at'],q)
     if day not in latest or w['measured_at']>=latest[day]['measured_at']:latest[day]=w
-   result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items()) if in_range(d,q)])
+   result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items()) if in_range(d,q)][-LIST_LIMIT:])
   elif path.endswith('/food-logs/summary'):result=summary(q)
   elif '/food-logs' in path:
    if self.command=='GET':result=dict(items=[] if empty else [l for l in state['logs'] if in_range(local_day(l['eaten_at'],q),q)])
