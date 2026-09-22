@@ -49,7 +49,7 @@ class DemoNavigationTest {
         composeRule.onNodeWithContentDescription("Scan", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText("Scan a meal").assertIsDisplayed()
 
-        composeRule.onNodeWithContentDescription("Food Logs", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Logs", useUnmergedTree = true).performClick()
         composeRule.onNodeWithText(
             "Build one complete meal",
             substring = true,

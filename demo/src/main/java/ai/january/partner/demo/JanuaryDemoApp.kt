@@ -49,7 +49,6 @@ fun JanuaryDemoApp(providedState: DemoState? = null) {
             AppDestination.SCAN -> ScanScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
             AppDestination.FOOD_LOGS -> FoodLogsScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
             AppDestination.GLUCOSE -> GlucoseScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
-            AppDestination.BODY -> BodyScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
         }
     }
 

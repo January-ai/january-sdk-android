@@ -16,6 +16,34 @@ def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(f
 def seeded_eaten_at():
  # An hour ago, so the seeded log always falls in the demo's default date range.
  return (datetime.now(timezone.utc)-timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+def local_day(ts,q):
+ # The calendar day of a UTC timestamp in the request's timezone, like the API.
+ try:zone=__import__('zoneinfo').ZoneInfo(q.get('timezone','UTC'))
+ except Exception:zone=timezone.utc
+ return datetime.fromisoformat(ts.replace('Z','+00:00')).astimezone(zone).strftime('%Y-%m-%d')
+def in_range(day,q):return (not q.get('start_date') or day>=q['start_date']) and (not q.get('end_date') or day<=q['end_date'])
+def day_range(q):
+ start=q.get('start_date');end=q.get('end_date',start)
+ if not start:return []
+ first=datetime.strptime(start,'%Y-%m-%d');last=datetime.strptime(end,'%Y-%m-%d');days=[]
+ while first<=last and len(days)<366:days.append(first.strftime('%Y-%m-%d'));first+=timedelta(days=1)
+ return days
+def add_nutrients(total,extra):
+ for k,v in extra.items():
+  if k in total:total[k]=dict(value=round(total[k]['value']+v['value'],4),unit=v['unit'])
+  else:total[k]=dict(v)
+ return total
+def summary(q):
+ # One bucket per day, like group_by=day; every day in the range is present.
+ buckets=[];totals={};logs_count=0;days_with_logs=0
+ for day in day_range(q):
+  day_logs=[l for l in state['logs'] if local_day(l['eaten_at'],q)==day];nutrients={}
+  for l in day_logs:
+   for f in l['foods']:add_nutrients(nutrients,f['nutrients'])
+  buckets.append(dict(start_date=day,end_date=day,logs_count=len(day_logs),days_with_logs=1 if day_logs else 0,nutrients=nutrients))
+  logs_count+=len(day_logs);days_with_logs+=1 if day_logs else 0;add_nutrients(totals,nutrients)
+ average={k:dict(value=round(v['value']/days_with_logs,4),unit=v['unit']) for k,v in totals.items()} if days_with_logs else {}
+ return dict(group_by='day',week_start=None,timezone=q.get('timezone','UTC'),start_date=q.get('start_date'),end_date=q.get('end_date',q.get('start_date')),buckets=buckets,totals=dict(logs_count=logs_count,days_with_logs=days_with_logs,nutrients=totals),average_per_logged_day=dict(nutrients=average))
 def log(name='Fixture breakfast'):
  f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
  return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at=seeded_eaten_at(),foods=[f])
@@ -72,26 +100,29 @@ class Handler(BaseHTTPRequestHandler):
    if self.command=='POST':
     amount=body.get('amount',{});ml=float(amount.get('value',0))*(ML_PER_FL_OZ if amount.get('unit')=='fl_oz' else 1)
     result=dict(id=str(__import__('uuid').uuid4()),amount=dict(value=amount.get('value'),unit=amount.get('unit')),consumed_at=stamp(body.get('consumed_at')))
-    state['water'].append(dict(id=result['id'],ml=ml,date=result['consumed_at'][:10]));return self.respond(result,201)
+    state['water'].append(dict(id=result['id'],ml=ml,consumed_at=result['consumed_at']));return self.respond(result,201)
    if self.command=='DELETE':
     state['water']=[w for w in state['water'] if w['id']!=path.rsplit('/',1)[1]];return self.respond(None,204)
    totals={}
-   for w in state['water']:totals[w['date']]=totals.get(w['date'],0)+w['ml']
-   result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items())])
+   for w in state['water']:day=local_day(w['consumed_at'],q);totals[day]=totals.get(day,0)+w['ml']
+   result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items()) if in_range(d,q)])
   elif '/weight-logs' in path:
    if self.command=='POST':
     result=dict(weight=body.get('weight'),measured_at=stamp(body.get('measured_at')))
     state['weights'].append(result);return self.respond(result,201)
    latest={}
    for w in state['weights']:
-    day=w['measured_at'][:10]
+    day=local_day(w['measured_at'],q)
     if day not in latest or w['measured_at']>=latest[day]['measured_at']:latest[day]=w
-   result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items())])
+   result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items()) if in_range(d,q)])
+  elif path.endswith('/food-logs/summary'):result=summary(q)
   elif '/food-logs' in path:
-   if self.command=='GET':result=dict(items=state['logs'])
+   if self.command=='GET':result=dict(items=[] if empty else [l for l in state['logs'] if in_range(local_day(l['eaten_at'],q),q)])
    elif self.command=='DELETE':state['logs']=[];result=dict(status='success')
    else:
-    result=log(body.get('name') or 'Fixture breakfast');state['logs']=[result]
+    result=log(body.get('name') or 'Fixture breakfast')
+    if body.get('eaten_at'):result['eaten_at']=stamp(body['eaten_at'])
+    state['logs']=[result]
   else:return self.respond(dict(message='Unmapped fixture route '+path),404)
   self.respond(result)
  def respond(self,body,status=200):

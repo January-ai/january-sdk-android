@@ -17,17 +17,13 @@ tags:
     id: tab-food-logs
 - assertVisible:
     id: food-logs-screen
-- assertVisible: Food logs
+- assertVisible: Build one complete meal
+- assertVisible: Today
 - tapOn:
     id: tab-glucose
 - assertVisible:
     id: glucose-screen
 - assertVisible: Estimate this meal.s response
-- tapOn:
-    id: tab-body
-- assertVisible:
-    id: body-screen
-- assertVisible: Track water and weight
 - tapOn:
     id: tab-search
 - assertVisible:

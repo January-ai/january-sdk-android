@@ -26,6 +26,8 @@ project uses Semantic Versioning.
   that mints least-privilege tokens must add them for these operations.
 - Regenerated the internal transport from the refreshed contract (water and
   weight logs, correction request shape, serving weights, integer profile age).
+- Demo: the Food Logs tab is now Logs, a per-day view with the day's food logs
+  and nutrient totals, water total, and weight, each with a log action.
 
 ## [0.2.2] - Unreleased
 

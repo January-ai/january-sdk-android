@@ -54,6 +54,7 @@ internal fun FoodLogEditorSheet(
     state: DemoState,
     user: PartnerUserContext,
     existing: FoodLog? = null,
+    initialTimestamp: OffsetDateTime? = null,
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -62,7 +63,7 @@ internal fun FoodLogEditorSheet(
     val coroutineScope = rememberCoroutineScope()
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
     var timestamp by remember(existing) {
-        mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it).atZoneSameInstant(java.time.ZoneId.systemDefault()).toOffsetDateTime() }.getOrNull() } ?: OffsetDateTime.now())
+        mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it).atZoneSameInstant(java.time.ZoneId.systemDefault()).toOffsetDateTime() }.getOrNull() } ?: initialTimestamp ?: OffsetDateTime.now())
     }
     var foods by remember(existing) { mutableStateOf(existing?.foods?.map(::selectedFood).orEmpty()) }
     var showFoodPicker by remember { mutableStateOf(false) }

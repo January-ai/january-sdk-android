@@ -1,12 +1,12 @@
 appId: ai.january.partner.demo
-name: Body logs failure and retry
+name: Logs day view - water and weight failures and retry
 tags:
   - fixture
 ---
 - runFlow: ../bootstrap.yaml
 - extendedWaitUntil:
     visible:
-      id: tab-body
+      id: tab-food-logs
     timeout: 15000
 - runScript:
     file: ../scripts/control-fixture.js
@@ -14,13 +14,14 @@ tags:
       ROUTE: /v1.2/water-logs
       STATUS: "400"
 - tapOn:
-    id: tab-body
-- extendedWaitUntil:
-    visible:
+    id: tab-food-logs
+- scrollUntilVisible:
+    element:
       id: water-error
+    direction: DOWN
     timeout: 15000
 - assertVisible: Check the information you entered
-- takeScreenshot: demo/.maestro/artifacts/android-body-water-error
+- takeScreenshot: demo/.maestro/artifacts/android-logs-day-water-error
 - runScript:
     file: ../scripts/control-fixture.js
     env:

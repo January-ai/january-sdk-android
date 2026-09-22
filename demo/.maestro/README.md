@@ -44,11 +44,19 @@ inherits another's configuration.
   lifts them clear of the floating tab bar and the navigation bar.
 - Assert on transient loading states with `optional: true`.
 - Tag every flow `fixture` or `parity`; CI runs both tags.
+- The Logs tab is a day view (`logs-day-previous`, `logs-day-next`,
+  `logs-day-today`, `logs-day-label`) showing that day's food logs and totals
+  (`food-logs-totals`), water (`water-total` or `water-empty`, `water-log`,
+  `water-delete-last`) and weight (`weight-day` or `weight-empty`,
+  `weight-log`). `seed-fixture.js` dates its saved food log an hour ago, so it
+  falls on today; the fixture server buckets logs, water and weight by the
+  request's timezone, like the API.
 
 ## In CI
 
 `.github/workflows/quality.yml` builds the APK once, then `ui-test-android`
-runs four shards through `.github/scripts/android-ui-suite.sh`. Failed flows are
+runs four shards (27 flows, dealt round-robin by `shard.mjs`) through
+`.github/scripts/android-ui-suite.sh`. Failed flows are
 rerun once and named in a workflow warning; each shard uploads its JUnit report
 and Maestro's failure screenshots and view hierarchies as `maestro-android-N`.
 The `ui-tests` job summarizes the shards.
