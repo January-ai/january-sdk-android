@@ -106,9 +106,9 @@ class StateParityWorkflowTest {
         control("/v1.2/food-analysis/corrections");tap("Try again");waitText("Corrected breakfast");capture("correction-result")
     }
     @Test fun foodLogsLoadCreateEditDeleteAndRetry() {
-        desc("Logs");capture("logs-initial");reveal("No food logs on this day");capture("logs-empty")
+        desc("Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
         control("/v1.2/food-logs",500,4);tap("Refresh food logs");capture("logs-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("logs-error")
-        control("/v1.2/food-logs");tap("Try again");waitText("No food logs on this day")
+        control("/v1.2/food-logs");tap("Try again");waitText("No food logs in this range")
         desc("Add food log");capture("log-new");reveal("Save food log").assertIsNotEnabled();tap("Add first food");capture("food-picker-initial");addFood()
         control("/v1.2/food-logs",500,4);tap("Save food log");capture("log-save-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("log-save-error")
         control("/v1.2/food-logs");tap("Try again");waitText("Fixture breakfast");reveal("Fixture breakfast");capture("logs-results");tap("Fixture breakfast");capture("log-detail");tap("Edit");capture("log-edit")
@@ -125,7 +125,7 @@ class StateParityWorkflowTest {
         capture("log-delete-confirmation")
         ui.onNodeWithTag("confirm-delete-food-log").performClick()
         waitText("January couldn’t complete the request");reveal("Try again");capture("log-delete-error")
-        control("/v1.2/food-logs/11111111-1111-4111-8111-111111111111");tap("Try again");waitText("No food logs on this day");capture("log-delete-result")
+        control("/v1.2/food-logs/11111111-1111-4111-8111-111111111111");tap("Try again");waitText("No food logs in this range");capture("log-delete-result")
         val requests = request("/__requests")
         assertTrue(requests.contains("POST"));assertTrue(requests.contains("PATCH") || requests.contains("PUT"));assertTrue(requests.contains("DELETE"))
     }

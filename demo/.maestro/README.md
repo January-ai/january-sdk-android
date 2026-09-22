@@ -44,11 +44,12 @@ inherits another's configuration.
   lifts them clear of the floating tab bar and the navigation bar.
 - Assert on transient loading states with `optional: true`.
 - Tag every flow `fixture` or `parity`; CI runs both tags.
-- The Logs tab is a day view (`logs-day-previous`, `logs-day-next`,
-  `logs-day-today`, `logs-day-label`) showing that day's food logs and totals
-  (`food-logs-totals`), water (`water-total` or `water-empty`, `water-log`,
-  `water-delete-last`) and weight (`weight-day` or `weight-empty`,
-  `weight-log`). `seed-fixture.js` dates its saved food log an hour ago, so it
+- The Tracking tab (`tab-tracking`, `tracking-screen`) is a day view
+  (`logs-day-previous`, `logs-day-next`, `logs-day-today`, `logs-day-label`)
+  showing that day's food logs and totals (`food-logs-totals`), water
+  (`water-total` or `water-empty`, `water-log`, `water-delete-last`) and weight
+  (`weight-day` or `weight-empty`, `weight-log`). The Logs tab
+  (`tab-food-logs`, `food-logs-screen`) lists food logs over a date range. `seed-fixture.js` dates its saved food log an hour ago, so it
   falls on today; the fixture server buckets logs, water and weight by the
   request's timezone, like the API.
 

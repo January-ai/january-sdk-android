@@ -1,9 +1,9 @@
 # Example app
 
 The `demo` module is a Jetpack Compose application covering autocomplete,
-hydrated food servings, photo and barcode scanning, restaurants, a per-day
-logs view (food logs with totals, water, and weight), glucose prediction, user
-context, and imperial/metric inputs.
+hydrated food servings, photo and barcode scanning, restaurants, food logs,
+a per-day tracking view (food logs with totals, water, and weight), glucose
+prediction, user context, and imperial/metric inputs.
 
 Install Android Studio with Android SDK 36 and JDK 17. Android Studio normally
 creates `local.properties` with `sdk.dir`; command-line users can set

@@ -1,19 +1,23 @@
 appId: ai.january.partner.demo
-name: Logs day view - water total and weight, previous day is empty
+name: Tracking day view - water total and weight, previous day is empty
 tags:
   - fixture
 ---
 - runFlow: ../bootstrap.yaml
 - extendedWaitUntil:
     visible:
-      id: tab-food-logs
+      id: tab-tracking
     timeout: 15000
 - runScript:
     file: ../scripts/seed-fixture.js
 - tapOn:
-    id: tab-food-logs
+    id: tab-tracking
 - assertVisible:
-    id: food-logs-screen
+    id: tracking-screen
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: logs-day-label
 - assertVisible: Today
 - scrollUntilVisible:
     element:
@@ -43,7 +47,7 @@ tags:
       id: water-total
     timeout: 15000
 - assertVisible: 8 fl oz
-- takeScreenshot: demo/.maestro/artifacts/android-logs-day-water
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-water
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -70,11 +74,8 @@ tags:
       TARGET_ID: weight-unit-kg
 - tapOn:
     id: weight-unit-kg
-- tapOn:
-    id: weight-value
-- eraseText
-- inputText: "70.5"
-- pressKey: Enter
+# Log the prefilled value: tapping the right-aligned field puts the cursor
+# before the text, so eraseText cannot clear it.
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -85,13 +86,13 @@ tags:
     visible:
       id: weight-logged
     timeout: 15000
-- assertVisible: Logged 70.5 kg
+- assertVisible: Logged 150 kg
 - extendedWaitUntil:
     visible:
       id: weight-day
     timeout: 15000
-- assertVisible: 70.5 kg
-- takeScreenshot: demo/.maestro/artifacts/android-logs-day-weight
+- assertVisible: 150 kg
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-weight
 # The previous day has nothing: no food logs, no water, no weight.
 - scrollUntilVisible:
     element:
@@ -101,9 +102,10 @@ tags:
     id: logs-day-previous
 - assertVisible:
     id: logs-day-today
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: food-logs-empty
+    direction: DOWN
     timeout: 15000
 - scrollUntilVisible:
     element:
@@ -118,7 +120,13 @@ tags:
     direction: UP
 - tapOn:
     id: logs-day-today
-- assertVisible: Today
+- scrollUntilVisible:
+    element:
+      id: logs-day-label
+    direction: UP
+# "Back to today" only shows on other days.
+- assertNotVisible:
+    id: logs-day-today
 - scrollUntilVisible:
     element:
       id: food-log-0

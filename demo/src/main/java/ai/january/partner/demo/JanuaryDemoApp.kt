@@ -47,6 +47,7 @@ fun JanuaryDemoApp(providedState: DemoState? = null) {
         when (destination) {
             AppDestination.SEARCH -> SearchScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
             AppDestination.SCAN -> ScanScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
+            AppDestination.TRACKING -> TrackingScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
             AppDestination.FOOD_LOGS -> FoodLogsScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
             AppDestination.GLUCOSE -> GlucoseScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
         }

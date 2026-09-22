@@ -14,11 +14,20 @@ tags:
     id: scan-screen
 - assertVisible: Scan a meal
 - tapOn:
+    id: tab-tracking
+- assertVisible:
+    id: tracking-screen
+- assertVisible: Track one day at a time
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: logs-day-label
+- assertVisible: Today
+- tapOn:
     id: tab-food-logs
 - assertVisible:
     id: food-logs-screen
 - assertVisible: Build one complete meal
-- assertVisible: Today
 - tapOn:
     id: tab-glucose
 - assertVisible:

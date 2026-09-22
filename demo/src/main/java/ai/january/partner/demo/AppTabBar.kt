@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CenterFocusWeak
 import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.sp
 internal enum class AppDestination(val label: String, val icon: ImageVector, val tag: String) {
     SEARCH("Search", Icons.Filled.Search, "tab-search"),
     SCAN("Scan", Icons.Filled.CenterFocusWeak, "tab-scan"),
+    TRACKING("Tracking", Icons.Filled.Insights, "tab-tracking"),
     FOOD_LOGS("Logs", Icons.Filled.EventNote, "tab-food-logs"),
     GLUCOSE("Glucose", Icons.Filled.ShowChart, "tab-glucose"),
 }
