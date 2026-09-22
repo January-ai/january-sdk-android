@@ -45,8 +45,10 @@ public data class ServingSummary(
     public val id: String?,
     public val quantity: Double? = null,
     public val unit: String?,
+    /** Weight in grams of one serving, when the catalog knows it. Consumed grams = `quantity` × `weightGrams`. */
+    @Json(name = "weight_grams") public val weightGrams: Double? = null,
 ) {
-    public constructor(id: Long, quantity: Double? = null, unit: String) : this(id.toString(), quantity, unit)
+    public constructor(id: Long, quantity: Double? = null, unit: String) : this(id.toString(), quantity, unit, null)
 }
 
 @Deprecated("Use ServingSummary. The amount eaten is now DetectedFood.quantity.", ReplaceWith("ServingSummary"))

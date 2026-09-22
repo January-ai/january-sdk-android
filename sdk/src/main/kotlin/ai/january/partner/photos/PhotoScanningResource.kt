@@ -7,6 +7,10 @@ import ai.january.partner.foods.ServingSummary
 import ai.january.partner.transport.apis.PhotoScanningApi
 import ai.january.partner.transport.models.AnalysisReasoning
 import ai.january.partner.transport.models.CorrectPhotoScanBody
+import ai.january.partner.transport.models.CorrectionAnalysis
+import ai.january.partner.transport.models.CorrectionDetection
+import ai.january.partner.transport.models.CorrectionFood
+import ai.january.partner.transport.models.CorrectionServing
 import ai.january.partner.transport.models.ScanFoodPhotoBody
 import ai.january.partner.transport.models.SearchFoodsByNaturalLanguageBody
 
@@ -67,32 +71,44 @@ private fun ai.january.partner.transport.models.FoodScan.toPublic() = FoodScan(
                 nutrients = bridgeModel(detection.food.nutrients),
                 serving = ServingSummary(
                     detection.food.serving.id,
-                    detection.food.serving.quantity?.toDouble(),
+                    detection.food.serving.quantity.toDouble(),
                     detection.food.serving.unit,
+                    detection.food.serving.weightGrams?.toDouble(),
                 ),
-                quantity = detection.food.quantity?.toDouble(),
+                quantity = detection.food.quantity.toDouble(),
             ),
         )
     },
 )
 
-private fun FoodScan.toTransport() = ai.january.partner.transport.models.FoodScan(
+/**
+ * A correction sends the prior scan back field for field. Every detection the
+ * API returned carries a food id, a serving id, and a quantity; one that lacks
+ * them (only possible for a hand-built value) cannot be expressed in the
+ * correction request and is left out, like the API leaves out detections it
+ * cannot size. Describe such a food in the instruction instead.
+ */
+private fun FoodScan.toTransport() = CorrectionAnalysis(
     mealName = mealName,
     totalNutrients = bridgeModel(totalNutrients),
-    detections = detections.map { detection ->
-        ai.january.partner.transport.models.FoodDetection(
+    detections = detections.mapNotNull { detection ->
+        val foodId = detection.food.id ?: return@mapNotNull null
+        val servingId = detection.food.serving.id ?: return@mapNotNull null
+        val quantity = detection.food.quantity ?: return@mapNotNull null
+        CorrectionDetection(
             confidence = detection.confidenceScore,
-            food = ai.january.partner.transport.models.DetectedFood(
-                id = detection.food.id,
+            food = CorrectionFood(
+                id = foodId,
                 name = detection.food.name,
                 brandName = detection.food.brandName,
                 nutrients = bridgeModel(detection.food.nutrients),
-                serving = ai.january.partner.transport.models.ServingSummary(
-                    id = detection.food.serving.id,
-                    quantity = detection.food.serving.quantity?.let(java.math.BigDecimal::valueOf),
+                serving = CorrectionServing(
+                    id = servingId,
+                    quantity = java.math.BigDecimal.valueOf(detection.food.serving.quantity ?: 1.0),
                     unit = detection.food.serving.unit,
+                    weightGrams = detection.food.serving.weightGrams?.let(java.math.BigDecimal::valueOf),
                 ),
-                quantity = detection.food.quantity?.let(java.math.BigDecimal::valueOf),
+                quantity = java.math.BigDecimal.valueOf(quantity),
             ),
         )
     },

@@ -1,5 +1,7 @@
 package ai.january.partner.foodlogs
 
+import ai.january.partner.ErrorCategory
+import ai.january.partner.JanuaryException
 import ai.january.partner.executeApiCall
 import ai.january.partner.executeEmptyApiCall
 import ai.january.partner.transport.apis.FoodLogsApi
@@ -63,7 +65,17 @@ public class FoodLogsResource internal constructor(private val api: FoodLogsApi)
         transform = { it.toPublic() },
     )
 
+    /**
+     * Sends only the fields set on [request]; the API rejects an empty patch, so
+     * a request that changes nothing fails before any network call.
+     */
     public suspend fun update(request: UpdateFoodLogRequest): FoodLog {
+        if (request.foods == null && request.timestampUtc == null && request.name == null) {
+            throw JanuaryException(
+                ErrorCategory.VALIDATION,
+                "An update must change at least one of foods, timestampUtc, or name.",
+            )
+        }
         val body = UpdateFoodLogBody(
             foods = request.foods?.map { it.toTransport() },
             eatenAt = request.timestampUtc?.let(OffsetDateTime::parse),
@@ -99,7 +111,7 @@ private fun ai.january.partner.transport.models.FoodLog.toPublic() = FoodLog(
             consumedServing = ConsumedServing(food.serving.id, food.quantity?.toDouble()),
             servingDetails = ServingDetails(
                 food.serving.id,
-                food.serving.quantity?.toDouble(),
+                food.serving.quantity.toDouble(),
                 food.serving.unit,
                 food.serving.weightGrams?.toDouble(),
             ),
@@ -137,7 +149,7 @@ private fun ai.january.partner.transport.models.FoodLogSummary.toPublic() = Food
 
 private fun ai.january.partner.transport.models.NutritionFacts.toPublic(): NutritionFacts {
     fun ai.january.partner.transport.models.NutrientAmount?.amount(): NutrientAmount? =
-        this?.let { NutrientAmount(it.value.toDouble(), it.unit) }
+        this?.let { NutrientAmount(it.value.toDouble(), it.unit.value) }
     return NutritionFacts(
         calories.amount(), protein.amount(), carbohydrates.amount(), netCarbohydrates.amount(),
         totalFat.amount(), transFat.amount(), saturatedFat.amount(), fiber.amount(),

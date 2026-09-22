@@ -13,6 +13,15 @@ import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
 import ai.january.partner.glucose.Gender
+import ai.january.partner.glucose.Weight
+import ai.january.partner.glucose.WeightUnit
+import ai.january.partner.waterlogs.CreateWaterLogRequest
+import ai.january.partner.waterlogs.DeleteWaterLogRequest
+import ai.january.partner.waterlogs.ListWaterLogsRequest
+import ai.january.partner.waterlogs.VolumeUnit
+import ai.january.partner.waterlogs.WaterAmount
+import ai.january.partner.weightlogs.CreateWeightLogRequest
+import ai.january.partner.weightlogs.ListWeightLogsRequest
 import ai.january.partner.glucose.GlucosePredictionProfile
 import ai.january.partner.glucose.PredictGlucoseRequest
 import ai.january.partner.models.FoodSelection
@@ -58,6 +67,7 @@ public class PublicSurfaceTest {
             envelope, envelope, envelope, photo, photo, foodLog, envelope,
             foodLog, foodLog, "",
             """{"points":[{"minutes":0,"value":100}],"impact_score":"low","chart":{"min":70,"max":140}}""",
+            waterLog, """{"items":[]}""", "", weightLog, """{"items":[]}""",
         )
         responses.forEach { body ->
             server.enqueue(MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(body))
@@ -104,7 +114,13 @@ public class PublicSurfaceTest {
             ),
         )
 
-        val paths = List(17) { server.takeRequest().requestUrl!!.encodedPath }
+        val water = client.waterLogs.create(CreateWaterLogRequest(WaterAmount(8.0, VolumeUnit.FL_OZ), user = user))
+        client.waterLogs.list(ListWaterLogsRequest("2026-08-21", "2026-08-23", VolumeUnit.FL_OZ, user))
+        client.waterLogs.delete(DeleteWaterLogRequest(water.id, user))
+        client.weightLogs.create(CreateWeightLogRequest(Weight(150.0, WeightUnit.POUNDS), user = user))
+        client.weightLogs.list(ListWeightLogsRequest("2026-08-21", "2026-08-23", user))
+
+        val paths = List(22) { server.takeRequest().requestUrl!!.encodedPath }
         assertEquals(
             listOf(
                 "/v1.2/foods/autocomplete", "/v1.2/foods/1", "/v1.2/foods",
@@ -114,6 +130,8 @@ public class PublicSurfaceTest {
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001",
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001",
                 "/v1.2/food-logs/00000000-0000-0000-0000-000000000001", "/v1.2/glucose/predictions",
+                "/v1.2/water-logs", "/v1.2/water-logs", "/v1.2/water-logs/9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607",
+                "/v1.2/weight-logs", "/v1.2/weight-logs",
             ),
             paths,
         )
@@ -124,5 +142,7 @@ public class PublicSurfaceTest {
         const val foodItem = """{"id":"1","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":null,"servings":[{"id":"2","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
         const val photo = """{"meal_name":"Fixture meal","total_nutrients":{},"detections":[]}"""
         const val foodLog = """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"eaten_at":"2026-08-22T12:00:00Z","name":"Fixture"}"""
+        const val waterLog = """{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":8,"unit":"fl_oz"},"consumed_at":"2026-08-22T12:00:00.000Z"}"""
+        const val weightLog = """{"weight":{"value":150,"unit":"lb"},"measured_at":"2026-08-22T12:00:00.000Z"}"""
     }
 }

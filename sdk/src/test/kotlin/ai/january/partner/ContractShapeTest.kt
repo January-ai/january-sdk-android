@@ -2,6 +2,7 @@ package ai.january.partner
 
 import ai.january.partner.foodlogs.FoodLogSummaryGrouping
 import ai.january.partner.foodlogs.GetFoodLogSummaryRequest
+import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foodlogs.WeekStart
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
@@ -69,6 +70,39 @@ class ContractShapeTest {
         assertTrue(sent, sent.contains(""""quantity":2.0"""))
         assertTrue(sent, sent.contains(""""serving":{"id":"34073350","quantity":1.0,"unit":"large"}"""))
         assertTrue(sent, !sent.contains("servings"))
+        // The prior scan goes back field for field inside the correction wrapper.
+        assertTrue(sent, sent.startsWith(""""analysis":{"detections":[{"food":{"name":"eggs","id":"70382174","quantity":2.0,""".let { "{$it" }))
+        assertTrue(sent, sent.endsWith(""","instruction":"make it two eggs"}"""))
+        assertTrue(sent, sent.contains(""""total_nutrients":{"calories":{"value":206.8,"unit":"kcal"}"""))
+    }
+
+    @Test
+    fun correctionKeepsTheServingWeightItWasGiven(): Unit = runBlocking {
+        enqueue(TEXT_ANALYSIS.replace(""""unit": "large"}""", """"unit": "large", "weight_grams": 50}"""))
+        enqueue(TEXT_ANALYSIS)
+        val scan = client.foodAnalysis.analyzeDescription(SearchFoodsByNaturalLanguageRequest("three eggs"))
+        assertEquals(50.0, scan.detections.single().food.serving.weightGrams!!, 0.0)
+        server.takeRequest()
+
+        client.foodAnalysis.correct(CorrectPhotoScanRequest(scan, "make it two eggs"))
+
+        val sent = server.takeRequest().body.readUtf8()
+        assertTrue(sent, sent.contains(""""serving":{"id":"34073350","quantity":1.0,"unit":"large","weight_grams":50.0}"""))
+    }
+
+    @Test
+    fun foodLogUpdateSendsOnlyTheFieldsSetAndRejectsAnEmptyPatch(): Unit = runBlocking {
+        enqueue("""{"id":"78129823-8ba2-4183-b13b-71f0e963c606","foods":[],"eaten_at":"2026-09-13T11:34:56Z","name":"Lunch"}""")
+        val user = PartnerUserContext(PartnerUserId("fixture-user"), "America/Chicago")
+
+        client.foodLogs.update(UpdateFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", name = "Lunch", user = user))
+        assertEquals("""{"name":"Lunch"}""", server.takeRequest().body.readUtf8())
+
+        val failure = runCatching {
+            client.foodLogs.update(UpdateFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", user = user))
+        }.exceptionOrNull() as JanuaryException
+        assertEquals(ErrorCategory.VALIDATION, failure.category)
+        assertEquals(1, server.requestCount)
     }
 
     @Test

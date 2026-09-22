@@ -10,6 +10,10 @@ import ai.january.partner.transport.apis.FoodsApi
 import ai.january.partner.transport.apis.GlucoseApi
 import ai.january.partner.transport.apis.PhotoScanningApi
 import ai.january.partner.transport.apis.RestaurantsApi
+import ai.january.partner.transport.apis.WaterLogsApi
+import ai.january.partner.transport.apis.WeightLogsApi
+import ai.january.partner.waterlogs.WaterLogsResource
+import ai.january.partner.weightlogs.WeightLogsResource
 import ai.january.partner.transport.infrastructure.ApiClient
 import java.time.Duration
 import java.time.Instant
@@ -30,6 +34,8 @@ public class JanuaryPartnerClient private constructor(
     public val foodAnalysis: FoodAnalysisResource
     public val foodLogs: FoodLogsResource
     public val glucose: GlucoseResource
+    public val waterLogs: WaterLogsResource
+    public val weightLogs: WeightLogsResource
 
     @Deprecated(
         message = "Local development only. Use withClientTokenProvider in production.",
@@ -63,6 +69,8 @@ public class JanuaryPartnerClient private constructor(
         foodAnalysis = FoodAnalysisResource(foodAnalysisApi)
         foodLogs = FoodLogsResource(apiClient.createService(FoodLogsApi::class.java))
         glucose = GlucoseResource(apiClient.createService(GlucoseApi::class.java))
+        waterLogs = WaterLogsResource(apiClient.createService(WaterLogsApi::class.java))
+        weightLogs = WeightLogsResource(apiClient.createService(WeightLogsApi::class.java))
     }
 
     /** Returns a lightweight client that reuses the supplied partner-owned identity. */

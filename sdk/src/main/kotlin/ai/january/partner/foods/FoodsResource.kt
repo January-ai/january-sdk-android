@@ -188,7 +188,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
 
 private fun ai.january.partner.transport.models.NutritionFacts.toPublicNutrition(): NutritionFacts {
     fun ai.january.partner.transport.models.NutrientAmount?.amount(): NutrientAmount? =
-        this?.let { NutrientAmount(it.value.toDouble(), it.unit) }
+        this?.let { NutrientAmount(it.value.toDouble(), it.unit.value) }
     return NutritionFacts(
         calories = calories.amount(), protein = protein.amount(),
         carbohydrates = carbohydrates.amount(), netCarbohydrates = netCarbohydrates.amount(),
@@ -203,7 +203,7 @@ private fun ai.january.partner.transport.models.NutritionFacts.toPublicNutrition
 private fun ai.january.partner.transport.models.NutritionFacts.toPublicCompleteNutrition():
     ai.january.partner.models.CompleteScanNutritionFacts {
     fun ai.january.partner.transport.models.NutrientAmount?.amount(): NutrientAmount? =
-        this?.let { NutrientAmount(it.value.toDouble(), it.unit) }
+        this?.let { NutrientAmount(it.value.toDouble(), it.unit.value) }
     return ai.january.partner.models.CompleteScanNutritionFacts(
         calories = calories.amount(), protein = protein.amount(),
         carbohydrates = carbohydrates.amount(), netCarbohydrates = netCarbohydrates.amount(),
