@@ -63,7 +63,9 @@ import ai.january.partner.foodlogs.LoggedFood
 import ai.january.partner.glucose.Weight
 import ai.january.partner.glucose.WeightUnit
 import ai.january.partner.models.NutrientAmount
+import ai.january.partner.waterlogs.DailyWaterTotal
 import ai.january.partner.waterlogs.VolumeUnit
+import ai.january.partner.weightlogs.DailyWeight
 import ai.january.partner.waterlogs.Volume
 import ai.january.partner.waterlogs.WaterAmount
 import java.time.LocalDate
@@ -72,6 +74,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -115,6 +121,18 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     var weightSaving by remember { mutableStateOf(false) }
     var weightError by remember { mutableStateOf<Throwable?>(null) }
     var lastWeightLogged by remember { mutableStateOf<Weight?>(null) }
+
+    // The history charts always end today, whichever day the day picker shows.
+    var waterRange by rememberSaveable { mutableStateOf(ChartRange.WEEK) }
+    var waterHistory by remember { mutableStateOf<List<DailyWaterTotal>?>(null) }
+    var waterHistoryLoading by remember { mutableStateOf(false) }
+    var waterHistoryError by remember { mutableStateOf<Throwable?>(null) }
+    var waterHistoryJob by remember { mutableStateOf<Job?>(null) }
+    var weightRange by rememberSaveable { mutableStateOf(ChartRange.WEEK) }
+    var weightHistory by remember { mutableStateOf<List<DailyWeight>?>(null) }
+    var weightHistoryLoading by remember { mutableStateOf(false) }
+    var weightHistoryError by remember { mutableStateOf<Throwable?>(null) }
+    var weightHistoryJob by remember { mutableStateOf<Job?>(null) }
 
     /** Entries logged for a day other than today are dated noon, local time, so they land on that day. */
     fun entryTimestamp(): String? = if (isToday) null else selectedDay.atTime(12, 0).atZone(zone).toOffsetDateTime().toString()
@@ -186,6 +204,47 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
         }
     }
 
+    fun loadWaterHistory() {
+        val sdk = userClient ?: return
+        val span = chartSpan(waterRange, today)
+        val unit = waterUnit
+        waterHistoryJob?.cancel()
+        waterHistoryLoading = true
+        waterHistoryError = null
+        waterHistoryJob = coroutineScope.launch {
+            try {
+                waterHistory = fetchInChunks(span, { it.date }) { chunk -> sdk.waterLogs.list(chunk.start.toString(), chunk.end.toString(), unit).items }
+                waterHistoryLoading = false
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                waterHistory = null
+                waterHistoryError = failure
+                waterHistoryLoading = false
+            }
+        }
+    }
+
+    fun loadWeightHistory() {
+        val sdk = userClient ?: return
+        val span = chartSpan(weightRange, today)
+        weightHistoryJob?.cancel()
+        weightHistoryLoading = true
+        weightHistoryError = null
+        weightHistoryJob = coroutineScope.launch {
+            try {
+                weightHistory = fetchInChunks(span, { it.date }) { chunk -> sdk.weightLogs.list(chunk.start.toString(), chunk.end.toString()).items }
+                weightHistoryLoading = false
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                weightHistory = null
+                weightHistoryError = failure
+                weightHistoryLoading = false
+            }
+        }
+    }
+
     fun load() {
         loadFoodLogs()
         loadSummary()
@@ -204,6 +263,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 lastWaterLogId = log.id
                 lastWaterLogged = log.amount
                 loadWater()
+                loadWaterHistory()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -225,6 +285,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 lastWaterLogId = null
                 lastWaterLogged = null
                 loadWater()
+                loadWaterHistory()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -244,6 +305,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
             try {
                 lastWeightLogged = sdk.weightLogs.create(Weight(value, weightUnit), entryTimestamp()).weight
                 loadWeight()
+                loadWeightHistory()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -271,6 +333,14 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
         if (userClient != null) load()
     }
     LaunchedEffect(waterUnit) { if (userClient != null) loadWater() }
+    LaunchedEffect(userContext, client, waterRange, waterUnit) {
+        waterHistory = null
+        if (userClient != null) loadWaterHistory()
+    }
+    LaunchedEffect(userContext, client, weightRange) {
+        weightHistory = null
+        if (userClient != null) loadWeightHistory()
+    }
 
     if (selectedLog != null && userContext != null && client != null) {
         FoodLogDetailScreen(
@@ -295,7 +365,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     ) {
         androidx.compose.material3.pulltorefresh.PullToRefreshBox(
             isRefreshing = loading,
-            onRefresh = ::load,
+            onRefresh = { load(); loadWaterHistory(); loadWeightHistory() },
             modifier = Modifier.fillMaxSize(),
         ) {
             DemoScreen {
@@ -373,9 +443,20 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                 if (lastWaterLogId != null) {
                                     DemoSecondaryButton("Delete last water log", ::deleteLastWater, Modifier.fillMaxWidth().testTag("water-delete-last"))
                                 }
+                                val waterSpan = chartSpan(waterRange, today)
+                                val bars = waterHistory?.let { items ->
+                                    waterBars(waterRange, waterSpan, items.associate { LocalDate.parse(it.date) to it.total.value })
+                                }
+                                TrackingChartSection(
+                                    idPrefix = "water-chart", range = waterRange, onRange = { waterRange = it },
+                                    loading = waterHistoryLoading && waterHistory == null, failed = waterHistoryError != null,
+                                    isEmpty = bars == null || bars.none { it.value > 0 }, emptyText = "No water logged in this range",
+                                    headline = bars?.let { "${formatChartNumber(it.sumOf { bar -> bar.value })} ${waterUnit.label()} total" },
+                                ) { WaterBarChart(bars.orEmpty(), waterRange, waterUnit.label()) }
                             }
                         }
                         waterError?.let { ErrorCard(it, ::loadWater, testTag = "water-error", retryTestTag = "water-retry") }
+                        waterHistoryError?.let { ErrorCard(it, ::loadWaterHistory, testTag = "water-chart-error", retryTestTag = "water-chart-retry") }
 
                         SectionLabel("Weight")
                         DemoCard(Modifier.testTag("weight-card")) {
@@ -401,9 +482,18 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                 lastWeightLogged?.let {
                                     Text("Logged ${formatLogNumber(it.value)} ${it.unit.value}", Modifier.testTag("weight-logged"), color = JanuaryColors.Green, fontWeight = FontWeight.SemiBold)
                                 }
+                                val weightSpan = chartSpan(weightRange, today)
+                                val points = weightHistory?.let { items -> weightPoints(items.map { LocalDate.parse(it.date) to it.weight }, weightUnit) }.orEmpty()
+                                TrackingChartSection(
+                                    idPrefix = "weight-chart", range = weightRange, onRange = { weightRange = it },
+                                    loading = weightHistoryLoading && weightHistory == null, failed = weightHistoryError != null,
+                                    isEmpty = points.isEmpty(), emptyText = "No weight logged in this range",
+                                    headline = points.lastOrNull()?.let { "Latest ${formatChartNumber(it.value)} ${weightUnit.value}" },
+                                ) { WeightLineChart(points, weightSpan, weightRange, weightUnit.value) }
                             }
                         }
                         weightError?.let { ErrorCard(it, ::loadWeight, testTag = "weight-error", retryTestTag = "weight-retry") }
+                        weightHistoryError?.let { ErrorCard(it, ::loadWeightHistory, testTag = "weight-chart-error", retryTestTag = "weight-chart-retry") }
                     }
                     if (client == null) AuthenticationRequiredCard()
                 }
@@ -460,7 +550,7 @@ private fun <T> UnitRow(label: String, options: List<T>, selected: T, text: (T) 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.weight(1f))
-        SegmentedControl(options, selected, text, onSelect, Modifier.width(if (options.size > 2) 210.dp else 170.dp), testTag)
+        SegmentedControl(options, selected, text, onSelect, Modifier.width(if (options.size > 2) 210.dp else 170.dp), testTag = testTag)
     }
 }
 
@@ -482,4 +572,12 @@ private fun VolumeUnit.label(): String = when (this) {
     VolumeUnit.FL_OZ -> "fl oz"
     VolumeUnit.ML -> "ml"
     VolumeUnit.CUP -> "cup"
+}
+
+/**
+ * Fetches [span] in consecutive chunks the list endpoints can answer in full (each returns at
+ * most 100 days), all at once, and joins the results oldest first.
+ */
+private suspend fun <T> fetchInChunks(span: DateSpan, date: (T) -> String, fetch: suspend (DateSpan) -> List<T>): List<T> = coroutineScope {
+    mergeChunks(requestChunks(span).map { chunk -> async { fetch(chunk) } }.awaitAll(), date)
 }

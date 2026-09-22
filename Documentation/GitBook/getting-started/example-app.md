@@ -5,6 +5,13 @@ hydrated food servings, photo and barcode scanning, restaurants, food logs,
 a per-day tracking view (food logs with totals, water, and weight), glucose
 prediction, user context, and imperial/metric inputs.
 
+The Tracking tab also charts the user's history, always ending today: daily
+water totals as bars and weight as a line, each with a Week / Month / Year
+switch. A Year of water shows one bar per calendar month. Weights appear in the
+unit selected on the card, whatever unit they were logged in. The list endpoints
+return at most 100 days per call, so the demo fetches a year in consecutive
+chunks of 90 days and joins them, a pattern you can reuse for longer ranges.
+
 Install Android Studio with Android SDK 36 and JDK 17. Android Studio normally
 creates `local.properties` with `sdk.dir`; command-line users can set
 `ANDROID_HOME` instead.
