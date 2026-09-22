@@ -356,7 +356,11 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                     )
                                 }
                                 UnitRow("Amount", VolumeUnit.entries, waterUnit, { it.label() }, { waterUnit = it }) {
-                                    if (it == VolumeUnit.FL_OZ) "water-unit-fl-oz" else "water-unit-ml"
+                                    when (it) {
+                                        VolumeUnit.FL_OZ -> "water-unit-fl-oz"
+                                        VolumeUnit.ML -> "water-unit-ml"
+                                        VolumeUnit.CUP -> "water-unit-cup"
+                                    }
                                 }
                                 LogNumberField(waterText, { waterText = it }, "water-amount")
                                 DemoPrimaryButton(
@@ -456,7 +460,7 @@ private fun <T> UnitRow(label: String, options: List<T>, selected: T, text: (T) 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.weight(1f))
-        SegmentedControl(options, selected, text, onSelect, Modifier.width(170.dp), testTag)
+        SegmentedControl(options, selected, text, onSelect, Modifier.width(if (options.size > 2) 210.dp else 170.dp), testTag)
     }
 }
 
@@ -474,4 +478,8 @@ private fun LogNumberField(value: String, onValueChange: (String) -> Unit, testT
     )
 }
 
-private fun VolumeUnit.label(): String = if (this == VolumeUnit.FL_OZ) "fl oz" else "ml"
+private fun VolumeUnit.label(): String = when (this) {
+    VolumeUnit.FL_OZ -> "fl oz"
+    VolumeUnit.ML -> "ml"
+    VolumeUnit.CUP -> "cup"
+}

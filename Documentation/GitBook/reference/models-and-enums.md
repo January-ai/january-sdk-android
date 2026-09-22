@@ -33,7 +33,7 @@ serving when the catalog knows it.
 
 ## Water and weight logs
 
-* `VolumeUnit`: `FL_OZ`, `ML`
+* `VolumeUnit`: `FL_OZ`, `ML`, `CUP` (a US cup, 8 fl oz)
 
 `WaterAmount(value, unit: VolumeUnit)` is the input to a water log and the
 amount stored on a `WaterLog`; `Volume(value, unit)` is a daily total in the

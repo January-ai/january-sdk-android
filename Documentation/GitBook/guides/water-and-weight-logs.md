@@ -13,7 +13,8 @@ val user = client.forUser(
 
 ## Water
 
-Log one amount at a time, in fluid ounces or milliliters. Keep the returned
+Log one amount at a time, in fluid ounces, milliliters, or cups (1 cup =
+8 fl oz). Keep the returned
 `id` if the user may undo the entry:
 
 ```kotlin

@@ -5,8 +5,8 @@ project uses Semantic Versioning.
 
 ## [Unreleased]
 
-- Added water logs: `waterLogs.create` records an amount in `VolumeUnit.FL_OZ`
-  or `VolumeUnit.ML` (the API caps an end user at 24 L per day and answers
+- Added water logs: `waterLogs.create` records an amount in `VolumeUnit.FL_OZ`,
+  `VolumeUnit.ML`, or `VolumeUnit.CUP` (the API caps an end user at 24 L per day and answers
   `daily_water_limit_exceeded`), `waterLogs.list` returns one `DailyWaterTotal`
   per local day in the unit you ask for, and `waterLogs.delete` removes an
   entry. The scoped client exposes `user.waterLogs`.

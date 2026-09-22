@@ -7,6 +7,9 @@ import com.squareup.moshi.Json
 public enum class VolumeUnit(public val value: String) {
     @Json(name = "fl_oz") FL_OZ("fl_oz"),
     @Json(name = "ml") ML("ml"),
+
+    /** A US cup: 8 fl oz. */
+    @Json(name = "cup") CUP("cup"),
     ;
 
     public companion object {
@@ -16,8 +19,8 @@ public enum class VolumeUnit(public val value: String) {
 }
 
 /**
- * An amount of water: 1–811.5 fl oz or 30–24,000 ml. An end user's total is
- * capped at 24 L (about 811 fl oz) per day.
+ * An amount of water: 1–811.5 fl oz, 0.125–101.4 cups (1 cup = 8 fl oz), or
+ * 30–24,000 ml. An end user's total is capped at 24 L (about 811 fl oz) per day.
  */
 public data class WaterAmount(public val value: Double, public val unit: VolumeUnit)
 

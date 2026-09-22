@@ -5,6 +5,7 @@ import ai.january.partner.glucose.WeightUnit
 import ai.january.partner.waterlogs.CreateWaterLogRequest
 import ai.january.partner.waterlogs.DeleteWaterLogRequest
 import ai.january.partner.waterlogs.ListWaterLogsRequest
+import ai.january.partner.waterlogs.Volume
 import ai.january.partner.waterlogs.VolumeUnit
 import ai.january.partner.waterlogs.WaterAmount
 import ai.january.partner.weightlogs.CreateWeightLogRequest
@@ -63,6 +64,22 @@ public class WaterAndWeightLogsResourceTest {
         client.waterLogs.create(CreateWaterLogRequest(WaterAmount(250.0, VolumeUnit.ML), user = user))
 
         assertEquals("""{"amount":{"value":250.0,"unit":"ml"}}""", server.takeRequest().body.readUtf8())
+    }
+
+    @Test
+    public fun waterLogsSendAndDecodeCups(): Unit = runBlocking {
+        enqueue("""{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":0.5,"unit":"cup"},"consumed_at":"2026-09-10T14:30:15.123Z"}""", 201)
+        enqueue("""{"items":[{"date":"2026-09-10","total":{"value":8.5,"unit":"cup"}}]}""")
+
+        val log = client.waterLogs.create(CreateWaterLogRequest(WaterAmount(0.5, VolumeUnit.CUP), user = user))
+        val days = client.waterLogs.list(ListWaterLogsRequest("2026-09-10", "2026-09-10", VolumeUnit.CUP, user)).items
+
+        assertEquals("""{"amount":{"value":0.5,"unit":"cup"}}""", server.takeRequest().body.readUtf8())
+        assertEquals("cup", server.takeRequest().requestUrl!!.queryParameter("unit"))
+        assertEquals(WaterAmount(0.5, VolumeUnit.CUP), log.amount)
+        assertEquals(Volume(8.5, VolumeUnit.CUP), days.single().total)
+        assertEquals(listOf("fl_oz", "ml", "cup"), VolumeUnit.entries.map { it.value })
+        assertEquals(VolumeUnit.CUP, VolumeUnit.fromValue("cup"))
     }
 
     @Test

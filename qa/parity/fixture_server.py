@@ -48,7 +48,8 @@ def log(name='Fixture breakfast'):
  f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
  return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at=seeded_eaten_at(),foods=[f])
 ML_PER_FL_OZ=29.5735
-def volume(ml,unit):return dict(value=round(ml/ML_PER_FL_OZ if unit=='fl_oz' else ml,1),unit=unit)
+ML_PER_UNIT=dict(fl_oz=ML_PER_FL_OZ,cup=8*ML_PER_FL_OZ,ml=1)
+def volume(ml,unit):return dict(value=round(ml/ML_PER_UNIT.get(unit,1),1),unit=unit)
 def stamp(value):
  # Any ISO-8601 offset in, UTC with milliseconds out, like the API.
  if value:
@@ -98,7 +99,7 @@ class Handler(BaseHTTPRequestHandler):
   elif path.endswith('/food-analysis/text'):result=dict(meal_name=None,detections=[] if empty else [dict(food=detected(),confidence=None)],total_nutrients=NUTRIENTS)
   elif '/water-logs' in path:
    if self.command=='POST':
-    amount=body.get('amount',{});ml=float(amount.get('value',0))*(ML_PER_FL_OZ if amount.get('unit')=='fl_oz' else 1)
+    amount=body.get('amount',{});ml=float(amount.get('value',0))*ML_PER_UNIT.get(amount.get('unit'),1)
     result=dict(id=str(__import__('uuid').uuid4()),amount=dict(value=amount.get('value'),unit=amount.get('unit')),consumed_at=stamp(body.get('consumed_at')))
     state['water'].append(dict(id=result['id'],ml=ml,consumed_at=result['consumed_at']));return self.respond(result,201)
    if self.command=='DELETE':

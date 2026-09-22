@@ -61,8 +61,8 @@ suspend fun list(start: String, end: String, unit: VolumeUnit): ListWaterLogsRes
 suspend fun delete(id: String): DeleteWaterLogResponse
 ```
 
-`WaterAmount(value, unit)` is 1–811.5 `VolumeUnit.FL_OZ` or 30–24000
-`VolumeUnit.ML`; an end user's total is capped at 24 L per day. `consumedAt`
+`WaterAmount(value, unit)` is 1–811.5 `VolumeUnit.FL_OZ`, 0.125–101.4
+`VolumeUnit.CUP`, or 30–24000 `VolumeUnit.ML`; an end user's total is capped at 24 L per day. `consumedAt`
 is an ISO-8601 offset date-time and defaults to now. `WaterLog` contains `id`,
 `amount` (as logged), and `consumedAt` in UTC. `list` returns `items`, one
 `DailyWaterTotal(date, total: Volume)` per local calendar day that has water
