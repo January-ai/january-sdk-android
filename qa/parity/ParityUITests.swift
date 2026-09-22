@@ -73,7 +73,7 @@ final class ParityUITests: XCTestCase {
         control("/v1.2/food-analysis/image");tap("Try again");wait("Fixture breakfast");capture("scan-result");tap("Correct result");capture("correction-initial")
     }
     func testLogs() {
-        tab("Food Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
+        tab("Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
         control("/v1.2/food-logs",status:500,delay:4);tap("Refresh food logs");capture("logs-loading");wait("January couldn’t complete the request");reveal("Try again");capture("logs-error")
         control("/v1.2/food-logs");request("/__seed");tap("Try again");wait("Fixture breakfast");reveal("Fixture breakfast");capture("logs-results");tap("Fixture breakfast");capture("log-detail");tap("Edit");capture("log-edit");tap("Close food log editor")
     }
@@ -91,7 +91,7 @@ final class ParityUITests: XCTestCase {
         control("/v1.2/restaurants");tap("Search nearby");wait("Fixture Cafe");tap("Fixture Cafe");wait("Fixture bowl");capture("restaurant-detail");tap("Fixture bowl");capture("menu-detail")
     }
     func testLogMutationErrors() {
-        tab("Food Logs");tap("Add food log");capture("log-new");tap("Add first food");addFood()
+        tab("Logs");tap("Add food log");capture("log-new");tap("Add first food");addFood()
         control("/v1.2/food-logs",status:500,delay:4);tap("Save food log");capture("log-save-loading");wait("January couldn’t complete the request");reveal("Try again");capture("log-save-error")
         control("/v1.2/food-logs");tap("Try again");wait("Fixture breakfast");tap("Fixture breakfast");tap("Edit");tap("Update food log");wait("Food logs");tap("Fixture breakfast")
         tap("Delete food log");capture("log-delete-confirmation")
@@ -137,7 +137,7 @@ final class ParityUITests: XCTestCase {
         tap("Restaurants");app.textFields["Restaurant name"].tap();app.textFields["Restaurant name"].typeText("Fixture Cafe")
         control("/v1.2/restaurants",status:500,delay:4);tap("Search nearby");capture("restaurants-loading");wait("January couldn’t complete the request");reveal("Try again");capture("restaurants-error")
         tab("Scan");tap("Sample meal");control("/v1.2/food-analysis/image",status:500,delay:4);tap("Analyze meal");capture("scan-loading");wait("January couldn’t complete the request");reveal("Try again");capture("scan-error")
-        tab("Food Logs");reveal("Refresh food logs");control("/v1.2/food-logs",status:500,delay:4);tap("Refresh food logs");capture("logs-loading");wait("January couldn’t complete the request");reveal("Try again");capture("logs-error")
+        tab("Logs");reveal("Refresh food logs");control("/v1.2/food-logs",status:500,delay:4);tap("Refresh food logs");capture("logs-loading");wait("January couldn’t complete the request");reveal("Try again");capture("logs-error")
     }
 
 }
