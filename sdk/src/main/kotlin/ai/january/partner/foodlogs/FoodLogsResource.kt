@@ -149,7 +149,7 @@ private fun ai.january.partner.transport.models.FoodLogSummary.toPublic() = Food
 
 private fun ai.january.partner.transport.models.NutritionFacts.toPublic(): NutritionFacts {
     fun ai.january.partner.transport.models.NutrientAmount?.amount(): NutrientAmount? =
-        this?.let { NutrientAmount(it.value.toDouble(), it.unit.value) }
+        this?.let { NutrientAmount(it.value.toDouble(), it.unit) }
     return NutritionFacts(
         calories.amount(), protein.amount(), carbohydrates.amount(), netCarbohydrates.amount(),
         totalFat.amount(), transFat.amount(), saturatedFat.amount(), fiber.amount(),
