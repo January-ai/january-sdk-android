@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.Weight
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,19 +31,19 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
- * @param unit
+ * @param weight
+ * @param measuredAt When the weight was measured — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now.
  */
 
 
-internal data class Weight (
+internal data class CreateWeightLogBody (
 
-    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
-    @Json(name = "value")
-    val `value`: java.math.BigDecimal,
+    @Json(name = "weight")
+    val weight: Weight,
 
-    @Json(name = "unit")
-    val unit: kotlin.String
+    /* When the weight was measured — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now. */
+    @Json(name = "measured_at")
+    val measuredAt: java.time.OffsetDateTime? = null
 
 ) {
 

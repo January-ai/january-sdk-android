@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.CorrectionFood
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,19 +31,19 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
- * @param unit
+ * @param confidence How sure the vision model is of this detection. Null on text analyses and on corrected results.
+ * @param food
  */
 
 
-internal data class Weight (
+internal data class CorrectionDetection (
 
-    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
-    @Json(name = "value")
-    val `value`: java.math.BigDecimal,
+    /* How sure the vision model is of this detection. Null on text analyses and on corrected results. */
+    @Json(name = "confidence")
+    val confidence: kotlin.String?,
 
-    @Json(name = "unit")
-    val unit: kotlin.String
+    @Json(name = "food")
+    val food: CorrectionFood
 
 ) {
 

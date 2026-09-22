@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.DailyWeight
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,19 +31,15 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
- * @param unit
+ * @param items One entry per day that has a weight, oldest first. Days with no weight are absent. An empty list is a valid result.
  */
 
 
-internal data class Weight (
+internal data class ListWeightLogsResponse (
 
-    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
-    @Json(name = "value")
-    val `value`: java.math.BigDecimal,
-
-    @Json(name = "unit")
-    val unit: kotlin.String
+    /* One entry per day that has a weight, oldest first. Days with no weight are absent. An empty list is a valid result. */
+    @Json(name = "items")
+    val items: kotlin.collections.List<DailyWeight>
 
 ) {
 

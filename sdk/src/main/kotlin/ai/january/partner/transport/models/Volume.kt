@@ -30,14 +30,14 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
+ * @param `value` Rounded to one decimal place.
  * @param unit
  */
 
 
-internal data class Weight (
+internal data class Volume (
 
-    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
+    /* Rounded to one decimal place. */
     @Json(name = "value")
     val `value`: java.math.BigDecimal,
 

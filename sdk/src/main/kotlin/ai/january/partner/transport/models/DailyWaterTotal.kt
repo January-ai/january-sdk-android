@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.Volume
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,19 +31,19 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
- * @param unit
+ * @param date Local calendar date in the request’s `timezone`.
+ * @param total
  */
 
 
-internal data class Weight (
+internal data class DailyWaterTotal (
 
-    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
-    @Json(name = "value")
-    val `value`: java.math.BigDecimal,
+    /* Local calendar date in the request’s `timezone`. */
+    @Json(name = "date")
+    val date: java.time.LocalDate,
 
-    @Json(name = "unit")
-    val unit: kotlin.String
+    @Json(name = "total")
+    val total: Volume
 
 ) {
 

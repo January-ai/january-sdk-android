@@ -37,7 +37,7 @@ import com.squareup.moshi.JsonClass
  */
 
 
-internal data class ServingSummary (
+internal data class CorrectionServing (
 
     /* Catalog serving id. Pass it back as serving_id when logging this food. */
     @Json(name = "id")
@@ -53,7 +53,7 @@ internal data class ServingSummary (
 
     /* Weight in grams of this serving definition. For food analysis and food logs this is one catalog serving, not the consumed portion: consumed grams = food.quantity × food.serving.weight_grams. Null when unknown. */
     @Json(name = "weight_grams")
-    val weightGrams: java.math.BigDecimal?
+    val weightGrams: java.math.BigDecimal? = null
 
 ) {
 

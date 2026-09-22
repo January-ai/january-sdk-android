@@ -27,7 +27,7 @@ internal interface FoodLogsApi {
      *  - 0: Any other error: the HTTP status plus { code, message }. Retry only rate_limited and the transient 5xx codes.
      *
      * @param createFoodLogBody
-     * @param januaryEndUserID Your stable ID for the end user whose food logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
+     * @param januaryEndUserID Your stable ID for the end user whose logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
      * @return [FoodLog]
      */
     @POST("v1.2/food-logs")
@@ -46,7 +46,7 @@ internal interface FoodLogsApi {
      *  - 0: Any other error: the HTTP status plus { code, message }. Retry only rate_limited and the transient 5xx codes.
      *
      * @param logId The log id returned when the log was created.
-     * @param januaryEndUserID Your stable ID for the end user whose food logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
+     * @param januaryEndUserID Your stable ID for the end user whose logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
      * @return [Unit]
      */
     @DELETE("v1.2/food-logs/{log_id}")
@@ -66,7 +66,7 @@ internal interface FoodLogsApi {
      *  - 0: Any other error: the HTTP status plus { code, message }. Retry only rate_limited and the transient 5xx codes.
      *
      * @param logId The log id returned when the log was created.
-     * @param januaryEndUserID Your stable ID for the end user whose food logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
+     * @param januaryEndUserID Your stable ID for the end user whose logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
      * @return [FoodLog]
      */
     @GET("v1.2/food-logs/{log_id}")
@@ -108,8 +108,8 @@ internal interface FoodLogsApi {
      *
      * @param startDate First local calendar date in &#x60;timezone&#x60;, inclusive.
      * @param endDate Last local calendar date in &#x60;timezone&#x60;, inclusive. May equal start_date for a single day. The inclusive range may not exceed 366 calendar days.
-     * @param timezone IANA timezone that defines the local calendar days this range covers. Required: without it the days would be cut in UTC, which silently shifts a meal near midnight into the wrong day for anyone not on UTC.
-     * @param januaryEndUserID Your stable ID for the end user whose food logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
+     * @param timezone IANA timezone that defines the local calendar days this range covers. Required: without it the days would be cut in UTC, which silently shifts anything logged near midnight into the wrong day for anyone not on UTC.
+     * @param januaryEndUserID Your stable ID for the end user whose logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
      * @param groupBy Bucket size. &#x60;day&#x60; is one bucket per local calendar date; &#x60;week&#x60; is one per week, with the first and last clipped to the range. (optional, default to GroupBy.DAY)
      * @param weekStart Which weekday a week bucket begins on. Ignored when &#x60;group_by&#x3D;day&#x60;, where the response reports &#x60;week_start: null&#x60;. (optional, default to WeekStart.MONDAY)
      * @return [FoodLogSummary]
@@ -131,8 +131,8 @@ internal interface FoodLogsApi {
      *
      * @param startDate First local calendar date in &#x60;timezone&#x60;, inclusive.
      * @param endDate Last local calendar date in &#x60;timezone&#x60;, inclusive. May equal start_date for a single day. The inclusive range may not exceed 60 calendar days.
-     * @param timezone IANA timezone that defines the local calendar days this range covers. Required: without it the days would be cut in UTC, which silently shifts a meal near midnight into the wrong day for anyone not on UTC.
-     * @param januaryEndUserID Your stable ID for the end user whose food logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
+     * @param timezone IANA timezone that defines the local calendar days this range covers. Required: without it the days would be cut in UTC, which silently shifts anything logged near midnight into the wrong day for anyone not on UTC.
+     * @param januaryEndUserID Your stable ID for the end user whose logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
      * @return [ListFoodLogsResponse]
      */
     @GET("v1.2/food-logs")
@@ -153,7 +153,7 @@ internal interface FoodLogsApi {
      *
      * @param logId The log id returned when the log was created.
      * @param updateFoodLogBody
-     * @param januaryEndUserID Your stable ID for the end user whose food logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
+     * @param januaryEndUserID Your stable ID for the end user whose logs this request reads or writes. Opaque to January — use the same ID your system already uses for them.  | Credential | Header | Result | | --- | --- | --- | | API key (&#x60;sk-…&#x60;) | absent | &#x60;400 end_user_id_required&#x60; | | API key (&#x60;sk-…&#x60;) | present | the request acts on that end user | | Client token (&#x60;ct-…&#x60;) | absent | filled in from the token | | Client token (&#x60;ct-…&#x60;) | the end user the token is bound to | accepted | | Client token (&#x60;ct-…&#x60;) | any other end user | &#x60;403 end_user_id_mismatch&#x60; | (optional)
      * @return [FoodLog]
      */
     @PATCH("v1.2/food-logs/{log_id}")

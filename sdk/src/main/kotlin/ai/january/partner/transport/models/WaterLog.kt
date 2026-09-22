@@ -23,6 +23,7 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.WaterAmount
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -30,19 +31,24 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
- * @param unit
+ * @param id Save this id to delete the log.
+ * @param amount
+ * @param consumedAt When the water was consumed. UTC, with milliseconds.
  */
 
 
-internal data class Weight (
+internal data class WaterLog (
 
-    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
-    @Json(name = "value")
-    val `value`: java.math.BigDecimal,
+    /* Save this id to delete the log. */
+    @Json(name = "id")
+    val id: kotlin.String,
 
-    @Json(name = "unit")
-    val unit: kotlin.String
+    @Json(name = "amount")
+    val amount: WaterAmount,
+
+    /* When the water was consumed. UTC, with milliseconds. */
+    @Json(name = "consumed_at")
+    val consumedAt: java.time.OffsetDateTime
 
 ) {
 

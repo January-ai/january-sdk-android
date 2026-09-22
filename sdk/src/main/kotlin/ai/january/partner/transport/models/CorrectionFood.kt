@@ -23,8 +23,8 @@
 
 package ai.january.partner.transport.models
 
+import ai.january.partner.transport.models.CorrectionServing
 import ai.january.partner.transport.models.NutritionFacts
-import ai.january.partner.transport.models.ServingSummary
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -36,12 +36,12 @@ import com.squareup.moshi.JsonClass
  * @param brandName Null for generic (non-branded) foods.
  * @param id Matched catalog food id. Pass it back as food_id when logging this food.
  * @param quantity Positive number of selected catalog servings consumed. Use it unchanged as food-log quantity. Display the consumed amount as food.quantity × food.serving.quantity, followed by food.serving.unit: 4 × 0.5 cup = 2 cups; 0.4 × 100 g = 40 g. Nutrients already describe this consumed portion; do not multiply them again.
- * @param serving
  * @param nutrients
+ * @param serving
  */
 
 
-internal data class DetectedFood (
+internal data class CorrectionFood (
 
     /* Null only when the producer sent a food with no name. */
     @Json(name = "name")
@@ -59,11 +59,11 @@ internal data class DetectedFood (
     @Json(name = "quantity")
     val quantity: java.math.BigDecimal,
 
-    @Json(name = "serving")
-    val serving: ServingSummary,
-
     @Json(name = "nutrients")
-    val nutrients: NutritionFacts
+    val nutrients: NutritionFacts,
+
+    @Json(name = "serving")
+    val serving: CorrectionServing
 
 ) {
 

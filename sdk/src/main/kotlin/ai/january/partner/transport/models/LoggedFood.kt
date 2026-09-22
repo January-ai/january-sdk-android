@@ -24,7 +24,7 @@
 package ai.january.partner.transport.models
 
 import ai.january.partner.transport.models.NutritionFacts
-import ai.january.partner.transport.models.ServingDetails
+import ai.january.partner.transport.models.ServingSummary
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -39,7 +39,7 @@ import com.squareup.moshi.JsonClass
  * @param glycemicIndex
  * @param glycemicLoad
  * @param nutrients
- * @param quantity How many of the serving below were consumed. Null only when the upstream sent no consumed quantity.
+ * @param quantity Number of selected servings consumed. Consumed amount = food.quantity × food.serving.quantity, in food.serving.unit (4 × 0.5 cup = 2 cups). Nutrients are already scaled to this portion. Null when unavailable.
  * @param serving
  */
 
@@ -70,12 +70,12 @@ internal data class LoggedFood (
     @Json(name = "nutrients")
     val nutrients: NutritionFacts,
 
-    /* How many of the serving below were consumed. Null only when the upstream sent no consumed quantity. */
+    /* Number of selected servings consumed. Consumed amount = food.quantity × food.serving.quantity, in food.serving.unit (4 × 0.5 cup = 2 cups). Nutrients are already scaled to this portion. Null when unavailable. */
     @Json(name = "quantity")
     val quantity: java.math.BigDecimal?,
 
     @Json(name = "serving")
-    val serving: ServingDetails
+    val serving: ServingSummary
 
 ) {
 
