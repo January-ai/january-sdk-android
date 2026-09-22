@@ -22,6 +22,7 @@
 * [Photo and barcode scanning](guides/photo-scanning.md)
 * [Voice capture](guides/voice-capture.md)
 * [Food logs](guides/food-logs.md)
+* [Water and weight logs](guides/water-and-weight-logs.md)
 * [Glucose prediction](guides/glucose-prediction.md)
 
 ## Reference
@@ -29,7 +30,7 @@
 * [Client and authentication API](reference/client-and-resources.md)
 * [Foods API](reference/foods-api.md)
 * [Restaurants and scanning API](reference/discovery-and-scanning-api.md)
-* [Food Logs and Glucose API](reference/user-resources-api.md)
+* [Food, Water and Weight Logs and Glucose API](reference/user-resources-api.md)
 * [Models and enums](reference/models-and-enums.md)
 * [Retries and token lifecycle](reference/retries-and-lifecycle.md)
 * [Error handling](reference/error-handling.md)

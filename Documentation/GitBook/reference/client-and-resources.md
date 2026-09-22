@@ -38,12 +38,15 @@ or token endpoint URL. The generated OpenAPI transport is internal.
 | `foods` | `autocomplete`, `search`, `get`, `lookupBarcode`, `suggestAlternatives` |
 | `restaurants` | `search`, `searchMenuItems`, `getMenuItems` |
 | `foodAnalysis` | `analyzePhoto`, `analyzeDescription`, `correct` |
-| `foodLogs` | `create`, `list`, `update`, `delete` |
+| `foodLogs` | `create`, `list`, `getSummary`, `update`, `delete` |
+| `waterLogs` | `create`, `list`, `delete` |
+| `weightLogs` | `create`, `list` |
 | `glucose` | `predict` |
 
 `forUser(PartnerUserId, timezone)` returns a lightweight
 `JanuaryPartnerUserClient`. Its `foods`, `restaurants`, `foodAnalysis`,
-`foodLogs`, and `glucose` wrappers apply one `PartnerUserContext`. Set the user
+`foodLogs`, `waterLogs`, `weightLogs`, and `glucose` wrappers apply one
+`PartnerUserContext`. Set the user
 once, then use the scoped client for every operation. All network operations are
 `suspend` functions.
 

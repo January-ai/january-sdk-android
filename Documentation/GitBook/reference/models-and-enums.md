@@ -27,6 +27,20 @@ input accepted by Food Logs and Glucose.
 * `WeekStart`: `MONDAY`, `SUNDAY`
 * `AnalysisEffort`: `NONE`, `XHIGH`
 
+`ServingSummary(id, quantity, unit, weightGrams)` is the catalog serving
+attached to a detected or alternative food; `weightGrams` is the weight of one
+serving when the catalog knows it.
+
+## Water and weight logs
+
+* `VolumeUnit`: `FL_OZ`, `ML`
+
+`WaterAmount(value, unit: VolumeUnit)` is the input to a water log and the
+amount stored on a `WaterLog`; `Volume(value, unit)` is a daily total in the
+requested unit. Weight logs reuse the glucose profile's `Weight(value, unit:
+WeightUnit)`. A unit this SDK version does not know is reported as
+`ErrorCategory.DECODING`.
+
 ## Glucose profile
 
 ```kotlin

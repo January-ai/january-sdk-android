@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Water logs (`waterLogs.create`, `list`, `delete`) and weight logs (`weightLogs.create`, `list`) per end user, with daily totals and latest daily weights
+* `ServingSummary.weightGrams`, the weight of one catalog serving
+* Corrections send the prior scan in the API's new request shape; `foodLogs.update` rejects an empty patch before any network call
 * Breaking: `DetectedFood` exposes `serving` and `quantity` instead of `servings`, matching the current Partner API; `0.1.x` fails to decode photo scans
 * Food-log summaries per day or week with `foodLogs.getSummary`
 * Optional reasoning-based photo analysis with `ScanFoodPhotoRequest.reasoningEffort`

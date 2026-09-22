@@ -3,6 +3,30 @@
 All notable changes to the January SDK for Android are documented here. This
 project uses Semantic Versioning.
 
+## [Unreleased]
+
+- Added water logs: `waterLogs.create` records an amount in `VolumeUnit.FL_OZ`
+  or `VolumeUnit.ML` (the API caps an end user at 24 L per day and answers
+  `daily_water_limit_exceeded`), `waterLogs.list` returns one `DailyWaterTotal`
+  per local day in the unit you ask for, and `waterLogs.delete` removes an
+  entry. The scoped client exposes `user.waterLogs`.
+- Added weight logs: `weightLogs.create` records a `Weight` in pounds or
+  kilograms and `weightLogs.list` returns the latest `DailyWeight` per local
+  day. The scoped client exposes `user.weightLogs`.
+- `ServingSummary` gains `weightGrams`, the weight of one catalog serving; the
+  API now returns it on scans, alternatives, and logged foods.
+- `foodAnalysis.correct` sends the prior scan in the API's new correction
+  request shape. Nothing changes for callers: pass back the `FoodScan` you
+  received.
+- `foodLogs.update` throws `JanuaryException` (`ErrorCategory.VALIDATION`)
+  when nothing is set to change; the API rejects an empty patch. Only the
+  fields you set are sent.
+- Client tokens can carry the `water_logs:read`, `water_logs:write`,
+  `weight_logs:read`, and `weight_logs:write` scopes; a backend token endpoint
+  that mints least-privilege tokens must add them for these operations.
+- Regenerated the internal transport from the refreshed contract (water and
+  weight logs, correction request shape, serving weights, integer profile age).
+
 ## [0.2.2] - Unreleased
 
 - Voice capture waits two seconds of silence before ending a capture (the

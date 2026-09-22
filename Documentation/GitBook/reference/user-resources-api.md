@@ -1,7 +1,8 @@
-# Food Logs and Glucose API
+# Food, Water and Weight Logs and Glucose API
 
 Prefer `client.forUser(...)` so one identity and timezone are reused across all
-SDK resources, including the Food Logs and Glucose operations documented here.
+SDK resources, including the Food Logs, Water Logs, Weight Logs, and Glucose
+operations documented here.
 
 ## Scoped Food Logs
 
@@ -51,6 +52,44 @@ suspend fun delete(request: DeleteFoodLogRequest): DeleteFoodLogResponse
 
 Each request requires `user: PartnerUserContext`; other fields match the scoped
 signatures.
+
+## Scoped Water Logs
+
+```kotlin
+suspend fun create(amount: WaterAmount, consumedAt: String? = null): WaterLog
+suspend fun list(start: String, end: String, unit: VolumeUnit): ListWaterLogsResponse
+suspend fun delete(id: String): DeleteWaterLogResponse
+```
+
+`WaterAmount(value, unit)` is 1–811.5 `VolumeUnit.FL_OZ` or 30–24000
+`VolumeUnit.ML`; an end user's total is capped at 24 L per day. `consumedAt`
+is an ISO-8601 offset date-time and defaults to now. `WaterLog` contains `id`,
+`amount` (as logged), and `consumedAt` in UTC. `list` returns `items`, one
+`DailyWaterTotal(date, total: Volume)` per local calendar day that has water
+logged, oldest first, in the requested `unit`, rounded to one decimal place.
+`delete` succeeds for an unknown or already-deleted log too. The unscoped
+`client.waterLogs` takes `CreateWaterLogRequest`, `ListWaterLogsRequest`, and
+`DeleteWaterLogRequest`, each with `user: PartnerUserContext`.
+
+## Scoped Weight Logs
+
+```kotlin
+suspend fun create(weight: Weight, measuredAt: String? = null): WeightLog
+suspend fun list(start: String, end: String): ListWeightLogsResponse
+```
+
+`Weight(value, unit)` is 10–1000 `WeightUnit.POUNDS` or 4.5–453.6
+`WeightUnit.KILOGRAMS`, stored and returned in the unit it was sent in.
+`measuredAt` is an ISO-8601 offset date-time and defaults to now. `WeightLog`
+contains `weight` and `measuredAt` in UTC. `list` returns `items`, one
+`DailyWeight(date, weight)` per local calendar day that has a weight, oldest
+first; when several were logged on one day, the latest by `measuredAt` is
+returned. The unscoped `client.weightLogs` takes `CreateWeightLogRequest` and
+`ListWeightLogsRequest`, each with `user: PartnerUserContext`.
+
+For both, `start` and `end` are inclusive `YYYY-MM-DD` dates in the scoped
+timezone and at most five years back (`date_range_too_large` otherwise); when
+more than 100 days in the range have entries, the most recent 100 are returned.
 
 ## Glucose
 
