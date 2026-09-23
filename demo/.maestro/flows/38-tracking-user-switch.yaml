@@ -121,10 +121,12 @@ tags:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/water-logs
-- runFlow:
-    file: ../scroll-to.yaml
-    env:
-      TARGET_ID: water-log
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: UP
+    centerElement: true
+    timeout: 15000
 - extendedWaitUntil:
     notVisible:
       id: water-loading

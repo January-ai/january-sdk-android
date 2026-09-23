@@ -64,9 +64,11 @@ tags:
       TARGET_ID: water-delete-last
 - tapOn:
     id: water-delete-last
-- extendedWaitUntil:
-    visible:
+# The day's total sits at the top of the water card, above the button.
+- scrollUntilVisible:
+    element:
       id: water-empty
+    direction: UP
     timeout: 15000
 - runFlow:
     file: ../scroll-to.yaml
