@@ -63,7 +63,7 @@ internal fun FoodLogEditorSheet(
     val coroutineScope = rememberCoroutineScope()
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
     // Times are shown and chosen in the end user's timezone, the one their days are grouped by.
-    val zone = remember(user.timezone) { user.timezone?.let { runCatching { java.time.ZoneId.of(it) }.getOrNull() } ?: java.time.ZoneId.systemDefault() }
+    val zone = remember(user.timezone) { userZone(user.timezone) }
     var timestamp by remember(existing, zone) {
         mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it).atZoneSameInstant(zone).toOffsetDateTime() }.getOrNull() } ?: initialTimestamp ?: OffsetDateTime.now(zone))
     }

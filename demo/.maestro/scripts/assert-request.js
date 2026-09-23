@@ -10,6 +10,7 @@
 //         METHOD: POST
 //         FIELD: body.amount.value
 //         VALUE: "16"               # JSON: 16, "cup", ["type_2_diabetes"], ...
+//         # or, instead of VALUE, MATCHES: a regular expression the field's text must match
 // Maestro runs this on the host; override with -e FIXTURE_CONTROL=... when the
 // fixture server listens elsewhere.
 const control = typeof FIXTURE_CONTROL === 'string' && FIXTURE_CONTROL ? FIXTURE_CONTROL : 'http://127.0.0.1:18766';
@@ -28,7 +29,13 @@ let actual = matching[matching.length - 1];
 FIELD.split('.').forEach(function (key) {
   actual = actual === null || actual === undefined ? undefined : actual[key];
 });
-const expected = JSON.stringify(JSON.parse(VALUE));
-if (JSON.stringify(actual) !== expected) {
-  throw new Error('The last request to ' + ROUTE + ' sent ' + FIELD + ' = ' + JSON.stringify(actual) + ', not ' + expected);
+if (typeof MATCHES === 'string' && MATCHES) {
+  if (typeof actual !== 'string' || !new RegExp(MATCHES).test(actual)) {
+    throw new Error('The last request to ' + ROUTE + ' sent ' + FIELD + ' = ' + JSON.stringify(actual) + ', which does not match ' + MATCHES);
+  }
+} else {
+  const expected = JSON.stringify(JSON.parse(VALUE));
+  if (JSON.stringify(actual) !== expected) {
+    throw new Error('The last request to ' + ROUTE + ' sent ' + FIELD + ' = ' + JSON.stringify(actual) + ', not ' + expected);
+  }
 }

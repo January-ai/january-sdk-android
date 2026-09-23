@@ -92,13 +92,14 @@ import kotlinx.coroutines.launch
 fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifier = Modifier) {
     val client = state.client
     val coroutineScope = rememberCoroutineScope()
-    val zone = remember(state.timezone) { runCatching { ZoneId.of(state.timezone) }.getOrDefault(ZoneId.systemDefault()) }
-    // Today in the user's timezone, moving on at midnight while the screen stays open.
-    val today by produceState(LocalDate.now(zone), zone) {
+    val zone = remember(state.timezone) { userZone(state.timezone) }
+    // Today in the user's timezone, moving on at midnight while the screen stays open. A change of
+    // user or timezone starts the screen afresh (see JanuaryDemoApp), on that zone's today.
+    val today by produceState(userToday(zone), zone) {
         while (true) {
             val now = ZonedDateTime.now(zone)
             delay(Duration.between(now, now.toLocalDate().plusDays(1).atStartOfDay(zone)).toMillis() + 1_000)
-            value = LocalDate.now(zone)
+            value = userToday(zone)
         }
     }
     var day by rememberSaveable { mutableStateOf(today.toString()) }

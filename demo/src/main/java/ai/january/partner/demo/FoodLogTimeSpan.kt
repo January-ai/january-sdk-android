@@ -9,10 +9,8 @@ enum class FoodLogTimeSpan(val title: String) {
     CURRENT_WEEK("This week"),
     LAST_MONTH("Last month");
 
-    fun dateRange(timezone: String, instant: java.time.Instant = java.time.Instant.now()): FoodLogDateRange {
-        val zone = runCatching { java.time.ZoneId.of(timezone) }.getOrDefault(java.time.ZoneId.systemDefault())
-        return dateRange(instant.atZone(zone).toLocalDate())
-    }
+    fun dateRange(timezone: String, instant: java.time.Instant = java.time.Instant.now()): FoodLogDateRange =
+        dateRange(userToday(userZone(timezone), instant))
 
     fun dateRange(referenceDate: LocalDate = LocalDate.now()): FoodLogDateRange = when (this) {
         TODAY -> FoodLogDateRange(referenceDate, referenceDate)

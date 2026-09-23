@@ -17,6 +17,10 @@ import android.app.Activity
  * own per-user client-token path instead of the stub: it asks the fixture
  * server's token route for a token for each end user, as it would a token
  * relay, so a suite can check which user each token was minted for.
+ *
+ * `januaryFixtureTimezone` sets the end user's timezone (America/New_York
+ * otherwise), so a suite can put the user's calendar day away from the
+ * device's.
  */
 internal fun fixtureStateFromIntent(activity: Activity): DemoState? {
     val origin = activity.intent?.getStringExtra(FIXTURE_ORIGIN_EXTRA)?.trim().orEmpty()
@@ -34,11 +38,13 @@ internal fun fixtureStateFromIntent(activity: Activity): DemoState? {
         )
         DemoState(activity.applicationContext, client)
     }
+    val timezone = activity.intent?.getStringExtra(FIXTURE_TIMEZONE_EXTRA)?.trim().orEmpty().ifEmpty { "America/New_York" }
     return state.apply {
         endUserId = "parity-user"
-        timezone = "America/New_York"
+        this.timezone = timezone
     }
 }
 
 private const val FIXTURE_ORIGIN_EXTRA = "januaryFixtureOrigin"
 private const val FIXTURE_CLIENT_TOKENS_EXTRA = "januaryFixtureClientTokens"
+private const val FIXTURE_TIMEZONE_EXTRA = "januaryFixtureTimezone"

@@ -28,7 +28,9 @@ tokens instead: it mints them from the fixture server's
 `/api/january/client-token`, as it would from a token relay, and the fixture
 server keeps each end user's food logs, water and weights apart by token, like
 the API (see flows 38 and 39). With the stub token everything belongs to one
-shared user. On a physical device, forward the port
+shared user. The end user's timezone is America/New_York unless the launch sets
+`januaryFixtureTimezone` (flow 42 puts it at UTC-11 or UTC+14, away from the
+device's). On a physical device, forward the port
 and point both sides at it:
 
 ```bash
@@ -43,7 +45,8 @@ food log, for `USER` when set), `seed-history.js` (about 13 months of water and 
 and `reset-fixture.js`, which the bootstrap runs first so no flow
 inherits another's configuration. `assert-request.js` checks what the demo
 sent: a field of its latest request to a route, from the query, the JSON body,
-its `auth` header or its `end_user` header. The fixture suggests foods only for queries starting with "ban", so
+its `auth` header or its `end_user` header, equal to a JSON `VALUE` or matching a
+`MATCHES` pattern. `zone-day.js` works out a day on a fixed-offset clock. The fixture suggests foods only for queries starting with "ban", so
 typing anything else never opens the suggestion list.
 
 ## Conventions
@@ -148,7 +151,7 @@ Other settings, each passed with `-e`:
 ## In CI
 
 `.github/workflows/quality.yml` runs `scripts/ui-coverage.mjs`, builds the APK
-once, then `ui-test-android` runs four shards (41 fixture and parity flows,
+once, then `ui-test-android` runs four shards (42 fixture and parity flows,
 dealt round-robin by `shard.mjs`) through
 `.github/scripts/android-ui-suite.sh`. Failed flows are
 rerun once and named in a workflow warning; each shard uploads its JUnit report

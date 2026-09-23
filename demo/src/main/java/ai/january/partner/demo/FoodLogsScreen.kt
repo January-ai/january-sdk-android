@@ -66,7 +66,7 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     val coroutineScope = rememberCoroutineScope()
     var span by remember { mutableStateOf(FoodLogTimeSpan.CURRENT_WEEK) }
     val range = span.dateRange(timezone = state.timezone)
-    val zone = remember(state.timezone) { runCatching { java.time.ZoneId.of(state.timezone) }.getOrDefault(java.time.ZoneId.systemDefault()) }
+    val zone = remember(state.timezone) { userZone(state.timezone) }
     var logs by remember { mutableStateOf<List<FoodLog>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Throwable?>(null) }
@@ -237,7 +237,7 @@ internal fun FoodLogDetailScreen(
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Text(log.name?.takeIf(String::isNotBlank) ?: "Meal", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                Text(localLogDate(log.timestampUtc, user.timezone?.let { runCatching { java.time.ZoneId.of(it) }.getOrNull() } ?: java.time.ZoneId.systemDefault()), color = JanuaryColors.Muted)
+                Text(localLogDate(log.timestampUtc, userZone(user.timezone)), color = JanuaryColors.Muted)
                 log.foods.forEach { LoggedFoodCard(it) }
                 Column {
                     Row(Modifier.fillMaxWidth().clickable { showTechnicalDetails = !showTechnicalDetails }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
