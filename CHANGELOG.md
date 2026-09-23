@@ -5,6 +5,17 @@ project uses Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-23
+
+- 0.3.0's food, water, and weight logs don't work with the current API —
+  upgrade to 0.3.1.
+- Fixed food, water, and weight logs: the Partner API now names their
+  timestamp `created_at` in requests and responses (it was `eaten_at`,
+  `consumed_at`, and `measured_at`). The SDK sends and reads `created_at` and
+  keeps its own names, so no code changes are needed: `timestampUtc` on food
+  logs, `consumedAt` on water logs, and `measuredAt` on weight logs.
+- A water log in `VolumeUnit.CUP` takes 0.1–101.4 cups.
+
 ## [0.3.0] - 2026-09-23
 
 - Breaking: `AlternativeFood.id`, `ServingOption.id`, `RestaurantMenuEntry.id`,
