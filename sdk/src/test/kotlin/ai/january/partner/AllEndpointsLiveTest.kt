@@ -213,14 +213,17 @@ public class AllEndpointsLiveTest {
             createdWaterLogId?.let { id -> runCatching { client.waterLogs.delete(DeleteWaterLogRequest(id, user)) } }
         }
 
+        // The API cannot delete a weight, so the measurement goes to an end user of its own for this
+        // run, never into the configured user's history.
+        val weightUser = FoodLogUserContext(PartnerUserId("${userId.value}-weight-${UUID.randomUUID()}"), TIMEZONE)
         val weight = client.weightLogs.create(
-            CreateWeightLogRequest(Weight(175.0, WeightUnit.POUNDS), OffsetDateTime.now(ZoneOffset.UTC).toString(), user),
+            CreateWeightLogRequest(Weight(175.0, WeightUnit.POUNDS), OffsetDateTime.now(ZoneOffset.UTC).toString(), weightUser),
         )
         assertEquals(175.0, weight.weight.value, 0.0)
         pass("weightLogs.create")
 
         val weightDays = client.weightLogs.list(
-            ListWeightLogsRequest(today.minusDays(1).toString(), today.plusDays(1).toString(), user),
+            ListWeightLogsRequest(today.minusDays(1).toString(), today.plusDays(1).toString(), weightUser),
         )
         assertTrue(weightDays.items.any { it.weight.unit == WeightUnit.POUNDS })
         pass("weightLogs.list")
