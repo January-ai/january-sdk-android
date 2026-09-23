@@ -90,6 +90,12 @@ tags:
     direction: UP
 - tapOn:
     id: settings-button
+# On a shorter screen the timezone row starts below the fold of the sheet.
+- scrollUntilVisible:
+    element:
+      text: Timezone
+    direction: DOWN
+    timeout: 15000
 - tapOn: Timezone
 - tapOn: Africa/Abidjan
 - tapOn:

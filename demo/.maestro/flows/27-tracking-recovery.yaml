@@ -140,11 +140,18 @@ tags:
       TARGET_ID: weight-log
 - tapOn:
     id: weight-log
+# Look for the card's title, not the card: the card can first show as a sliver
+# at the bottom of the screen. With its retry button in view, the whole card is,
+# and it has no "may have been saved" note.
 - scrollUntilVisible:
     element:
-      id: weight-error
+      text: Too many requests
     direction: DOWN
     timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-retry
 - assertVisible: Too many requests
 - assertNotVisible: "The weight may have been saved anyway.*"
 - runScript:
@@ -152,10 +159,6 @@ tags:
     env:
       ROUTE: /v1.2/weight-logs
       STATUS: "200"
-- runFlow:
-    file: ../scroll-to.yaml
-    env:
-      TARGET_ID: weight-retry
 - tapOn:
     id: weight-retry
     retryTapIfNoChange: true
@@ -212,6 +215,13 @@ tags:
     element:
       text: "The water may have been saved anyway.*"
     direction: DOWN
+    timeout: 15000
+# Back at the log button, where the Logged line and Delete last would sit below it.
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: UP
+    centerElement: true
     timeout: 15000
 - assertNotVisible:
     id: water-delete-last
