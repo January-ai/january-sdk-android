@@ -26,6 +26,10 @@ project uses Semantic Versioning.
   that mints least-privilege tokens must add them for these operations.
 - Regenerated the internal transport from the refreshed contract (water and
   weight logs, correction request shape, serving weights, integer profile age).
+- `glucose.predict` throws `JanuaryException` (`ErrorCategory.VALIDATION`) for
+  a fractional `GlucosePredictionProfile.age`; the API takes whole years.
+- `foodAnalysis.correct` leaves out a hand-built detection without a serving
+  size instead of sending one serving.
 - Demo: a new Tracking tab shows one day at a time, with the day's food logs and
   nutrient totals, water total, and weight, each with a log action. The Food
   Logs tab is now Logs.

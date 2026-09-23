@@ -1,5 +1,7 @@
 package ai.january.partner.glucose
 
+import ai.january.partner.ErrorCategory
+import ai.january.partner.JanuaryException
 import ai.january.partner.bridgeModel
 import ai.january.partner.executeApiCall
 import ai.january.partner.transport.apis.GlucoseApi
@@ -11,6 +13,12 @@ import java.math.BigDecimal
 
 public class GlucoseResource internal constructor(private val api: GlucoseApi) {
     public suspend fun predict(request: PredictGlucoseRequest): GlucosePrediction {
+        // The API takes age as whole years; a fractional value cannot be sent, so it is rejected here
+        // as a validation error rather than failing while the request is built.
+        val age = request.userProfile.age
+        if (age.isNaN() || age.isInfinite() || age % 1.0 != 0.0) {
+            throw JanuaryException(ErrorCategory.VALIDATION, "Age must be a whole number of years.")
+        }
         val body = PredictGlucoseBody(
             userProfile = bridgeModel(request.userProfile),
             timezone = request.timezone ?: "UTC",

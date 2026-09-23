@@ -80,8 +80,6 @@ import kotlinx.coroutines.launch
 
 private val GoldText = androidx.compose.ui.graphics.Color(0xFF6E5613)
 
-internal fun numericText(value: String): String = value.filter { it.isDigit() || it == '.' }
-
 @Composable
 internal fun FormSection(title: String, detail: String? = null, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

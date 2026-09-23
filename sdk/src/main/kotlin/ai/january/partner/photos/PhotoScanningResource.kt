@@ -83,10 +83,11 @@ private fun ai.january.partner.transport.models.FoodScan.toPublic() = FoodScan(
 
 /**
  * A correction sends the prior scan back field for field. Every detection the
- * API returned carries a food id, a serving id, and a quantity; one that lacks
- * them (only possible for a hand-built value) cannot be expressed in the
- * correction request and is left out, like the API leaves out detections it
- * cannot size. Describe such a food in the instruction instead.
+ * API returned carries a food id, a serving id and size, and a quantity; one
+ * that lacks any of them (only possible for a hand-built value) cannot be
+ * expressed in the correction request and is left out, like the API leaves out
+ * detections it cannot size. Nothing is filled in on its behalf. Describe such
+ * a food in the instruction instead.
  */
 private fun FoodScan.toTransport() = CorrectionAnalysis(
     mealName = mealName,
@@ -94,6 +95,7 @@ private fun FoodScan.toTransport() = CorrectionAnalysis(
     detections = detections.mapNotNull { detection ->
         val foodId = detection.food.id ?: return@mapNotNull null
         val servingId = detection.food.serving.id ?: return@mapNotNull null
+        val servingQuantity = detection.food.serving.quantity ?: return@mapNotNull null
         val quantity = detection.food.quantity ?: return@mapNotNull null
         CorrectionDetection(
             confidence = detection.confidenceScore,
@@ -104,7 +106,7 @@ private fun FoodScan.toTransport() = CorrectionAnalysis(
                 nutrients = bridgeModel(detection.food.nutrients),
                 serving = CorrectionServing(
                     id = servingId,
-                    quantity = java.math.BigDecimal.valueOf(detection.food.serving.quantity ?: 1.0),
+                    quantity = java.math.BigDecimal.valueOf(servingQuantity),
                     unit = detection.food.serving.unit,
                     weightGrams = detection.food.serving.weightGrams?.let(java.math.BigDecimal::valueOf),
                 ),

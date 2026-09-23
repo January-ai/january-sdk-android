@@ -4,12 +4,24 @@ import ai.january.partner.foodlogs.FoodLogSummaryGrouping
 import ai.january.partner.foodlogs.GetFoodLogSummaryRequest
 import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foodlogs.WeekStart
+import ai.january.partner.foods.DetectedFood
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
+import ai.january.partner.foods.ServingSummary
+import ai.january.partner.glucose.GlucosePredictionProfile
+import ai.january.partner.glucose.Height
+import ai.january.partner.glucose.HeightUnit
+import ai.january.partner.glucose.PredictGlucoseRequest
+import ai.january.partner.glucose.Sex
+import ai.january.partner.glucose.Weight
+import ai.january.partner.glucose.WeightUnit
+import ai.january.partner.models.CompleteScanNutritionFacts
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
 import ai.january.partner.models.FoodSelection
 import ai.january.partner.models.ServingSelection
 import ai.january.partner.photos.AnalysisEffort
 import ai.january.partner.photos.CorrectPhotoScanRequest
+import ai.january.partner.photos.FoodDetection
+import ai.january.partner.photos.FoodScan
 import ai.january.partner.photos.ScanFoodPhotoRequest
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -88,6 +100,48 @@ class ContractShapeTest {
 
         val sent = server.takeRequest().body.readUtf8()
         assertTrue(sent, sent.contains(""""serving":{"id":"34073350","quantity":1.0,"unit":"large","weight_grams":50.0}"""))
+    }
+
+    @Test
+    fun correctionLeavesOutADetectionWithoutAServingSize(): Unit = runBlocking {
+        enqueue(TEXT_ANALYSIS)
+        fun detection(id: String, servingQuantity: Double?) = FoodDetection(
+            DetectedFood(
+                id = id,
+                name = "food $id",
+                brandName = null,
+                nutrients = CompleteScanNutritionFacts(),
+                serving = ServingSummary("11", servingQuantity, "cup"),
+                quantity = 2.0,
+            ),
+        )
+        val scan = FoodScan("Meal", CompleteScanNutritionFacts(), listOf(detection("1", 0.5), detection("2", null)))
+
+        client.foodAnalysis.correct(CorrectPhotoScanRequest(scan, "make it one cup"))
+
+        val sent = server.takeRequest().body.readUtf8()
+        assertTrue(sent, sent.contains(""""id":"1""""))
+        assertTrue(sent, sent.contains(""""serving":{"id":"11","quantity":0.5,"unit":"cup"}"""))
+        // No serving size is invented for the second food: it is left out.
+        assertTrue(sent, !sent.contains(""""id":"2""""))
+    }
+
+    @Test
+    fun glucosePredictionRejectsAFractionalAgeBeforeSending(): Unit = runBlocking {
+        fun request(age: Double) = PredictGlucoseRequest(
+            userProfile = GlucosePredictionProfile(age, Sex.FEMALE, Height(66.0, HeightUnit.INCHES), Weight(150.0, WeightUnit.POUNDS)),
+            foods = listOf(FoodSelection("70382174", ServingSelection("34073350", 1.0))),
+            startTime = java.time.OffsetDateTime.parse("2026-09-22T12:00:00-04:00"),
+        )
+
+        val failure = runCatching { client.glucose.predict(request(35.5)) }.exceptionOrNull()
+        assertTrue(failure.toString(), failure is JanuaryException)
+        assertEquals(ErrorCategory.VALIDATION, (failure as JanuaryException).category)
+        assertEquals(0, server.requestCount)
+
+        enqueue("""{"points":[{"minutes":0,"value":90}],"impact_score":"low","chart":{"min":70,"max":140}}""")
+        client.glucose.predict(request(35.0))
+        assertTrue(server.takeRequest().body.readUtf8().contains(""""age":35"""))
     }
 
     @Test
