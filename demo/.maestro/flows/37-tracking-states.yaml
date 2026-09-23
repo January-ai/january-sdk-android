@@ -71,18 +71,18 @@ tags:
     file: ../scroll-to.yaml
     env:
       TARGET_ID: water-amount
-- runFlow:
-    file: ../clear-field.yaml
-    env:
-      FIELD_ID: water-amount
-- inputText: "2"
-- pressKey: Enter
 - tapOn:
     id: water-unit-cup
 - extendedWaitUntil:
     visible:
       id: water-empty
     timeout: 15000
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: water-amount
+- inputText: "2"
+- pressKey: Enter
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -209,6 +209,12 @@ tags:
 - runFlow:
     file: ../scroll-to.yaml
     env:
+      TARGET_ID: weight-unit-lb
+- tapOn:
+    id: weight-unit-lb
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
       TARGET_ID: weight-value
 - runFlow:
     file: ../clear-field.yaml
@@ -216,12 +222,6 @@ tags:
       FIELD_ID: weight-value
 - inputText: "160.5"
 - pressKey: Enter
-- runFlow:
-    file: ../scroll-to.yaml
-    env:
-      TARGET_ID: weight-unit-lb
-- tapOn:
-    id: weight-unit-lb
 # A slow save and reload show the day's spinner.
 - runScript:
     file: ../scripts/control-fixture.js

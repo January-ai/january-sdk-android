@@ -151,8 +151,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     var weightHistoryError by remember { mutableStateOf<Throwable?>(null) }
     var weightHistoryJob by remember { mutableStateOf<Job?>(null) }
 
-    /** Entries logged for a day other than today are dated noon, local time, so they land on that day. */
-    fun entryTimestamp(forDay: LocalDate): String? = if (forDay == today) null else forDay.atTime(12, 0).atZone(zone).toOffsetDateTime().toString()
+    fun entryTimestamp(forDay: LocalDate): String = entryTime(forDay, zone).toString()
 
     fun loadFoodLogs() {
         loadJob?.cancel()
@@ -496,7 +495,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                         fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
                                     )
                                 }
-                                UnitRow("Amount", VolumeUnit.entries, waterUnit, { it.label() }, { waterUnit = it }) {
+                                UnitRow("Amount", VolumeUnit.entries, waterUnit, { it.label() }, { waterText = convertWaterDraft(waterText, waterUnit, it); waterUnit = it }) {
                                     when (it) {
                                         VolumeUnit.FL_OZ -> "water-unit-fl-oz"
                                         VolumeUnit.ML -> "water-unit-ml"
@@ -542,7 +541,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                         fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
                                     )
                                 }
-                                UnitRow("Weight", WeightUnit.entries, weightUnit, { it.value }, { weightUnit = it }) {
+                                UnitRow("Weight", WeightUnit.entries, weightUnit, { it.value }, { weightText = convertWeightDraft(weightText, weightUnit, it); weightUnit = it }) {
                                     if (it == WeightUnit.POUNDS) "weight-unit-lb" else "weight-unit-kg"
                                 }
                                 LogNumberField(weightText, { weightText = it }, "weight-value")

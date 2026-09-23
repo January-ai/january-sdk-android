@@ -1,0 +1,116 @@
+appId: ai.january.partner.demo
+name: Tracking - switching the unit converts the typed amount, and the converted amount is logged
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- tapOn:
+    id: tab-tracking
+# Water: 250 typed in ml becomes 8.5 fl oz (1 fl oz = 29.5735 ml), and 8.5 fl oz
+# is what gets logged.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: water-amount
+- inputText: "250"
+- pressKey: Enter
+- tapOn:
+    id: water-unit-fl-oz
+- assertVisible:
+    id: water-amount
+    text: "8\\.5"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible: Logged 8.5 fl oz
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      METHOD: POST
+      FIELD: body.amount.value
+      VALUE: "8.5"
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      METHOD: POST
+      FIELD: body.amount.unit
+      VALUE: '"fl_oz"'
+# Cups hold 8 fl oz each, to one decimal.
+- scrollUntilVisible:
+    element:
+      id: water-unit-cup
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- tapOn:
+    id: water-unit-cup
+- assertVisible:
+    id: water-amount
+    text: "1\\.1"
+# Weight: the prefilled 150 lb becomes 68 kg (1 lb = 0.45359237 kg), and 68 kg is
+# what gets logged.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-kg
+- tapOn:
+    id: weight-unit-kg
+- assertVisible:
+    id: weight-value
+    text: "68"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 15000
+- assertVisible: Logged 68 kg
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      METHOD: POST
+      FIELD: body.weight.value
+      VALUE: "68"
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      METHOD: POST
+      FIELD: body.weight.unit
+      VALUE: '"kg"'
+# Back to pounds: 68 kg is 149.9 lb.
+- scrollUntilVisible:
+    element:
+      id: weight-unit-lb
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- tapOn:
+    id: weight-unit-lb
+- assertVisible:
+    id: weight-value
+    text: "149\\.9"

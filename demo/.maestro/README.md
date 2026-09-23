@@ -148,7 +148,7 @@ Other settings, each passed with `-e`:
 ## In CI
 
 `.github/workflows/quality.yml` runs `scripts/ui-coverage.mjs`, builds the APK
-once, then `ui-test-android` runs four shards (40 fixture and parity flows,
+once, then `ui-test-android` runs four shards (41 fixture and parity flows,
 dealt round-robin by `shard.mjs`) through
 `.github/scripts/android-ui-suite.sh`. Failed flows are
 rerun once and named in a workflow warning; each shard uploads its JUnit report

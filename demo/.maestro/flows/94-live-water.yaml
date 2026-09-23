@@ -208,7 +208,8 @@ tags:
       UNIT: ml
 # The previous day: water logged there lands on that day, then is deleted.
 # Leaving the tab first drops the focus from the amount field, so no keyboard
-# toolbar covers the day arrows; the tab comes back in fl oz with 8 prefilled.
+# toolbar covers the day arrows; the tab comes back in fl oz with 8 prefilled,
+# which the switch to ml turns into 237 ml.
 - tapOn:
     id: tab-search
 - tapOn:

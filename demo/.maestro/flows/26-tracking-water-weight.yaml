@@ -76,8 +76,7 @@ tags:
       TARGET_ID: weight-unit-kg
 - tapOn:
     id: weight-unit-kg
-# Log the prefilled value: tapping the right-aligned field puts the cursor
-# before the text, so eraseText cannot clear it.
+# Log the prefilled value, which the switch to kg converted from 150 lb.
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -88,12 +87,12 @@ tags:
     visible:
       id: weight-logged
     timeout: 15000
-- assertVisible: Logged 150 kg
+- assertVisible: Logged 68 kg
 - extendedWaitUntil:
     visible:
       id: weight-day
     timeout: 15000
-- assertVisible: 150 kg
+- assertVisible: 68 kg
 - takeScreenshot: demo/.maestro/artifacts/android-tracking-weight
 # The previous day has nothing: no food logs, no water, no weight. Center the
 # day picker so the tap cannot land on the navigation bar above it.
