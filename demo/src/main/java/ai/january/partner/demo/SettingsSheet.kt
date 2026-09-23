@@ -23,7 +23,14 @@ import java.time.ZoneId
 internal fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
     var zoneMenu by remember { mutableStateOf(false) }
     val zones = remember { ZoneId.getAvailableZoneIds().sorted() }
-    AppModalSheet(title = "Settings", onDismiss = onDismiss, expanded = false, testTag = "settings-sheet", closeTestTag = "settings-close") {
+    // The end user ID takes effect when the sheet closes, not on every keystroke: each change of
+    // user reloads that user's data, and a half-typed ID is nobody's.
+    var userIdDraft by remember { mutableStateOf(state.endUserId) }
+    val close = {
+        if (userIdDraft.trim() != state.endUserId) state.endUserId = userIdDraft.trim()
+        onDismiss()
+    }
+    AppModalSheet(title = "Settings", onDismiss = close, expanded = false, testTag = "settings-sheet", closeTestTag = "settings-close") {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = DemoScreenPadding).padding(top = 28.dp, bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             SectionLabel("Connection")
             DemoCard {
@@ -41,7 +48,7 @@ internal fun SettingsSheet(state: DemoState, onDismiss: () -> Unit) {
             SectionLabel("Request context")
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("End user ID", style = MaterialTheme.typography.titleMedium)
-                DemoInput(state.endUserId, { state.endUserId = it }, "Partner user identifier", Modifier.testTag("settings-user-id"))
+                DemoInput(userIdDraft, { userIdDraft = it }, "Partner user identifier", Modifier.testTag("settings-user-id"))
                 Text("Food Logs requires a stable ID. Other requests include it when available.", style = MaterialTheme.typography.bodySmall, color = JanuaryColors.Muted)
             }
             DemoCard {
