@@ -83,7 +83,8 @@ tags:
 # A year of weights is more than one request returns, so it takes several.
 - extendedWaitUntil:
     visible:
-      text: "Weight, last 12 months: 1[01][0-9] entries.*"
+      # A weight every third day over the 11 to 12 months the span covers: 111 to 122.
+      text: "Weight, last 12 months: 1[0-2][0-9] entries.*"
     timeout: 20000
 - takeScreenshot: demo/.maestro/artifacts/android-tracking-weight-chart-year
 # With nothing in the range, each chart says so.
