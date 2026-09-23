@@ -25,9 +25,10 @@ class ScreenParityWorkflowTest {
     private val servings = """[{"id":"11","quantity":1,"unit":"cup","scaling_factor":1,"weight_grams":100,"is_primary":true},{"id":"12","quantity":1,"unit":"oz","scaling_factor":0.2835,"weight_grams":28.35,"is_primary":false}]"""
     private fun food(id: String = "101", name: String = "Fixture oatmeal", complete: Boolean = true) = """{"id":"$id","type":"generic","name":"$name","brand_name":"January fixture","nutrients":$nutrients,"glycemic_index":52,"glycemic_load":12,"image_url":null,"barcode":null,"servings":${if (complete) servings else JSONArray(servings).let { JSONArray().put(it.get(0)).toString() }}}"""
     private fun alternative(id: String, name: String) = """{"id":"$id","name":"$name","brand_name":null,"nutrients":$nutrients,"servings":[{"id":"11","quantity":1,"unit":"cup"}]}"""
-    // quantity = null models a detection the API could not size; the demo must not invent "1".
-    private fun detected(id: String = "101", name: String = "Fixture oatmeal", quantity: Int? = 1) = """{"id":"$id","name":"$name","brand_name":null,"nutrients":$nutrients,"quantity":${quantity ?: "null"},"serving":{"id":"11","quantity":1,"unit":"cup"}}"""
-    private fun detections() = """[{"food":${detected()},"confidence":"high"},{"food":${detected("103", "Fixture unsized", quantity = null)},"confidence":"low"}]"""
+    // Every detection carries a quantity and a serving, as the API contract requires; the second
+    // is half a serving of a different size, so the demo must use the values it was given.
+    private fun detected(id: String = "101", name: String = "Fixture oatmeal", quantity: Double = 1.0, servingId: String = "11", unit: String = "cup") = """{"id":"$id","name":"$name","brand_name":null,"nutrients":$nutrients,"quantity":$quantity,"serving":{"id":"$servingId","quantity":1,"unit":"$unit"}}"""
+    private fun detections() = """[{"food":${detected()},"confidence":"high"},{"food":${detected("103", "Fixture yogurt", 0.5, "12", "oz")},"confidence":"low"}]"""
     private val prediction = """{"points":[{"minutes":0,"value":90},{"minutes":30,"value":125},{"minutes":60,"value":140},{"minutes":90,"value":115},{"minutes":120,"value":95}],"impact_score":"medium","chart":{"min":70,"max":140}}"""
     private fun scan(name: String) = """{"meal_name":"$name","detections":${detections()},"total_nutrients":$nutrients}"""
 
@@ -119,11 +120,14 @@ class ScreenParityWorkflowTest {
         click("Show glucose prediction")
         waitText("LIKELY MEAL PEAK")
         capture("meal-description-glucose")
-        // The unsized detection is left out of the prediction instead of being sent as one serving.
+        // Each detection goes to the prediction with its own serving and quantity.
         val foods = JSONObject(requests.last { it.first == "/v1.2/glucose/predictions" }.second).getJSONArray("foods")
-        assertEquals(1, foods.length())
+        assertEquals(2, foods.length())
         assertEquals("101", foods.getJSONObject(0).getString("food_id"))
         assertEquals(1.0, foods.getJSONObject(0).getDouble("quantity"), 0.0)
+        assertEquals("103", foods.getJSONObject(1).getString("food_id"))
+        assertEquals("12", foods.getJSONObject(1).getString("serving_id"))
+        assertEquals(0.5, foods.getJSONObject(1).getDouble("quantity"), 0.0)
 
         ui.onNodeWithTag("search-content").performScrollToNode(hasText("Analyze another meal"))
         click("Analyze another meal")
@@ -140,10 +144,10 @@ class ScreenParityWorkflowTest {
         click("Sample meal")
         click("Analyze meal")
         waitText("Fixture breakfast")
-        // The sized detection shows "eaten × serving"; the unsized one shows only the serving.
+        // Each detection shows "eaten × serving".
         assertEquals(1, ui.onAllNodesWithText("1 × 1 cup").fetchSemanticsNodes().size)
-        ui.onNodeWithText("Fixture unsized").assertExists()
-        ui.onNodeWithText("1 cup").assertExists()
+        ui.onNodeWithText("Fixture yogurt").assertExists()
+        ui.onNodeWithText("0.5 × 1 oz").assertExists()
         capture("scan-results-fixture")
         click("Correct result")
         ui.onNodeWithText("Describe the correction").performTextInput("This was lentils")
