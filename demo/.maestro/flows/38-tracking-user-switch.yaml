@@ -1,15 +1,15 @@
 appId: ai.january.partner.demo
-name: Tracking - switching the end user drops the previous user's day, entries and delete-last
+name: Tracking - switching the end user shows only the new user's day, and no delete-last until they log
 tags:
   - fixture
 ---
-- runFlow: ../bootstrap.yaml
-- extendedWaitUntil:
-    visible:
-      id: tab-tracking
-    timeout: 15000
+# In client-token mode the fixture server keeps each end user's logs, water and
+# weights apart, like the API, so the new user's day is really empty.
+- runFlow: ../client-token-bootstrap.yaml
 - runScript:
     file: ../scripts/seed-fixture.js
+    env:
+      USER: parity-user
 - tapOn:
     id: tab-tracking
 - scrollUntilVisible:
@@ -88,7 +88,9 @@ tags:
 # While the new user's day loads, and after it fails, none of the previous
 # user's day shows: no meals, no totals, no water or weight entry, no delete-last.
 - assertVisible: parity-user-2
-# Spinners never settle, so do not wait for them between scrolls.
+# The loading row is transient: on a slow emulator it can finish before the flow
+# scrolls to it, so it is checked where possible (without waiting for spinners to
+# settle between scrolls); what follows holds either way.
 - scrollUntilVisible:
     element:
       id: food-logs-loading
@@ -96,6 +98,15 @@ tags:
     visibilityPercentage: 50
     waitToSettleTimeoutMs: 300
     timeout: 8000
+    optional: true
+# The optional scroll above may have gone past the food logs: look back up
+# first, then down while the slow load finishes.
+- scrollUntilVisible:
+    element:
+      id: food-logs-error
+    direction: UP
+    timeout: 10000
+    optional: true
 - scrollUntilVisible:
     element:
       id: food-logs-error
@@ -126,31 +137,83 @@ tags:
     timeout: 15000
 - assertNotVisible:
     id: weight-logged
-# Once the day loads, delete-last is still not offered: nothing has been logged
-# as this user yet.
+# Once it loads, the day is the new user's alone: no meals, no totals, no water,
+# no weight, empty charts, and still no delete-last.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/water-logs
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
 - scrollUntilVisible:
     element:
-      id: water-retry
+      id: food-logs-refresh
     direction: UP
     timeout: 15000
 - tapOn:
-    id: water-retry
+    id: food-logs-refresh
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+      text: 0 logs
+    direction: UP
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: food-logs-empty
+    direction: DOWN
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: DOWN
+    timeout: 15000
+- assertNotVisible:
+    id: water-delete-last
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-retry
+- tapOn:
+    id: water-chart-retry
+- scrollUntilVisible:
+    element:
+      id: water-chart-empty
+    direction: UP
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: weight-empty
+    direction: DOWN
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-retry
+- tapOn:
+    id: weight-chart-retry
+- scrollUntilVisible:
+    element:
+      id: weight-chart-empty
+    direction: UP
+    timeout: 15000
+# Logging as the new user brings delete-last back.
 - scrollUntilVisible:
     element:
       id: water-log
     direction: UP
     centerElement: true
     timeout: 15000
-- extendedWaitUntil:
-    notVisible:
-      id: water-loading
-    timeout: 15000
-- assertNotVisible:
-    id: water-delete-last
 - tapOn:
     id: water-log
 - extendedWaitUntil:

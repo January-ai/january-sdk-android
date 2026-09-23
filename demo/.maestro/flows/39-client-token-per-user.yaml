@@ -3,29 +3,10 @@ name: Client tokens - a new end user gets a token minted for them, and requests 
 tags:
   - fixture
 ---
-# Launched with januaryFixtureClientTokens, the demo mints its client tokens
-# from the fixture server's token route (as from a token relay) instead of using
-# the stub token, and the fixture server records each mint's end user and each
-# request's token.
-- runScript:
-    file: ../scripts/reset-fixture.js
-- retry:
-    maxRetries: 2
-    commands:
-      - stopApp
-      - launchApp:
-          clearState: false
-          stopApp: true
-          arguments:
-            januaryFixtureOrigin: "${typeof FIXTURE_ORIGIN === 'undefined' ? 'http://10.0.2.2:18766' : FIXTURE_ORIGIN}"
-            januaryFixtureClientTokens: "true"
-      - tapOn:
-          text: "Close app"
-          optional: true
-      - extendedWaitUntil:
-          visible:
-            id: search-screen
-          timeout: 120000
+# The demo mints its client tokens from the fixture server's token route (as
+# from a token relay), and the fixture server records each mint's end user and
+# each request's token.
+- runFlow: ../client-token-bootstrap.yaml
 - tapOn:
     id: tab-tracking
 - scrollUntilVisible:

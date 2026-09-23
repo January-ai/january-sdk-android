@@ -39,11 +39,11 @@ def add_nutrients(total,extra):
   if k in total:total[k]=dict(value=round(total[k]['value']+v['value'],4),unit=v['unit'])
   else:total[k]=dict(v)
  return total
-def summary(q):
+def summary(q,logs):
  # One bucket per day, like group_by=day; every day in the range is present.
  buckets=[];totals={};logs_count=0;days_with_logs=0
  for day in day_range(q):
-  day_logs=[l for l in state['logs'] if local_day(l['eaten_at'],q)==day];nutrients={}
+  day_logs=[l for l in logs if local_day(l['eaten_at'],q)==day];nutrients={}
   for l in day_logs:
    for f in l['foods']:add_nutrients(nutrients,f['nutrients'])
   buckets.append(dict(start_date=day,end_date=day,logs_count=len(day_logs),days_with_logs=1 if day_logs else 0,nutrients=nutrients))
@@ -76,7 +76,14 @@ def history():
    weights.append(dict(weight=dict(value=round(kg/0.45359237,1),unit='lb') if i%12==0 else dict(value=kg,unit='kg'),measured_at=at))
  return water,weights
 LIST_LIMIT=100
-state={'rules':{},'logs':[],'water':[],'weights':[],'requests':[]}
+# Food logs, water and weights are kept per end user, like the API. A client token from the token
+# route names its user ('fixture-token-<user>'); the stub token of the plain fixture launch is one
+# shared user, ''. The seed routes take ?user= for the same reason.
+state={'rules':{},'logs':{},'water':{},'weights':{},'requests':[]}
+def user_of(headers):
+ auth=headers.get('Authorization') or ''
+ return auth[len('Bearer fixture-token-'):] if auth.startswith('Bearer fixture-token-') else ''
+def mine(kind,user):return state[kind].setdefault(user,[])
 class Handler(BaseHTTPRequestHandler):
  def log_message(self,*args):pass
  def do_GET(self):self.handle_request()
@@ -88,10 +95,10 @@ class Handler(BaseHTTPRequestHandler):
   parsed=urlparse(self.path);path=parsed.path;q={k:v[0] for k,v in parse_qs(parsed.query).items()}
   raw=self.rfile.read(int(self.headers.get('Content-Length',0)))
   body=json.loads(raw) if raw and 'application/json' in self.headers.get('Content-Type','') else {}
-  if path=='/__reset':state.update(rules={},logs=[],water=[],weights=[],requests=[]);return self.respond({})
+  if path=='/__reset':state.update(rules={},logs={},water={},weights={},requests=[]);return self.respond({})
   if path=='/__control':state['rules'][q['route']]=q;return self.respond({})
-  if path=='/__seed':state['logs']=[log()];return self.respond({})
-  if path=='/__seed_history':state['water'],state['weights']=history();return self.respond({})
+  if path=='/__seed':state['logs'][q.get('user','')]=[log()];return self.respond({})
+  if path=='/__seed_history':state['water'][q.get('user','')],state['weights'][q.get('user','')]=history();return self.respond({})
   if path=='/__requests':return self.respond(state['requests'])
   state['requests'].append(dict(method=self.command,path=path,query=q,body=body,auth=self.headers.get('Authorization'),end_user=self.headers.get('January-End-User-ID')))
   if path=='/api/january/client-token':
@@ -99,6 +106,7 @@ class Handler(BaseHTTPRequestHandler):
    user=self.headers.get('January-End-User-ID','')
    if not user:return self.respond(dict(code='invalid_request',message='January-End-User-ID is required.'),400)
    return self.respond(dict(token='fixture-token-'+user,expires_in=3600))
+  user=user_of(self.headers)
   rule=state['rules'].get(path,{})
   delay=float(rule.get('delay',0))
   if delay:time.sleep(delay)
@@ -129,29 +137,29 @@ class Handler(BaseHTTPRequestHandler):
    if self.command=='POST':
     amount=body.get('amount',{});ml=float(amount.get('value',0))*ML_PER_UNIT.get(amount.get('unit'),1)
     result=dict(id=str(__import__('uuid').uuid4()),amount=dict(value=amount.get('value'),unit=amount.get('unit')),consumed_at=stamp(body.get('consumed_at')))
-    state['water'].append(dict(id=result['id'],ml=ml,consumed_at=result['consumed_at']));return self.respond(result,201)
+    mine('water',user).append(dict(id=result['id'],ml=ml,consumed_at=result['consumed_at']));return self.respond(result,201)
    if self.command=='DELETE':
-    state['water']=[w for w in state['water'] if w['id']!=path.rsplit('/',1)[1]];return self.respond(None,204)
+    state['water'][user]=[w for w in mine('water',user) if w['id']!=path.rsplit('/',1)[1]];return self.respond(None,204)
    totals={}
-   for w in state['water']:day=local_day(w['consumed_at'],q);totals[day]=totals.get(day,0)+w['ml']
+   for w in mine('water',user):day=local_day(w['consumed_at'],q);totals[day]=totals.get(day,0)+w['ml']
    result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items()) if in_range(d,q)][-LIST_LIMIT:])
   elif '/weight-logs' in path:
    if self.command=='POST':
     result=dict(weight=body.get('weight'),measured_at=stamp(body.get('measured_at')))
-    state['weights'].append(result);return self.respond(result,201)
+    mine('weights',user).append(result);return self.respond(result,201)
    latest={}
-   for w in state['weights']:
+   for w in mine('weights',user):
     day=local_day(w['measured_at'],q)
     if day not in latest or w['measured_at']>=latest[day]['measured_at']:latest[day]=w
    result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items()) if in_range(d,q)][-LIST_LIMIT:])
-  elif path.endswith('/food-logs/summary'):result=summary(q)
+  elif path.endswith('/food-logs/summary'):result=summary(q,mine('logs',user))
   elif '/food-logs' in path:
-   if self.command=='GET':result=dict(items=[] if empty else [l for l in state['logs'] if in_range(local_day(l['eaten_at'],q),q)])
-   elif self.command=='DELETE':state['logs']=[];result=dict(status='success')
+   if self.command=='GET':result=dict(items=[] if empty else [l for l in mine('logs',user) if in_range(local_day(l['eaten_at'],q),q)])
+   elif self.command=='DELETE':state['logs'][user]=[];result=dict(status='success')
    else:
     result=log(body.get('name') or 'Fixture breakfast')
     if body.get('eaten_at'):result['eaten_at']=stamp(body['eaten_at'])
-    state['logs']=[result]
+    state['logs'][user]=[result]
   else:return self.respond(dict(message='Unmapped fixture route '+path),404)
   self.respond(result)
  def respond(self,body,status=200):

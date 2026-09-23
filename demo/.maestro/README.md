@@ -22,10 +22,13 @@ maestro test $(node demo/.maestro/shard.mjs 2 4)
 
 `bootstrap.yaml` launches the app with the debug-only `januaryFixtureOrigin`
 intent extra, so the client talks to `http://10.0.2.2:18766` (the emulator's
-alias for the host) with a stub token. Adding `januaryFixtureClientTokens:
-"true"` keeps the demo's own per-user client tokens instead: it mints them from
-the fixture server's `/api/january/client-token`, as it would from a token
-relay (see `39-client-token-per-user.yaml`). On a physical device, forward the port
+alias for the host) with a stub token. `client-token-bootstrap.yaml` adds
+`januaryFixtureClientTokens: "true"`, which keeps the demo's own per-user client
+tokens instead: it mints them from the fixture server's
+`/api/january/client-token`, as it would from a token relay, and the fixture
+server keeps each end user's food logs, water and weights apart by token, like
+the API (see flows 38 and 39). With the stub token everything belongs to one
+shared user. On a physical device, forward the port
 and point both sides at it:
 
 ```bash
@@ -35,7 +38,7 @@ maestro test --include-tags fixture,parity -e FIXTURE_ORIGIN=http://127.0.0.1:18
 
 Flows change the fixture server's behaviour through `scripts/control-fixture.js`
 (HTTP status, delay, empty collections per route), `seed-fixture.js` (one saved
-food log), `seed-history.js` (about 13 months of water and weight ending today)
+food log, for `USER` when set), `seed-history.js` (about 13 months of water and weight ending today)
 and `reset-fixture.js`, which the bootstrap runs first so no flow
 inherits another's configuration. `assert-request.js` checks what the demo
 sent: a field of its latest request to a route, from the query, the JSON body,

@@ -1,0 +1,25 @@
+appId: ai.january.partner.demo
+# Like bootstrap.yaml, but the demo keeps its own per-user client tokens: with
+# januaryFixtureClientTokens it mints them from the fixture server's token
+# route, as from a token relay, and the fixture server keeps each end user's
+# logs, water and weights apart by token.
+---
+- runScript:
+    file: scripts/reset-fixture.js
+- retry:
+    maxRetries: 2
+    commands:
+      - stopApp
+      - launchApp:
+          clearState: false
+          stopApp: true
+          arguments:
+            januaryFixtureOrigin: "${typeof FIXTURE_ORIGIN === 'undefined' ? 'http://10.0.2.2:18766' : FIXTURE_ORIGIN}"
+            januaryFixtureClientTokens: "true"
+      - tapOn:
+          text: "Close app"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: search-screen
+          timeout: 120000
