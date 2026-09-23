@@ -43,7 +43,7 @@ internal data class ServingOption (
 
     /* Opaque serving id; may look numeric but is always a string. */
     @Json(name = "id")
-    val id: kotlin.String?,
+    val id: kotlin.String,
 
     @Json(name = "quantity")
     val quantity: java.math.BigDecimal?,

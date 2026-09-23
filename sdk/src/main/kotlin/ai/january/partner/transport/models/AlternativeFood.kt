@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Catalog food id, or null when the producer matched none.
+ * @param id Catalog food id.
  * @param name Null only when the producer sent a food with no name.
  * @param brandName Null for generic (non-branded) foods.
  * @param nutrients
@@ -42,9 +42,9 @@ import com.squareup.moshi.JsonClass
 
 internal data class AlternativeFood (
 
-    /* Catalog food id, or null when the producer matched none. */
+    /* Catalog food id. */
     @Json(name = "id")
-    val id: kotlin.String?,
+    val id: kotlin.String,
 
     /* Null only when the producer sent a food with no name. */
     @Json(name = "name")

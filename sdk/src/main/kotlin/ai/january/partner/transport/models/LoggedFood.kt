@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param foodId Food id from a search or food-analysis result. Null only when the upstream sent a food with no id.
+ * @param foodId Food id from a search or food-analysis result.
  * @param name Null only when the upstream sent none.
  * @param brandName Null for generic (non-branded) foods.
  * @param imageUrl
@@ -46,9 +46,9 @@ import com.squareup.moshi.JsonClass
 
 internal data class LoggedFood (
 
-    /* Food id from a search or food-analysis result. Null only when the upstream sent a food with no id. */
+    /* Food id from a search or food-analysis result. */
     @Json(name = "food_id")
-    val foodId: kotlin.String?,
+    val foodId: kotlin.String,
 
     /* Null only when the upstream sent none. */
     @Json(name = "name")

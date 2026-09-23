@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Food id of the dish — the same id `GET /v1.2/foods/{food_id}` and `POST /v1.2/food-logs` take. Null only when the menu source carries no id for the row.
+ * @param id Food id of the dish — the same id `GET /v1.2/foods/{food_id}` and `POST /v1.2/food-logs` take.
  * @param name Null only when the menu source has no name for the dish.
  * @param nutrients
  * @param glycemicIndex Glycemic index; null when the source has none.
@@ -43,9 +43,9 @@ import com.squareup.moshi.JsonClass
 
 internal data class RestaurantMenuItem (
 
-    /* Food id of the dish — the same id `GET /v1.2/foods/{food_id}` and `POST /v1.2/food-logs` take. Null only when the menu source carries no id for the row. */
+    /* Food id of the dish — the same id `GET /v1.2/foods/{food_id}` and `POST /v1.2/food-logs` take. */
     @Json(name = "id")
-    val id: kotlin.String?,
+    val id: kotlin.String,
 
     /* Null only when the menu source has no name for the dish. */
     @Json(name = "name")
