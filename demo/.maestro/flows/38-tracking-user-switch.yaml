@@ -41,27 +41,30 @@ tags:
     visible:
       id: weight-logged
     timeout: 15000
-# The next user's day answers slowly, so what shows meanwhile is visible.
+# The next user's day answers slowly and then fails, so what shows while it
+# loads, and after, is the new user's state alone.
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/food-logs
-      DELAY: "9"
+      DELAY: "8"
+      STATUS: "500"
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/food-logs/summary
-      DELAY: "9"
+      DELAY: "8"
+      STATUS: "500"
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/water-logs
-      DELAY: "6"
+      STATUS: "500"
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/weight-logs
-      DELAY: "6"
+      STATUS: "500"
 # Switch to parity-user-2 in Settings; the ID takes effect when the sheet closes.
 - tapOn:
     id: settings-button
@@ -82,7 +85,8 @@ tags:
       - tapOn:
           id: settings-close
           waitToSettleTimeoutMs: 500
-# While the new user's day loads, none of the previous user's day shows.
+# While the new user's day loads, and after it fails, none of the previous
+# user's day shows: no meals, no totals, no water or weight entry, no delete-last.
 - assertVisible: parity-user-2
 # Spinners never settle, so do not wait for them between scrolls.
 - scrollUntilVisible:
@@ -92,16 +96,24 @@ tags:
     visibilityPercentage: 50
     waitToSettleTimeoutMs: 300
     timeout: 8000
-- assertVisible:
-    id: food-logs-totals-count
-    text: "—"
+- scrollUntilVisible:
+    element:
+      id: food-logs-error
+    direction: DOWN
+    timeout: 20000
 - assertNotVisible:
     id: food-log-0
 - scrollUntilVisible:
     element:
-      id: water-card
+      id: food-logs-summary-error
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: food-logs-totals-count
+- scrollUntilVisible:
+    element:
+      id: water-error
     direction: DOWN
-    visibilityPercentage: 30
     timeout: 15000
 - assertNotVisible:
     id: water-logged
@@ -109,18 +121,24 @@ tags:
     id: water-delete-last
 - scrollUntilVisible:
     element:
-      id: weight-card
+      id: weight-error
     direction: DOWN
-    visibilityPercentage: 30
     timeout: 15000
 - assertNotVisible:
     id: weight-logged
-# Once the day has loaded, delete-last is still not offered: nothing has been
-# logged as this user yet.
+# Once the day loads, delete-last is still not offered: nothing has been logged
+# as this user yet.
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/water-logs
+- scrollUntilVisible:
+    element:
+      id: water-retry
+    direction: UP
+    timeout: 15000
+- tapOn:
+    id: water-retry
 - scrollUntilVisible:
     element:
       id: water-log

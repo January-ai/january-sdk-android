@@ -79,7 +79,7 @@ tags:
     id: scan-analyze
     waitToSettleTimeoutMs: 500
 - extendedWaitUntil:
-    visible: "Analyzing this meal…"
+    visible: "Complex meals can take a little longer.*"
     timeout: 5000
 - extendedWaitUntil:
     visible:
