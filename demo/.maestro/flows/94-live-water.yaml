@@ -42,7 +42,7 @@ tags:
     env:
       CHECK: water
       UNIT: fl_oz
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-40-water-fl-oz
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-40-water-fl-oz"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -101,7 +101,7 @@ tags:
     env:
       CHECK: water
       UNIT: ml
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-41-water-ml
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-41-water-ml"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -153,7 +153,7 @@ tags:
           file: ../scroll-to.yaml
           env:
             TARGET_ID: water-error-details-body
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-42-water-cup
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-42-water-cup"
 - runFlow:
     file: ../clear-field.yaml
     env:
@@ -170,7 +170,7 @@ tags:
     visible:
       id: "water-logged|water-error"
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-43-water-cup-log
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-43-water-cup-log"
 - runFlow:
     when:
       visible:
@@ -259,7 +259,7 @@ tags:
     env:
       CHECK: water
       UNIT: ml
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-46-water-previous-day
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-46-water-previous-day"
 - runFlow:
     file: ../scroll-to.yaml
     env:

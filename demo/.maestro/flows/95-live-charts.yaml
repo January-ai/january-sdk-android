@@ -29,7 +29,7 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-50-water-week
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-50-water-week"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -47,7 +47,7 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-51-water-month
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-51-water-month"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -65,7 +65,7 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 45000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-52-water-year
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-52-water-year"
 # Weight in kg.
 - runFlow:
     file: ../scroll-to.yaml
@@ -90,7 +90,7 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-53-weight-week
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-53-weight-week"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -108,7 +108,7 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-54-weight-month
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-54-weight-month"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -126,4 +126,4 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 45000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-55-weight-year
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-55-weight-year"

@@ -253,6 +253,8 @@ function scalar(text) {
   const t = text.trim();
   if (t.startsWith('"') && t.endsWith('"')) return JSON.parse(t);
   if (t.startsWith("'") && t.endsWith("'")) return t.slice(1, -1).replace(/''/g, "'");
+  // YAML reads ": " inside an unquoted value as a nested mapping, and Maestro then rejects the file.
+  if (/: /.test(t)) throw new Error(`unquoted value contains ": " (quote it): ${t}`);
   if (t === 'true') return true;
   if (t === 'false') return false;
   if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t);
@@ -383,7 +385,13 @@ function walk(commands, context) {
 }
 
 function readFlow(file) {
-  const docs = parseYamlDocuments(readFileSync(file, 'utf8'));
+  let docs;
+  try {
+    docs = parseYamlDocuments(readFileSync(file, 'utf8'));
+  } catch (error) {
+    problems.push(`${path.relative(root, file)}: ${error.message}`);
+    return [{ tags: [] }, []];
+  }
   return docs.length === 1 ? [{}, docs[0]] : docs;
 }
 

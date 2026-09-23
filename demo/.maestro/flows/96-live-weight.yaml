@@ -54,7 +54,7 @@ tags:
     file: ../scripts/live-verify.js
     env:
       CHECK: weight
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-60-weight-lb
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-60-weight-lb"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -90,7 +90,7 @@ tags:
     file: ../scripts/live-verify.js
     env:
       CHECK: weight
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-61-weight-kg
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-61-weight-kg"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -108,4 +108,4 @@ tags:
       text: ${output.expectedChart}
     direction: DOWN
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-62-weight-chart
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-62-weight-chart"

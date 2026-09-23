@@ -15,7 +15,7 @@ tags:
     visible:
       id: food-result-0
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-10-barcode
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-10-barcode"
 - tapOn:
     id: food-result-0
 - extendedWaitUntil:
@@ -44,7 +44,7 @@ tags:
     visible:
       id: description-results
     timeout: 60000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-11-description
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-11-description"
 - scrollUntilVisible:
     element:
       text: Show glucose prediction
@@ -56,7 +56,7 @@ tags:
       text: "(?i)likely meal peak"
     direction: DOWN
     timeout: 60000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-12-description-glucose
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-12-description-glucose"
 # The sample photo, analyzed, then corrected.
 - tapOn:
     id: tab-scan
@@ -68,7 +68,7 @@ tags:
     visible:
       id: scan-results
     timeout: 90000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-13-scan
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-13-scan"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -98,7 +98,7 @@ tags:
     visible:
       id: scan-results
     timeout: 15000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-14-scan-corrected
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-14-scan-corrected"
 - runFlow:
     file: ../scroll-to.yaml
     env:

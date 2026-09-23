@@ -11,7 +11,7 @@ tags:
     visible:
       id: autocomplete-suggestions
     timeout: 30000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-01-suggestions
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-01-suggestions"
 - tapOn:
     id: autocomplete-result-0
 - extendedWaitUntil:
@@ -19,7 +19,7 @@ tags:
       id: food-result-0
     timeout: 30000
 - assertVisible: RESULTS · JANUARY FOOD DATABASE
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-02-search-results
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-02-search-results"
 - tapOn:
     id: food-result-0
 - extendedWaitUntil:
@@ -30,7 +30,7 @@ tags:
     file: ../scroll-to.yaml
     env:
       TARGET_ID: food-macros
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-03-food-detail
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-03-food-detail"
 # Pick another serving when the food has one.
 - tapOn:
     id: food-serving-unit
@@ -52,7 +52,7 @@ tags:
     file: ../scroll-to.yaml
     env:
       TARGET_ID: food-macros
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-04-food-serving
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-04-food-serving"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -63,7 +63,7 @@ tags:
     visible:
       id: food-glucose-result
     timeout: 45000
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-05-food-glucose
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-05-food-glucose"
 - tapOn: Close Glucose response
 - runFlow:
     file: ../scroll-to.yaml
@@ -85,7 +85,7 @@ tags:
     file: ../scroll-to.yaml
     env:
       TARGET_ID: "alternatives-(results|empty)"
-- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-06-alternatives
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-06-alternatives"
 - runFlow:
     when:
       visible:
@@ -97,7 +97,7 @@ tags:
           visible:
             id: food-macros
           timeout: 30000
-      - takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-07-alternative-detail
+      - takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-07-alternative-detail"
       - back
 - tapOn: Close Food alternatives
 - tapOn:
