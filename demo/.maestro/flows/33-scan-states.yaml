@@ -134,10 +134,9 @@ tags:
       TARGET_ID: scan-correction-submit
 - tapOn:
     id: scan-correction-submit
-- scrollUntilVisible:
-    element:
-      text: Corrected breakfast
-    direction: UP
+# Wait without swiping: a downward swipe before the result arrives would close the sheet.
+- extendedWaitUntil:
+    visible: Corrected breakfast
     timeout: 30000
 - runScript:
     file: ../scripts/assert-request.js
