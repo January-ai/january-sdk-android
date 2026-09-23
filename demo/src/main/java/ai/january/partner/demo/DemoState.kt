@@ -64,7 +64,9 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         }
 
     init {
-        if (isPartnerSessionTokenMissing) {
+        if (clientOverride != null) {
+            authenticationDescription = "Test client supplied at launch"
+        } else if (isPartnerSessionTokenMissing) {
             authenticationDescription = "Missing january.partnerSessionToken for non-loopback relay"
         } else if (partnerTokenUrl.isNotEmpty()) {
             authenticationDescription = "Client token provider"
