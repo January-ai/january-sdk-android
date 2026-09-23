@@ -5,6 +5,8 @@ project uses Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-23
+
 - Breaking: `AlternativeFood.id`, `ServingOption.id`, `RestaurantMenuEntry.id`,
   and `LoggedFood.id` are no longer nullable. The API now always returns these
   catalog IDs (food, serving, and menu IDs are 1 to 10 digits with no leading
@@ -50,7 +52,7 @@ project uses Semantic Versioning.
   nutrient totals, water total, and weight, each with a log action. The Food
   Logs tab is now Logs.
 
-## [0.2.2] - Unreleased
+## [0.2.2] - 2026-09-16
 
 - Voice capture waits two seconds of silence before ending a capture (the
   platform default cut people off between words). `VoiceCaptureSession` takes
