@@ -87,6 +87,8 @@ internal fun ServingControls(servings: List<ServingOption>, serving: ServingOpti
 internal fun DemoInput(value: String, onValueChange: (String) -> Unit, placeholder: String, modifier: Modifier = Modifier, singleLine: Boolean = true) {
     TextField(value, onValueChange, modifier.fillMaxWidth().heightIn(min = 54.dp),
         placeholder = { Text(placeholder) }, singleLine = singleLine, shape = RoundedCornerShape(18.dp),
+        keyboardOptions = if (singleLine) doneKeyboard() else androidx.compose.foundation.text.KeyboardOptions.Default,
+        keyboardActions = rememberDoneActions(),
         colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Control, unfocusedContainerColor = JanuaryColors.Control, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent))
 }
 

@@ -126,6 +126,8 @@ internal fun FoodLogEditorSheet(
                         shape = RoundedCornerShape(18.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Control, unfocusedContainerColor = JanuaryColors.Control, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         singleLine = true,
+                        keyboardOptions = doneKeyboard(),
+                        keyboardActions = rememberDoneActions(),
                     )
                 }
                 FoodLogCard { StartTimeRow(timestamp, label = "Date and time") { timestamp = it } }

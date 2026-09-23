@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
@@ -601,7 +600,8 @@ private fun LogNumberField(value: String, onValueChange: (String) -> Unit, testT
         },
         modifier = Modifier.fillMaxWidth().background(JanuaryColors.Control, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 12.dp).testTag(testTag),
         textStyle = TextStyle(color = JanuaryColors.Ink, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Monospace, textAlign = TextAlign.End),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        keyboardOptions = doneKeyboard(KeyboardType.Decimal),
+        keyboardActions = rememberDoneActions(),
         singleLine = true,
     )
 }
