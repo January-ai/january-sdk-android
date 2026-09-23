@@ -204,10 +204,12 @@ tags:
 - tapOn:
     id: weight-chart-retry
     retryTapIfNoChange: true
+# The weight card ends the screen, so its chart is never above: look down, which
+# also waits out the chart's loading without scrolling it out of view.
 - scrollUntilVisible:
     element:
       id: weight-chart-empty
-    direction: UP
+    direction: DOWN
     timeout: 15000
 # Logging as the new user brings delete-last back.
 - scrollUntilVisible:
