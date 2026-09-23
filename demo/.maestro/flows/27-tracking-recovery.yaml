@@ -44,6 +44,7 @@ tags:
       TARGET_ID: water-retry
 - tapOn:
     id: water-retry
+    retryTapIfNoChange: true
 # The day's total sits at the top of the water card, above the retry button.
 - scrollUntilVisible:
     element:
@@ -111,6 +112,7 @@ tags:
       TARGET_ID: weight-retry
 - tapOn:
     id: weight-retry
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       id: weight-empty
@@ -156,6 +158,14 @@ tags:
       TARGET_ID: weight-retry
 - tapOn:
     id: weight-retry
+    retryTapIfNoChange: true
+# "Logged" shows once the save answers, usually already in view: wait for it there
+# before looking further up, so a scroll cannot carry it out of view first.
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 10000
+    optional: true
 - scrollUntilVisible:
     element:
       id: weight-logged
@@ -201,6 +211,7 @@ tags:
       TARGET_ID: water-retry
 - tapOn:
     id: water-retry
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       id: water-empty
