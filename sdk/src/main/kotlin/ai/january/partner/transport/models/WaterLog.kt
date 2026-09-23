@@ -33,7 +33,7 @@ import com.squareup.moshi.JsonClass
  *
  * @param id Save this id to delete the log.
  * @param amount
- * @param consumedAt When the water was consumed. UTC, with milliseconds.
+ * @param createdAt When the water was consumed. UTC, with milliseconds.
  */
 
 
@@ -47,8 +47,8 @@ internal data class WaterLog (
     val amount: WaterAmount,
 
     /* When the water was consumed. UTC, with milliseconds. */
-    @Json(name = "consumed_at")
-    val consumedAt: java.time.OffsetDateTime
+    @Json(name = "created_at")
+    val createdAt: java.time.OffsetDateTime
 
 ) {
 

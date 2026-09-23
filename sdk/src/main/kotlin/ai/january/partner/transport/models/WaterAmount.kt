@@ -30,14 +30,14 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value` Accepted range depends on unit: 1–811.5 fl_oz, 0.125–101.4 cup, 30–24000 ml.
+ * @param `value` Accepted range depends on unit: 1–811.5 fl_oz, 30–24000 ml, 0.1–101.4 cup.
  * @param unit
  */
 
 
 internal data class WaterAmount (
 
-    /* Accepted range depends on unit: 1–811.5 fl_oz, 0.125–101.4 cup, 30–24000 ml. */
+    /* Accepted range depends on unit: 1–811.5 fl_oz, 30–24000 ml, 0.1–101.4 cup. */
     @Json(name = "value")
     val `value`: java.math.BigDecimal,
 

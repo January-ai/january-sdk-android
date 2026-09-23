@@ -141,7 +141,7 @@ internal interface FoodLogsApi {
     /**
      * PATCH v1.2/food-logs/{log_id}
      * Update a food log
-     * **API key or client token.**  Replaces any subset of the log: &#x60;foods&#x60;, &#x60;eaten_at&#x60;, &#x60;name&#x60;. Omitted fields are left unchanged.  Callable with a client token carrying the &#x60;food_logs:write&#x60; scope.
+     * **API key or client token.**  Replaces any subset of the log: &#x60;foods&#x60;, &#x60;created_at&#x60;, &#x60;name&#x60;. Omitted fields are left unchanged.  Callable with a client token carrying the &#x60;food_logs:write&#x60; scope.
      * Responses:
      *  - 200: The updated log, hydrated with resolved food and nutrition, reflecting the applied changes.
      *  - 400: A field is malformed; the message names it.

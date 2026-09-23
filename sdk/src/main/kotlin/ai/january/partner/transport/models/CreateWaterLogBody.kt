@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param amount
- * @param consumedAt When the water was consumed — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now. Its day is the one the daily cap counts it against.
+ * @param createdAt When the water was consumed — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now. Its day is the one the daily cap counts it against.
  */
 
 
@@ -42,8 +42,8 @@ internal data class CreateWaterLogBody (
     val amount: WaterAmount,
 
     /* When the water was consumed — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now. Its day is the one the daily cap counts it against. */
-    @Json(name = "consumed_at")
-    val consumedAt: java.time.OffsetDateTime? = null
+    @Json(name = "created_at")
+    val createdAt: java.time.OffsetDateTime? = null
 
 ) {
 
