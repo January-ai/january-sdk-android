@@ -48,6 +48,9 @@ public data class ServingSummary(
     /** Weight in grams of one serving, when the catalog knows it. Consumed grams = `quantity` × `weightGrams`. */
     @Json(name = "weight_grams") public val weightGrams: Double? = null,
 ) {
+    /** The shape before [weightGrams], kept for callers (Java callers too) that pass three arguments. */
+    public constructor(id: String?, quantity: Double?, unit: String?) : this(id, quantity, unit, null)
+
     public constructor(id: Long, quantity: Double? = null, unit: String) : this(id.toString(), quantity, unit, null)
 }
 

@@ -14,7 +14,8 @@ project uses Semantic Versioning.
   kilograms and `weightLogs.list` returns the latest `DailyWeight` per local
   day. The scoped client exposes `user.weightLogs`.
 - `ServingSummary` gains `weightGrams`, the weight of one catalog serving; the
-  API now returns it on scans, alternatives, and logged foods.
+  API now returns it on scans, alternatives, and logged foods. The
+  three-argument constructor remains, so Java callers compile unchanged.
 - `foodAnalysis.correct` sends the prior scan in the API's new correction
   request shape. Nothing changes for callers: pass back the `FoodScan` you
   received.

@@ -137,6 +137,14 @@ public class PublicSurfaceTest {
         )
     }
 
+    @Test
+    public fun servingSummaryKeepsItsThreeArgumentConstructorForJava() {
+        // Java callers get no overloads from Kotlin default arguments, so the shape from before
+        // weightGrams must still exist as its own constructor.
+        val constructor = ServingSummary::class.java.getConstructor(String::class.java, java.lang.Double::class.java, String::class.java)
+        assertEquals(ServingSummary("11", 1.0, "cup", null), constructor.newInstance("11", 1.0, "cup"))
+    }
+
     private companion object {
         const val envelope = """{"total_count":0,"items":[]}"""
         const val foodItem = """{"id":"1","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":null,"servings":[{"id":"2","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
