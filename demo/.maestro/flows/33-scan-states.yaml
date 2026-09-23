@@ -134,9 +134,16 @@ tags:
       TARGET_ID: scan-correction-submit
 - tapOn:
     id: scan-correction-submit
-# Wait without swiping: a downward swipe before the result arrives would close the sheet.
+# Swipe only once the correction sheet has closed: a downward swipe on it would
+# dismiss it instead of scrolling the result back to the meal name.
 - extendedWaitUntil:
-    visible: Corrected breakfast
+    notVisible:
+      id: scan-correction-input
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: Corrected breakfast
+    direction: UP
     timeout: 30000
 - runScript:
     file: ../scripts/assert-request.js
