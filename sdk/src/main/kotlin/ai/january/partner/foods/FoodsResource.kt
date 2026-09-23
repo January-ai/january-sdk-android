@@ -116,7 +116,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
                     brandName = food.brandName,
                     nutrients = food.nutrients.toPublicCompleteNutrition(),
                     servings = food.servings.map { serving ->
-                        ServingSummary(serving.id, serving.quantity?.toDouble(), serving.unit)
+                        ServingSummary(serving.id, serving.quantity?.toDouble(), serving.unit, serving.weightGrams?.toDouble())
                     },
                 )
             })

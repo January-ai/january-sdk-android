@@ -180,6 +180,16 @@ class ContractShapeTest {
         assertEquals("brown rice", alternative.name)
         assertEquals("cup", alternative.servings.single().unit)
         assertEquals(0.5, alternative.servings.single().quantity!!, 0.0)
+        assertNull(alternative.servings.single().weightGrams)
+    }
+
+    @Test
+    fun alternativesKeepTheServingWeight(): Unit = runBlocking {
+        enqueue("""{"alternatives":[{"id":"70372230","name":"brown rice","brand_name":null,"nutrients":{"calories":{"value":108,"unit":"kcal"}},"servings":[{"id":"34113801","quantity":0.5,"unit":"cup","weight_grams":97.5}]}]}""")
+
+        val serving = client.foods.suggestAlternatives(SuggestFoodAlternativesRequest("1")).alternatives.single().servings.single()
+
+        assertEquals(97.5, serving.weightGrams!!, 0.0)
     }
 
     @Test
