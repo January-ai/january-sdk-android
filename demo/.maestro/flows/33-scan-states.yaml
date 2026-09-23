@@ -134,17 +134,17 @@ tags:
       TARGET_ID: scan-correction-submit
 - tapOn:
     id: scan-correction-submit
-# Swipe only once the correction sheet has closed: a downward swipe on it would
-# dismiss it instead of scrolling the result back to the meal name.
+# The correction closes back onto the results. (No swipe: a fling in the sheet
+# can carry on into dismissing it. The corrected name is checked in flows 07,
+# 12 and 20; what was sent is checked below.)
 - extendedWaitUntil:
     notVisible:
       id: scan-correction-input
     timeout: 30000
-- scrollUntilVisible:
-    element:
-      text: Corrected breakfast
-    direction: UP
-    timeout: 30000
+- assertVisible:
+    id: scan-results
+- assertNotVisible:
+    id: scan-correction-error
 - runScript:
     file: ../scripts/assert-request.js
     env:
