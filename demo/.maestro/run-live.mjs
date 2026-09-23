@@ -81,7 +81,8 @@ async function apiAnswers() {
     headers: { Authorization: `Bearer ${token}` },
   });
   const body = await probe.text();
-  appendFileSync(verificationLog, `${new Date().toISOString()} preflight GET /v1.2/food-logs/summary -> ${probe.status} ${redact(body).slice(0, 500)}\n`);
+  // A successful answer is the end user's nutrition for the day: log only an error's body.
+  appendFileSync(verificationLog, `${new Date().toISOString()} preflight GET /v1.2/food-logs/summary -> ${probe.status}${probe.ok ? '' : ` ${redact(body).slice(0, 500)}`}\n`);
   if (probe.status === 429) return { limited: true, detail: redact(body) };
   if (!probe.ok) return { failed: true, detail: `API HTTP ${probe.status}: ${redact(body)}` };
   return { ok: true };

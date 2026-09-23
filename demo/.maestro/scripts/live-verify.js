@@ -52,17 +52,28 @@ function bearer() {
 // run-live.mjs looks for "RATE LIMITED" and runs no further flows.
 function stopIfRateLimited(response, what) {
   if (response.status !== 429) return;
-  let message = String(response.body);
-  try { message = JSON.parse(response.body).code + ': ' + JSON.parse(response.body).message; } catch (ignored) { /* keep the raw body */ }
+  let message = 'HTTP 429';
+  try { message = JSON.parse(response.body).code + ': ' + JSON.parse(response.body).message; } catch (ignored) { /* no error body */ }
   fail('RATE LIMITED at ' + what + ' (' + message + ')');
 }
 
+// Logs the route, the status and how many items came back, never the body: these are an end
+// user's food, water and weight records, and the log is kept as evidence. Each check logs only the
+// values it compares.
 function get(path) {
   const response = http.get(api + path, { headers: { Authorization: 'Bearer ' + bearer() } });
-  note('GET ' + path + ' -> ' + response.status + ' ' + String(response.body).slice(0, 1500));
   stopIfRateLimited(response, 'GET ' + path);
-  if (!response.ok) fail('GET ' + path + ' answered HTTP ' + response.status);
-  return JSON.parse(response.body);
+  if (!response.ok) {
+    let code = '';
+    try { code = ' ' + JSON.parse(response.body).code; } catch (ignored) { /* no error code */ }
+    note('GET ' + path + ' -> ' + response.status + code);
+    fail('GET ' + path + ' answered HTTP ' + response.status + code);
+  }
+  const body = JSON.parse(response.body);
+  const count = Array.isArray(body.items) ? body.items.length + ' items'
+    : Array.isArray(body.buckets) ? body.buckets.length + ' buckets' : 'ok';
+  note('GET ' + path + ' -> ' + response.status + ' (' + count + ')');
+  return body;
 }
 
 function query(params) {
@@ -101,16 +112,17 @@ function addDays(date, days) {
   return moved.toISOString().slice(0, 10);
 }
 
-function firstOfMonthMonthsAgo(date, months) {
+// The first day of the month `months` after the month of `date` (before it, when negative).
+function firstOfMonth(date, months) {
   const parts = date.split('-').map(Number);
-  return new Date(Date.UTC(parts[0], parts[1] - 1 - months, 1)).toISOString().slice(0, 10);
+  return new Date(Date.UTC(parts[0], parts[1] - 1 + months, 1)).toISOString().slice(0, 10);
 }
 
 function span(range) {
   const today = day();
   if (range === 'week') return { start: addDays(today, -6), end: today };
   if (range === 'month') return { start: addDays(today, -29), end: today };
-  return { start: firstOfMonthMonthsAgo(today, 11), end: today };
+  return { start: firstOfMonth(today, -11), end: today };
 }
 
 // Lists [start, end] in one request when it fits the endpoint's 100-day page, else in 90-day chunks.
@@ -199,7 +211,7 @@ function checkWaterChart() {
   listDays('/v1.2/water-logs', s.start, s.end, { unit: unit }).forEach((item) => { totals[item.date] = item.total.value; });
   const bars = [];
   if (range === 'year') {
-    for (let month = s.start; month <= s.end; month = firstOfMonthMonthsAgo(month, -1)) {
+    for (let month = s.start; month <= s.end; month = firstOfMonth(month, 1)) {
       const key = monthKey(month);
       bars.push({ date: month, value: Object.keys(totals).filter((date) => monthKey(date) === key).reduce((sum, date) => sum + totals[date], 0) });
     }
