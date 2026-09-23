@@ -167,11 +167,14 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
     var radius by remember { mutableDoubleStateOf(8000.0) }
     var resultLimit by remember { mutableStateOf(10) }
     var showFilters by remember { mutableStateOf(false) }
+    // Whether the current query has been searched, so "No foods found" waits for a search.
+    var hasSearched by remember { mutableStateOf(false) }
 
     fun clearResults() {
         foodSuggestions = emptyList(); foodResults = emptyList(); naturalResult = null
         naturalPrediction = null; naturalPredictionLoading = false; naturalPredictionError = null
         restaurants = emptyList(); menuItems = emptyList(); error = null
+        hasSearched = false
     }
 
     fun naturalFoodSelections(result: FoodScan): List<FoodSelection> =
@@ -249,6 +252,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
         val value = (forcedRestaurantName ?: query).trim()
         if (value.isEmpty() || client == null) return
         clearResults()
+        hasSearched = true
         autocompleteSuppressedQuery = value
         focusManager.clearFocus(force = true)
         keyboardController?.hide()
@@ -284,7 +288,9 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
         }
     }
 
-    LaunchedEffect(scope, foodMode, category, query, client, state.partnerUserId) {
+    // Keyed on the suppressed query too, so submitting a search (or picking a suggestion) cancels
+    // a suggestion request still in flight instead of letting it reopen the list over the results.
+    LaunchedEffect(scope, foodMode, category, query, autocompleteSuppressedQuery, client, state.partnerUserId) {
         val value = query.trim()
         val autocompleteCategory = when (category) {
             FoodCategory.GENERIC, FoodCategory.GENERAL -> AutocompleteFoodCategory.GENERIC
@@ -357,6 +363,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         value = query,
                         modifier = Modifier.testTag(if (scope == SearchScope.RESTAURANTS) "restaurant-search-input" else "search-input"),
                         onValueChange = {
+                            if (it != query) hasSearched = false
                             query = it
                             if (it != autocompleteSuppressedQuery) autocompleteSuppressedQuery = null
                         },
@@ -582,7 +589,7 @@ fun SearchScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifie
                         MenuItemResultCard(item, Modifier.testTag("menu-result-$index")) { selectedMenuItem = item }
                     }
                 }
-                if (!loading && error == null && query.isNotBlank() && foodResults.isEmpty() && naturalResult == null && restaurants.isEmpty() && menuItems.isEmpty()) {
+                if (!loading && error == null && hasSearched && foodResults.isEmpty() && naturalResult == null && restaurants.isEmpty() && menuItems.isEmpty()) {
                     item {
                         EmptySearchCard(
                             if (scope == SearchScope.FOODS) "No foods found" else "No nearby matches",
