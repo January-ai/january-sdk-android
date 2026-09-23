@@ -68,6 +68,7 @@ tags:
 - tapOn:
     id: food-log-name
 - inputText: Test lunch
+- pressKey: Enter
 - runFlow:
     file: ../scroll-to.yaml
     env:

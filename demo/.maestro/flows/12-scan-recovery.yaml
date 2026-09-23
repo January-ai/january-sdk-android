@@ -67,6 +67,11 @@ tags:
 - tapOn:
     id: scan-correction-input
 - inputText: retry correction
+# The instruction is multi-line, so Enter adds a line; Done on the meal name
+# closes the keyboard instead.
+- tapOn:
+    id: correction-meal-name
+- pressKey: Enter
 - scrollUntilVisible:
     element:
       id: scan-correction-submit

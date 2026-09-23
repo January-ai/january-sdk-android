@@ -129,7 +129,11 @@ tags:
     visible:
       id: description-results
     timeout: 15000
-- assertVisible: Analyze another meal
+- scrollUntilVisible:
+    element:
+      text: Analyze another meal
+    direction: DOWN
+    timeout: 15000
 - runScript:
     file: ../scripts/control-fixture.js
     env:

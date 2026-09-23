@@ -103,6 +103,7 @@ tags:
 - tapOn:
     id: image-url-input
 - inputText: https://example.com/meal.jpg
+- pressKey: Enter
 - tapOn:
     id: image-url-use
 - extendedWaitUntil:
@@ -125,9 +126,15 @@ tags:
     id: correction-meal-name
 - eraseText: 30
 - inputText: Late breakfast
+- pressKey: Enter
 - tapOn:
     id: scan-correction-input
 - inputText: Half the oatmeal
+# The instruction is multi-line, so Enter adds a line; Done on the meal name
+# closes the keyboard instead.
+- tapOn:
+    id: correction-meal-name
+- pressKey: Enter
 - runFlow:
     file: ../scroll-to.yaml
     env:
