@@ -200,9 +200,9 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
                 val menu = mutableListOf<RestaurantMenuItem>()
                 do {
                     val page = client.restaurants.getMenuItems(ai.january.partner.restaurants.GetRestaurantMenuItemsRequest(restaurant.id, offset = menu.size, endUserId = endUserId))
-                    menu.addAll(page.items.mapIndexed { index, entry ->
+                    menu.addAll(page.items.map { entry ->
                         RestaurantMenuItem(
-                            type = "menu_item", id = entry.id ?: "menu-${menu.size + index}",
+                            type = "menu_item", id = entry.id,
                             name = entry.name, restaurantName = restaurant.name,
                             calories = entry.calories, protein = entry.protein,
                             carbohydrates = entry.carbohydrates, netCarbohydrates = entry.netCarbohydrates,

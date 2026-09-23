@@ -79,7 +79,7 @@ internal fun FoodLogEditorSheet(
         coroutineScope.launch {
             runCatching {
                 val selections = foods.map {
-                    FoodSelection(it.food.id.value, ServingSelection(requireNotNull(it.serving.id).value, it.quantity))
+                    FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
                 }
                 val timestampUtc = timestamp.withOffsetSameInstant(ZoneOffset.UTC).toString()
                 if (existing == null) {
@@ -168,7 +168,9 @@ internal fun FoodLogEditorSheet(
 
 private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSelectedFood {
     val serving = ServingOption(
-        id = logged.servingDetails.id?.let(::ServingId),
+        // A logged food carries the serving it was logged with; were it ever missing, the API
+        // refuses the update and the editor shows why.
+        id = ServingId(logged.servingDetails.id.orEmpty()),
         quantity = logged.servingDetails.quantity ?: 1.0,
         unit = logged.servingDetails.unit,
         scalingFactor = 1.0,
@@ -177,7 +179,7 @@ private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSe
     )
     return DemoSelectedFood(
         food = FoodSearchItem(
-            id = FoodId(requireNotNull(logged.id)),
+            id = FoodId(logged.id),
             name = logged.name,
             brandName = logged.brandName,
             calories = logged.nutrients.calories?.value,

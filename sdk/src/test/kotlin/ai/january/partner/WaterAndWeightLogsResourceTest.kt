@@ -194,6 +194,20 @@ public class WaterAndWeightLogsResourceTest {
     }
 
     @Test
+    public fun aConflictIsAPermanentValidationFailureWithItsCode(): Unit = runBlocking {
+        enqueue("""{"code":"conflict","message":"The request conflicts with the current state."}""", 409)
+
+        val conflict = runCatching { client.waterLogs.create(CreateWaterLogRequest(WaterAmount(8.0, VolumeUnit.FL_OZ), user = user)) }
+            .exceptionOrNull() as JanuaryException
+
+        assertEquals(ErrorCategory.VALIDATION, conflict.category)
+        assertEquals("conflict", conflict.code)
+        assertEquals(409, conflict.httpStatus)
+        // Not retried: one attempt.
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
     public fun unknownUnitsAreReportedAsDecodingFailures(): Unit = runBlocking {
         enqueue("""{"items":[{"date":"2026-09-09","total":{"value":1,"unit":"cups"}}]}""")
 

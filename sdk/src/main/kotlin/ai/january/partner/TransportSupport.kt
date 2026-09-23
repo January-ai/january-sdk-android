@@ -107,7 +107,9 @@ internal suspend fun executeEmptyApiCall(operation: suspend () -> Response<Unit>
 }
 
 internal fun categoryForStatus(status: Int): ErrorCategory = when (status) {
-    400, 422 -> ErrorCategory.VALIDATION
+    // 409 is the API's permanent `conflict`: the request clashes with what the API holds, and sending
+    // it again unchanged gets the same answer.
+    400, 409, 422 -> ErrorCategory.VALIDATION
     401 -> ErrorCategory.AUTHENTICATION
     403 -> ErrorCategory.AUTHORIZATION
     404 -> ErrorCategory.NOT_FOUND

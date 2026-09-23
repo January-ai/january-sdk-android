@@ -17,6 +17,7 @@ import ai.january.partner.weightlogs.WeightLogsResource
 import ai.january.partner.transport.infrastructure.ApiClient
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -59,6 +60,17 @@ public class JanuaryPartnerClient private constructor(
                 .build()
             chain.proceed(request)
         }
+        // Food analysis can take tens of seconds (the reasoning-based photo analyzer is the API's
+        // default), longer than OkHttp's 10-second read timeout. Those requests wait at least
+        // FOOD_ANALYSIS_READ_TIMEOUT_SECONDS; a longer timeout set on the builder is kept.
+        clientBuilder.addInterceptor { chain ->
+            val minimum = FOOD_ANALYSIS_READ_TIMEOUT_SECONDS * 1_000
+            if ("/v1.2/food-analysis/" in chain.request().url.encodedPath && chain.readTimeoutMillis() in 1 until minimum) {
+                chain.withReadTimeout(minimum, TimeUnit.MILLISECONDS).proceed(chain.request())
+            } else {
+                chain.proceed(chain.request())
+            }
+        }
         val apiClient = ApiClient(
             baseUrl = baseUrl,
             okHttpClientBuilder = clientBuilder,
@@ -87,6 +99,9 @@ public class JanuaryPartnerClient private constructor(
         /** The published artifact version, generated from the Gradle project version. */
         internal const val SDK_VERSION: String = BuildConfig.SDK_VERSION
         private const val PRODUCTION_BASE_URL = "https://partners.january.ai"
+
+        /** The least time a photo, text or correction analysis waits for its answer. */
+        internal const val FOOD_ANALYSIS_READ_TIMEOUT_SECONDS: Int = 120
 
         /** Creates a client with a short-lived token managed by the integrating app. */
         @JvmStatic

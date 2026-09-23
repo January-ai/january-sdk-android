@@ -167,7 +167,7 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
                     if (response.alternatives.isEmpty()) EmptyStateCard(Icons.Outlined.Eco, "No suitable alternatives", "No foods matched every selected dietary need.", Modifier.testTag("alternatives-empty"))
                     else SectionLabel("Suggestions · ${response.alternatives.size}", Modifier.testTag("alternatives-results"))
                     response.alternatives.forEachIndexed { index, alternative ->
-                        val detail = alternative.id?.let(details::get) ?: alternativeDetailFood(alternative)
+                        val detail = details[alternative.id] ?: alternativeDetailFood(alternative)
                         DemoCard((if (detail != null) Modifier.clickable { selected = detail } else Modifier).testTag("alternative-result-$index")) {
                             Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 NetworkImage(detail?.photoUrl, null, Modifier.size(58.dp))
@@ -190,15 +190,16 @@ internal fun AlternativesSheet(state: DemoState, food: FoodSearchItem, onDismiss
 }
 
 internal fun alternativeDetailFood(food: ai.january.partner.foods.AlternativeFood): FoodSearchItem? {
-    val id = food.id ?: return null
-    val servings = food.servings.takeIf { it.isNotEmpty() } ?: return null
+    // Only servings with a catalog id can be selected and logged.
+    val servings = food.servings.mapNotNull { serving -> serving.id?.let { id -> ai.january.partner.ServingId(id) to serving } }
+        .takeIf { it.isNotEmpty() } ?: return null
     val n = food.nutrients
-    return FoodSearchItem(id = ai.january.partner.FoodId(id), name = food.name, brandName = food.brandName,
+    return FoodSearchItem(id = ai.january.partner.FoodId(food.id), name = food.name, brandName = food.brandName,
         calories = n.calories?.value, protein = n.protein?.value, carbohydrates = n.carbohydrates?.value,
         netCarbohydrates = n.netCarbohydrates?.value, totalFat = n.totalFat?.value, saturatedFat = n.saturatedFat?.value,
         fiber = n.fiber?.value, totalSugars = n.totalSugars?.value, addedSugars = n.addedSugars?.value, sodium = n.sodium?.value,
         potassium = null, cholesterol = null, glycemicIndex = null, glycemicLoad = null, photoUrl = null,
-        servings = servings.mapIndexed { index, serving -> ServingOption(serving.id?.let { ai.january.partner.ServingId(it) }, serving.quantity ?: 1.0, serving.unit, 1.0, weightGrams = null, isPrimary = index == 0) })
+        servings = servings.mapIndexed { index, (id, serving) -> ServingOption(id, serving.quantity ?: 1.0, serving.unit, 1.0, weightGrams = null, isPrimary = index == 0) })
 }
 
 private fun String.dietLabel(): String = replace('_', ' ').split(' ').joinToString(" ") { it.replaceFirstChar(Char::uppercase) }

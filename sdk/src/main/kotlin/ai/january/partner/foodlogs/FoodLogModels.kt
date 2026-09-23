@@ -50,7 +50,7 @@ public data class ServingDetails(
 
 @JsonClass(generateAdapter = false)
 public data class LoggedFood(
-    public val id: String?, public val name: String?,
+    public val id: String, public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     @Json(name = "image_url") public val imageUrl: String? = null,
     @Json(name = "glycemic_index") public val glycemicIndex: Double? = null,

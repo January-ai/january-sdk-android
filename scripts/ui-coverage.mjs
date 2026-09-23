@@ -37,7 +37,6 @@ const NOT_TAGS = new Map([
   ['los-angeles', 'preset city ID'],
   ['sans-serif-medium', 'font family name'],
   ['partner-user-123', 'sample user ID in a preview'],
-  ['menu-${menu.size + index}', 'fallback menu item ID'],
 ]);
 
 const TAG = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/;

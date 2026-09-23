@@ -5,6 +5,20 @@ project uses Semantic Versioning.
 
 ## [Unreleased]
 
+- Breaking: `AlternativeFood.id`, `ServingOption.id`, `RestaurantMenuEntry.id`,
+  and `LoggedFood.id` are no longer nullable. The API now always returns these
+  catalog IDs (food, serving, and menu IDs are 1 to 10 digits with no leading
+  zero), so drop any null checks on them.
+- A photo analysis without `reasoningEffort` now gets the API's default, the
+  reasoning-based analyzer; set `AnalysisEffort.NONE` for the standard one. The
+  SDK sends an effort only when you set one.
+- Photo, text, and correction analyses wait at least 120 seconds for their
+  answer, since the reasoning-based analyzer can take tens of seconds. A longer
+  read timeout on your `OkHttpClient.Builder` is kept; other requests keep the
+  builder's timeouts.
+- An HTTP 409 (`conflict`, a request that clashes with what the API holds) is
+  `ErrorCategory.VALIDATION` with `code` `conflict`. Sending it again unchanged
+  gets the same answer.
 - Added water logs: `waterLogs.create` records an amount in `VolumeUnit.FL_OZ`,
   `VolumeUnit.ML`, or `VolumeUnit.CUP` (the API caps an end user at 24 L per day and answers
   `daily_water_limit_exceeded`), `waterLogs.list` returns one `DailyWaterTotal`
@@ -26,7 +40,8 @@ project uses Semantic Versioning.
   `weight_logs:read`, and `weight_logs:write` scopes; a backend token endpoint
   that mints least-privilege tokens must add them for these operations.
 - Regenerated the internal transport from the refreshed contract (water and
-  weight logs, correction request shape, serving weights, integer profile age).
+  weight logs, correction request shape, serving weights, integer profile age,
+  required catalog IDs, the `conflict` error code).
 - `glucose.predict` throws `JanuaryException` (`ErrorCategory.VALIDATION`) for
   a fractional `GlucosePredictionProfile.age`; the API takes whole years.
 - `foodAnalysis.correct` leaves out a hand-built detection without a serving

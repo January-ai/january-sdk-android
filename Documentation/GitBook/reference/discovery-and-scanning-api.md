@@ -49,8 +49,11 @@ suspend fun correct(request: CorrectPhotoScanRequest): FoodScan
 ```
 
 `ScanFoodPhotoRequest` has `image: String`, optional `endUserId`, and optional
-`reasoningEffort` (`AnalysisEffort.XHIGH` selects the reasoning-based analyzer;
-the result shape and cost are the same). Use
+`reasoningEffort`. Left out, the API uses its default, the reasoning-based
+analyzer (the same as `AnalysisEffort.XHIGH`); `AnalysisEffort.NONE` selects the
+standard analyzer. The result shape and cost are the same either way. An analysis
+can take tens of seconds, so food-analysis requests wait at least 120 seconds for
+their answer. Use
 `ScanFoodPhotoRequest.fromImageData(imageData, endUserId, maxDimension = 1000,
 jpegQuality = 70)` or `PhotoScanImage.dataUri(...)` to prepare camera bytes.
 

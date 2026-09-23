@@ -62,7 +62,7 @@ public class AllEndpointsLiveTest {
 
         val search = client.foods.search(SearchFoodsRequest("banana", limit = 3, endUserId = userId))
         val food = search.items.firstOrNull() ?: error("foods.search returned no food.")
-        val serving = food.servings.firstOrNull { it.id != null } ?: error("foods.search returned no serving.")
+        val serving = food.servings.firstOrNull() ?: error("foods.search returned no serving.")
         pass("foods.search")
 
         client.foods.get(GetFoodRequest(food.id))

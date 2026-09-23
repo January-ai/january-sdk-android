@@ -173,7 +173,7 @@ public class FoodsResource internal constructor(private val api: FoodsApi) {
         barcode = barcode,
         servings = servings.map { serving ->
             ServingOption(
-                id = serving.id?.let(::ServingId),
+                id = ServingId(serving.id),
                 quantity = serving.quantity?.toDouble(),
                 unit = serving.unit,
                 scalingFactor = serving.scalingFactor?.toDouble() ?: 1.0,

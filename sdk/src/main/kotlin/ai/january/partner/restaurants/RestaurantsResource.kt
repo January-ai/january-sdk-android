@@ -100,7 +100,7 @@ public class RestaurantsResource internal constructor(private val api: Restauran
 
 private fun mapServing(serving: ai.january.partner.transport.models.ServingOption) =
     ai.january.partner.foods.ServingOption(
-        serving.id?.let { ai.january.partner.ServingId(it) },
+        ai.january.partner.ServingId(serving.id),
         serving.quantity?.toDouble(),
         serving.unit,
         serving.scalingFactor?.toDouble() ?: 1.0,

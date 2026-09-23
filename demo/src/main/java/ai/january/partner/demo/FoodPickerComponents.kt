@@ -242,7 +242,7 @@ internal fun ServingSelectionSheet(
                 text = "Add to meal",
                 onClick = { onSelect(DemoSelectedFood(food, serving, quantity)) },
                 modifier = Modifier.fillMaxWidth().testTag("food-serving-add"),
-                enabled = serving.id?.value != "0",
+                enabled = serving.id.value != "0",
             )
         }
     }

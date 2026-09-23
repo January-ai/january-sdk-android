@@ -23,6 +23,7 @@ import ai.january.partner.photos.CorrectPhotoScanRequest
 import ai.january.partner.photos.FoodDetection
 import ai.january.partner.photos.FoodScan
 import ai.january.partner.photos.ScanFoodPhotoRequest
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -160,15 +161,44 @@ class ContractShapeTest {
     }
 
     @Test
+    fun foodAnalysisWaitsLongerThanOtherRequests(): Unit = runBlocking {
+        // A builder with a 1-second read timeout, and answers that take 2 seconds.
+        val impatient = JanuaryPartnerClient.testing(
+            "fixture-api-key",
+            server.url("/").toString(),
+            OkHttpClient.Builder().readTimeout(1, TimeUnit.SECONDS),
+        )
+        server.enqueue(
+            MockResponse().setHeader("Content-Type", "application/json")
+                .setBody("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
+                .setHeadersDelay(2, TimeUnit.SECONDS),
+        )
+        server.enqueue(
+            MockResponse().setHeader("Content-Type", "application/json")
+                .setBody("""{"total_count":0,"items":[]}""")
+                .setHeadersDelay(2, TimeUnit.SECONDS),
+        )
+
+        // The analysis waits for its answer; any other request keeps the builder's timeout.
+        assertTrue(impatient.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg")).detections.isEmpty())
+        val search = runCatching { impatient.foods.search(ai.january.partner.foods.SearchFoodsRequest("banana")) }.exceptionOrNull()
+        assertEquals(ErrorCategory.TIMEOUT, (search as JanuaryException).category)
+    }
+
+    @Test
     fun photoScanSendsReasoningEffortOnlyWhenAsked(): Unit = runBlocking {
+        enqueue("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
         enqueue("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
         enqueue("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
 
         client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg"))
         client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg", reasoningEffort = AnalysisEffort.XHIGH))
+        client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg", reasoningEffort = AnalysisEffort.NONE))
 
+        // Left out, the API picks its default (the reasoning-based analyzer); the SDK never sends one of its own.
         assertTrue(!server.takeRequest().body.readUtf8().contains("reasoning"))
         assertTrue(server.takeRequest().body.readUtf8().contains(""""reasoning":{"effort":"xhigh"}"""))
+        assertTrue(server.takeRequest().body.readUtf8().contains(""""reasoning":{"effort":"none"}"""))
     }
 
     @Test

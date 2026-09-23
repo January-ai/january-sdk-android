@@ -64,7 +64,7 @@ public data class SearchRestaurantMenuItemsResponse(
 )
 
 public data class RestaurantMenuEntry(
-    public val id: String?, public val name: String?,
+    public val id: String, public val name: String?,
     public val calories: Double? = null, public val protein: Double? = null,
     public val carbohydrates: Double? = null, public val netCarbohydrates: Double? = null,
     public val totalFat: Double? = null, public val fiber: Double? = null,

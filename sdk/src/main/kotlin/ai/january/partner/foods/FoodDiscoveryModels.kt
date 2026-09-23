@@ -82,7 +82,7 @@ public data class DetectedFood(
 /** A healthier alternative to a food, with the servings its nutrition can be read against. */
 @JsonClass(generateAdapter = false)
 public data class AlternativeFood(
-    public val id: String? = null,
+    public val id: String,
     public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     public val nutrients: CompleteScanNutritionFacts,

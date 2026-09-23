@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+* Breaking: `AlternativeFood.id`, `ServingOption.id`, `RestaurantMenuEntry.id`, and `LoggedFood.id` are non-null; the API always returns these catalog IDs
+* Photo analysis uses the API's default, the reasoning-based analyzer, unless `reasoningEffort` is set; `AnalysisEffort.NONE` selects the standard analyzer
+* Food analyses wait at least 120 seconds for their answer
+* HTTP 409 `conflict` is reported as `ErrorCategory.VALIDATION`
 * Water logs (`waterLogs.create`, `list`, `delete`) and weight logs (`weightLogs.create`, `list`) per end user, with daily totals and latest daily weights
 * `ServingSummary.weightGrams`, the weight of one catalog serving
 * Corrections send the prior scan in the API's new request shape; `foodLogs.update` rejects an empty patch before any network call

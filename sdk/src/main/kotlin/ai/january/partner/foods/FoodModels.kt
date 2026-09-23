@@ -81,7 +81,7 @@ public data class FoodSearchItem(
 )
 
 public data class ServingOption(
-    public val id: ServingId?,
+    public val id: ServingId,
     public val quantity: Double?,
     public val unit: String?,
     public val scalingFactor: Double,
