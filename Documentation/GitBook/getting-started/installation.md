@@ -35,7 +35,7 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("ai.january:january-sdk-android:0.2.2")
+    implementation("ai.january:january-sdk-android:0.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
 }
@@ -77,5 +77,5 @@ first-request example.
 ./gradlew :app:assembleDebug
 ```
 
-The dependency report should show `ai.january:january-sdk-android:0.2.2` resolved
+The dependency report should show `ai.january:january-sdk-android:0.3.0` resolved
 from Maven Central.
