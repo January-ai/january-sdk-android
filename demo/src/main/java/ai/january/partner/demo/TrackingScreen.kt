@@ -112,6 +112,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     var waterSaving by remember { mutableStateOf(false) }
     var waterError by remember { mutableStateOf<Throwable?>(null) }
     var lastWaterLogId by remember { mutableStateOf<String?>(null) }
+    var failedWaterAction by remember { mutableStateOf(TrackingAction.LOAD) }
     var lastWaterLogged by remember { mutableStateOf<WaterAmount?>(null) }
 
     var weightUnit by rememberSaveable { mutableStateOf(WeightUnit.POUNDS) }
@@ -121,6 +122,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     var weightSaving by remember { mutableStateOf(false) }
     var weightError by remember { mutableStateOf<Throwable?>(null) }
     var lastWeightLogged by remember { mutableStateOf<Weight?>(null) }
+    var failedWeightAction by remember { mutableStateOf(TrackingAction.LOAD) }
 
     // The history charts always end today, whichever day the day picker shows.
     var waterRange by rememberSaveable { mutableStateOf(ChartRange.WEEK) }
@@ -181,6 +183,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 throw cancelled
             } catch (failure: Exception) {
                 waterError = failure
+                failedWaterAction = TrackingAction.LOAD
             } finally {
                 waterLoading = false
             }
@@ -198,6 +201,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 throw cancelled
             } catch (failure: Exception) {
                 weightError = failure
+                failedWeightAction = TrackingAction.LOAD
             } finally {
                 weightLoading = false
             }
@@ -268,6 +272,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 throw cancelled
             } catch (failure: Exception) {
                 waterError = failure
+                failedWaterAction = TrackingAction.LOG
             } finally {
                 waterSaving = false
             }
@@ -290,6 +295,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 throw cancelled
             } catch (failure: Exception) {
                 waterError = failure
+                failedWaterAction = TrackingAction.DELETE
             } finally {
                 waterSaving = false
             }
@@ -310,11 +316,22 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 throw cancelled
             } catch (failure: Exception) {
                 weightError = failure
+                failedWeightAction = TrackingAction.LOG
             } finally {
                 weightSaving = false
             }
         }
     }
+
+    // "Try again" on a water or weight error repeats the request that failed: a failed log is logged
+    // again rather than only reloading the day, which would drop the entry the user asked for.
+    fun retryWater() = when (failedWaterAction) {
+        TrackingAction.LOAD -> loadWater()
+        TrackingAction.LOG -> logWater()
+        TrackingAction.DELETE -> deleteLastWater()
+    }
+
+    fun retryWeight() = if (failedWeightAction == TrackingAction.LOG) logWeight() else loadWeight()
 
     LaunchedEffect(userContext, client, day) {
         loadJob?.cancelAndJoin()
@@ -455,7 +472,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                 ) { WaterBarChart(bars.orEmpty(), waterRange, waterUnit.label()) }
                             }
                         }
-                        waterError?.let { ErrorCard(it, ::loadWater, testTag = "water-error", retryTestTag = "water-retry") }
+                        waterError?.let { ErrorCard(it, ::retryWater, testTag = "water-error", retryTestTag = "water-retry") }
                         waterHistoryError?.let { ErrorCard(it, ::loadWaterHistory, testTag = "water-chart-error", retryTestTag = "water-chart-retry") }
 
                         SectionLabel("Weight")
@@ -492,7 +509,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                 ) { WeightLineChart(points, weightSpan, weightRange, weightUnit.value) }
                             }
                         }
-                        weightError?.let { ErrorCard(it, ::loadWeight, testTag = "weight-error", retryTestTag = "weight-retry") }
+                        weightError?.let { ErrorCard(it, ::retryWeight, testTag = "weight-error", retryTestTag = "weight-retry") }
                         weightHistoryError?.let { ErrorCard(it, ::loadWeightHistory, testTag = "weight-chart-error", retryTestTag = "weight-chart-retry") }
                     }
                     if (client == null) AuthenticationRequiredCard()
@@ -567,6 +584,9 @@ private fun LogNumberField(value: String, onValueChange: (String) -> Unit, testT
         singleLine = true,
     )
 }
+
+/** The request behind a water or weight error, which that error's "Try again" repeats. */
+private enum class TrackingAction { LOAD, LOG, DELETE }
 
 private fun VolumeUnit.label(): String = when (this) {
     VolumeUnit.FL_OZ -> "fl oz"
