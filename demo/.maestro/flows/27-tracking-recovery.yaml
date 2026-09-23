@@ -66,6 +66,8 @@ tags:
     timeout: 15000
 - assertNotVisible:
     id: water-chart-error
+# A server error on a save may come after the weight was saved, and the create is
+# not idempotent: "Try again" reloads the day instead of logging it twice.
 - runScript:
     file: ../scripts/control-fixture.js
     env:
@@ -80,6 +82,11 @@ tags:
 - scrollUntilVisible:
     element:
       id: weight-error
+    direction: DOWN
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: "The weight may have been saved anyway.*"
     direction: DOWN
     timeout: 15000
 - runFlow:
@@ -98,7 +105,51 @@ tags:
     env:
       ROUTE: /v1.2/weight-logs
       STATUS: "200"
-# "Try again" repeats the failed save, not just a reload of the day.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-retry
+- tapOn:
+    id: weight-retry
+- scrollUntilVisible:
+    element:
+      id: weight-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: weight-error
+- assertNotVisible:
+    id: weight-logged
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      FIELD: method
+      VALUE: '"GET"'
+# A save the API refused was not recorded: "Try again" sends it again.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "429"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- scrollUntilVisible:
+    element:
+      id: weight-error
+    direction: DOWN
+    timeout: 15000
+- assertVisible: Too many requests
+- assertNotVisible: "The weight may have been saved anyway.*"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "200"
 - runFlow:
     file: ../scroll-to.yaml
     env:
@@ -113,3 +164,53 @@ tags:
 - assertVisible: Logged 150 lb
 - assertNotVisible:
     id: weight-error
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      METHOD: POST
+      FIELD: body.weight.value
+      VALUE: "150"
+# The same holds for water: after a server error, "Try again" only reloads the day.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "503"
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- tapOn:
+    id: water-log
+- scrollUntilVisible:
+    element:
+      text: "The water may have been saved anyway.*"
+    direction: DOWN
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "200"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-retry
+- tapOn:
+    id: water-retry
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: water-error
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      FIELD: method
+      VALUE: '"GET"'

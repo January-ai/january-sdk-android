@@ -1,0 +1,89 @@
+appId: ai.january.partner.demo
+name: Tracking - a water log still saving when the day changes stays with the day it was made on
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- tapOn:
+    id: tab-tracking
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+# The server keeps the water at once but holds its answer, so the day changes
+# while the save is on its way.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      METHOD: POST
+      HOLD: "true"
+- tapOn:
+    id: water-log
+    waitToSettleTimeoutMs: 300
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      id: logs-day-previous
+    direction: UP
+    waitToSettleTimeoutMs: 300
+    timeout: 30000
+- tapOn:
+    id: logs-day-previous
+    waitToSettleTimeoutMs: 300
+    retryTapIfNoChange: true
+- assertVisible:
+    id: logs-day-today
+# On the previous day the save is still going: the button shows a spinner, not
+# its label.
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: DOWN
+    centerElement: true
+    waitToSettleTimeoutMs: 300
+    timeout: 30000
+- assertNotVisible: Log water
+- runScript:
+    file: ../scripts/release-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+# When it finishes, nothing of it shows on this day: it was today's water.
+- extendedWaitUntil:
+    visible: Log water
+    timeout: 20000
+- assertNotVisible:
+    id: water-logged
+- assertNotVisible:
+    id: water-delete-last
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
+# Back on today, the day's total includes it.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+- scrollUntilVisible:
+    element:
+      id: logs-day-today
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- tapOn:
+    id: logs-day-today
+    retryTapIfNoChange: true
+- assertNotVisible:
+    id: logs-day-today
+- scrollUntilVisible:
+    element:
+      id: water-total
+      text: 8 fl oz
+    direction: DOWN
+    timeout: 20000

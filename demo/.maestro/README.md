@@ -37,7 +37,8 @@ maestro test --include-tags fixture,parity -e FIXTURE_ORIGIN=http://127.0.0.1:18
 ```
 
 Flows change the fixture server's behaviour through `scripts/control-fixture.js`
-(HTTP status, delay, empty collections per route), `seed-fixture.js` (one saved
+(HTTP status, delay, empty collections per route, optionally for one method, and
+`HOLD`, which keeps a request's answer open until `release-fixture.js`), `seed-fixture.js` (one saved
 food log, for `USER` when set), `seed-history.js` (about 13 months of water and weight ending today)
 and `reset-fixture.js`, which the bootstrap runs first so no flow
 inherits another's configuration. `assert-request.js` checks what the demo
@@ -61,7 +62,9 @@ typing anything else never opens the suggestion list.
   which can press Back and close a sheet.
 - To assert a loading state, slow its route with `control-fixture.js`
   (`DELAY`) and trigger it with `waitToSettleTimeoutMs: 500` on the tap, so
-  the spinner is still there when the assertion runs.
+  the spinner is still there when the assertion runs. Keep a `DELAY` under 10
+  seconds, the SDK's read timeout; to act while a request is on its way for
+  longer, `HOLD` its answer and release it with `release-fixture.js`.
 - Tag every flow `fixture` or `parity`; CI runs both tags. Flows tagged `live`
   run against the January API instead (see below).
 - The Tracking tab (`tab-tracking`, `tracking-screen`) is a day view
@@ -145,7 +148,7 @@ Other settings, each passed with `-e`:
 ## In CI
 
 `.github/workflows/quality.yml` runs `scripts/ui-coverage.mjs`, builds the APK
-once, then `ui-test-android` runs four shards (39 fixture and parity flows,
+once, then `ui-test-android` runs four shards (40 fixture and parity flows,
 dealt round-robin by `shard.mjs`) through
 `.github/scripts/android-ui-suite.sh`. Failed flows are
 rerun once and named in a workflow warning; each shard uploads its JUnit report

@@ -80,6 +80,10 @@ LIST_LIMIT=100
 # route names its user ('fixture-token-<user>'); the stub token of the plain fixture launch is one
 # shared user, ''. The seed routes take ?user= for the same reason.
 state={'rules':{},'logs':{},'water':{},'weights':{},'requests':[]}
+# A rule with hold=true answers its route but keeps the answer open (sending a space every second,
+# so the client's read timeout never fires) until /__release?route= , so a flow can act while a
+# save is still on its way. The request itself is handled, and its data kept, straight away.
+releases={}
 def user_of(headers):
  auth=headers.get('Authorization') or ''
  return auth[len('Bearer fixture-token-'):] if auth.startswith('Bearer fixture-token-') else ''
@@ -95,8 +99,17 @@ class Handler(BaseHTTPRequestHandler):
   parsed=urlparse(self.path);path=parsed.path;q={k:v[0] for k,v in parse_qs(parsed.query).items()}
   raw=self.rfile.read(int(self.headers.get('Content-Length',0)))
   body=json.loads(raw) if raw and 'application/json' in self.headers.get('Content-Type','') else {}
-  if path=='/__reset':state.update(rules={},logs={},water={},weights={},requests=[]);return self.respond({})
-  if path=='/__control':state['rules'][q['route']]=q;return self.respond({})
+  if path=='/__reset':
+   for held in releases.values():held.set()
+   releases.clear();state.update(rules={},logs={},water={},weights={},requests=[]);return self.respond({})
+  if path=='/__control':
+   state['rules'][q['route']]=q
+   if q['route'] in releases:releases.pop(q['route']).set()
+   if q.get('hold')=='true':releases[q['route']]=threading.Event()
+   return self.respond({})
+  if path=='/__release':
+   if q['route'] in releases:releases[q['route']].set()
+   return self.respond({})
   if path=='/__seed':state['logs'][q.get('user','')]=[log()];return self.respond({})
   if path=='/__seed_history':state['water'][q.get('user','')],state['weights'][q.get('user','')]=history();return self.respond({})
   if path=='/__requests':return self.respond(state['requests'])
@@ -108,6 +121,9 @@ class Handler(BaseHTTPRequestHandler):
    return self.respond(dict(token='fixture-token-'+user,expires_in=3600))
   user=user_of(self.headers)
   rule=state['rules'].get(path,{})
+  # A rule with method= applies to that method's requests only.
+  if rule.get('method') and rule['method']!=self.command:rule={}
+  self.held=releases.get(path) if rule.get('hold')=='true' else None
   delay=float(rule.get('delay',0))
   if delay:time.sleep(delay)
   status=int(rule.get('status',200));empty=rule.get('empty')=='true'
@@ -164,7 +180,18 @@ class Handler(BaseHTTPRequestHandler):
   self.respond(result)
  def respond(self,body,status=200):
   if status==204:self.send_response(status);self.send_header('Content-Length','0');self.end_headers();return
-  data=json.dumps(body).encode();self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.end_headers()
+  data=json.dumps(body).encode();held=getattr(self,'held',None)
+  if held is not None:
+   # No Content-Length: the body ends when the connection closes (HTTP/1.0), after the release.
+   self.send_response(status);self.send_header('Content-Type','application/json');self.end_headers()
+   try:
+    for _ in range(120):
+     if held.wait(1):break
+     self.wfile.write(b' ');self.wfile.flush()
+    self.wfile.write(data)
+   except (BrokenPipeError,ConnectionResetError):pass
+   return
+  self.send_response(status);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(data)));self.end_headers()
   try:self.wfile.write(data)
   except (BrokenPipeError,ConnectionResetError):pass
 if __name__=='__main__':ThreadingHTTPServer(('127.0.0.1',int(__import__('sys').argv[1]) if len(__import__('sys').argv)>1 else 18765),Handler).serve_forever()

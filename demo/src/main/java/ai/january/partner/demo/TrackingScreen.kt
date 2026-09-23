@@ -152,7 +152,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     var weightHistoryJob by remember { mutableStateOf<Job?>(null) }
 
     /** Entries logged for a day other than today are dated noon, local time, so they land on that day. */
-    fun entryTimestamp(): String? = if (isToday) null else selectedDay.atTime(12, 0).atZone(zone).toOffsetDateTime().toString()
+    fun entryTimestamp(forDay: LocalDate): String? = if (forDay == today) null else forDay.atTime(12, 0).atZone(zone).toOffsetDateTime().toString()
 
     fun loadFoodLogs() {
         loadJob?.cancel()
@@ -271,23 +271,34 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
         loadWeight()
     }
 
+    // A log or delete belongs to the day it was made on: the day and the entry's timestamp are fixed
+    // when the user taps, and if they have moved to another day by the time the answer comes, the
+    // answer (or the failure) is not shown on the day they are looking at. The charts end today
+    // whatever the day, so they reload either way.
     fun logWater() {
         val sdk = userClient ?: return
         val value = waterText.toDoubleOrNull() ?: return
+        val amount = WaterAmount(value, waterUnit)
+        val targetDay = day
+        val timestamp = entryTimestamp(LocalDate.parse(targetDay))
         waterSaving = true
         waterError = null
         coroutineScope.launch {
             try {
-                val log = sdk.waterLogs.create(WaterAmount(value, waterUnit), entryTimestamp())
-                lastWaterLogId = log.id
-                lastWaterLogged = log.amount
-                loadWater()
+                val log = sdk.waterLogs.create(amount, timestamp)
                 loadWaterHistory()
+                if (day == targetDay) {
+                    lastWaterLogId = log.id
+                    lastWaterLogged = log.amount
+                    loadWater()
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                waterError = failure
-                failedWaterAction = TrackingAction.LOG
+                if (day == targetDay) {
+                    waterError = failure
+                    failedWaterAction = if (mayHaveBeenSaved(failure)) TrackingAction.CHECK_LOG else TrackingAction.LOG
+                }
             } finally {
                 waterSaving = false
             }
@@ -297,20 +308,25 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     fun deleteLastWater() {
         val sdk = userClient ?: return
         val id = lastWaterLogId ?: return
+        val targetDay = day
         waterSaving = true
         waterError = null
         coroutineScope.launch {
             try {
                 sdk.waterLogs.delete(id)
-                lastWaterLogId = null
-                lastWaterLogged = null
-                loadWater()
                 loadWaterHistory()
+                if (day == targetDay) {
+                    lastWaterLogId = null
+                    lastWaterLogged = null
+                    loadWater()
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                waterError = failure
-                failedWaterAction = TrackingAction.DELETE
+                if (day == targetDay) {
+                    waterError = failure
+                    failedWaterAction = TrackingAction.DELETE
+                }
             } finally {
                 waterSaving = false
             }
@@ -320,33 +336,51 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     fun logWeight() {
         val sdk = userClient ?: return
         val value = weightText.toDoubleOrNull() ?: return
+        val weight = Weight(value, weightUnit)
+        val targetDay = day
+        val timestamp = entryTimestamp(LocalDate.parse(targetDay))
         weightSaving = true
         weightError = null
         coroutineScope.launch {
             try {
-                lastWeightLogged = sdk.weightLogs.create(Weight(value, weightUnit), entryTimestamp()).weight
-                loadWeight()
+                val logged = sdk.weightLogs.create(weight, timestamp).weight
                 loadWeightHistory()
+                if (day == targetDay) {
+                    lastWeightLogged = logged
+                    loadWeight()
+                }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                weightError = failure
-                failedWeightAction = TrackingAction.LOG
+                if (day == targetDay) {
+                    weightError = failure
+                    failedWeightAction = if (mayHaveBeenSaved(failure)) TrackingAction.CHECK_LOG else TrackingAction.LOG
+                }
             } finally {
                 weightSaving = false
             }
         }
     }
 
-    // "Try again" on a water or weight error repeats the request that failed: a failed log is logged
-    // again rather than only reloading the day, which would drop the entry the user asked for.
+    // "Try again" on a water or weight error: a log the API refused is sent again rather than only
+    // reloading the day, which would drop the entry the user asked for. A log that may have been
+    // saved anyway (a timeout or a server error) is not sent twice: the day reloads, so the user sees
+    // whether it landed. The water and weight creates are not idempotent.
     fun retryWater() = when (failedWaterAction) {
         TrackingAction.LOAD -> loadWater()
         TrackingAction.LOG -> logWater()
+        TrackingAction.CHECK_LOG -> { loadWater(); loadWaterHistory() }
         TrackingAction.DELETE -> deleteLastWater()
     }
 
-    fun retryWeight() = if (failedWeightAction == TrackingAction.LOG) logWeight() else loadWeight()
+    fun retryWeight() = when (failedWeightAction) {
+        TrackingAction.LOG -> logWeight()
+        TrackingAction.CHECK_LOG -> { loadWeight(); loadWeightHistory() }
+        TrackingAction.LOAD, TrackingAction.DELETE -> loadWeight()
+    }
+
+    fun retryNote(action: TrackingAction, what: String): String? =
+        if (action == TrackingAction.CHECK_LOG) "The $what may have been saved anyway. Try again reloads the day, so check it before logging again." else null
 
     LaunchedEffect(userContext, client, day) {
         summaryJob?.cancel()
@@ -492,7 +526,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                 ) { WaterBarChart(bars.orEmpty(), waterRange, waterUnit.label()) }
                             }
                         }
-                        waterError?.let { ErrorCard(it, ::retryWater, testTag = "water-error", retryTestTag = "water-retry") }
+                        waterError?.let { ErrorCard(it, ::retryWater, testTag = "water-error", retryTestTag = "water-retry", note = retryNote(failedWaterAction, "water")) }
                         waterHistoryError?.let { ErrorCard(it, ::loadWaterHistory, testTag = "water-chart-error", retryTestTag = "water-chart-retry") }
 
                         SectionLabel("Weight")
@@ -529,7 +563,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                 ) { WeightLineChart(points, weightSpan, weightRange, weightUnit.value) }
                             }
                         }
-                        weightError?.let { ErrorCard(it, ::retryWeight, testTag = "weight-error", retryTestTag = "weight-retry") }
+                        weightError?.let { ErrorCard(it, ::retryWeight, testTag = "weight-error", retryTestTag = "weight-retry", note = retryNote(failedWeightAction, "weight")) }
                         weightHistoryError?.let { ErrorCard(it, ::loadWeightHistory, testTag = "weight-chart-error", retryTestTag = "weight-chart-retry") }
                     }
                     if (client == null) AuthenticationRequiredCard()
@@ -606,8 +640,22 @@ private fun LogNumberField(value: String, onValueChange: (String) -> Unit, testT
     )
 }
 
-/** The request behind a water or weight error, which that error's "Try again" repeats. */
-private enum class TrackingAction { LOAD, LOG, DELETE }
+/** The request behind a water or weight error, which decides what that error's "Try again" does. */
+private enum class TrackingAction {
+    LOAD,
+
+    /** A log the API refused, or never received: "Try again" sends it again. */
+    LOG,
+
+    /**
+     * A log that failed in a way that may have saved it anyway (see [mayHaveBeenSaved]): "Try again"
+     * reloads the day, so the user sees whether it landed before logging it again.
+     */
+    CHECK_LOG,
+
+    /** Deleting is idempotent, so "Try again" sends the delete again. */
+    DELETE,
+}
 
 private fun VolumeUnit.label(): String = when (this) {
     VolumeUnit.FL_OZ -> "fl oz"

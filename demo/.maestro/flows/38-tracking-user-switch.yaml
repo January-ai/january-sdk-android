@@ -186,6 +186,7 @@ tags:
       TARGET_ID: water-chart-retry
 - tapOn:
     id: water-chart-retry
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       id: water-chart-empty
@@ -202,6 +203,7 @@ tags:
       TARGET_ID: weight-chart-retry
 - tapOn:
     id: weight-chart-retry
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       id: weight-chart-empty
