@@ -10,16 +10,27 @@ import ai.january.partner.JanuaryClientToken
 import ai.january.partner.PartnerUserId
 import ai.january.partner.PartnerUserContext
 import ai.january.partner.JanuaryPartnerUserClient
+import ai.january.partner.JanuaryTokenProvider
 import ai.january.partner.JanuaryTokenProviderException
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-class DemoState(context: Context, private val clientOverride: JanuaryPartnerClient? = null) {
+/**
+ * [clientOverride] replaces the client outright (a fixed test client). [tokenUrlOverride] and
+ * [clientFactory] keep the per-user client-token path but point it elsewhere, so a debug launch can
+ * run it against a local fixture server.
+ */
+class DemoState(
+    context: Context,
+    private val clientOverride: JanuaryPartnerClient? = null,
+    tokenUrlOverride: String? = null,
+    private val clientFactory: ((JanuaryTokenProvider) -> JanuaryPartnerClient)? = null,
+) {
     private val preferences = context.getSharedPreferences("january_demo", Context.MODE_PRIVATE)
     private val developmentApiKey = BuildConfig.JANUARY_API_KEY.trim()
-    private val partnerTokenUrl = BuildConfig.JANUARY_PARTNER_TOKEN_URL.trim()
+    private val partnerTokenUrl = (tokenUrlOverride ?: BuildConfig.JANUARY_PARTNER_TOKEN_URL).trim()
     private val partnerSessionToken = BuildConfig.JANUARY_PARTNER_SESSION_TOKEN.trim()
     private val localTokenRelayHosts = setOf("localhost", "127.0.0.1", "10.0.2.2", "::1")
     private val isLocalTokenRelay = runCatching {
@@ -81,11 +92,13 @@ class DemoState(context: Context, private val clientOverride: JanuaryPartnerClie
         }
     }
 
+    // One client per end user: its token provider mints for that user only, so a new user never reuses
+    // a token (and so an account) minted for the previous one.
     private fun createClient(userId: String): JanuaryPartnerClient? = when {
-        partnerTokenUrl.isNotEmpty() && !isPartnerSessionTokenMissing ->
-            JanuaryPartnerClient.withClientTokenProvider(
-                provider = { fetchClientToken(partnerTokenUrl, partnerSessionToken, userId) },
-            )
+        partnerTokenUrl.isNotEmpty() && !isPartnerSessionTokenMissing -> {
+            val provider = JanuaryTokenProvider { fetchClientToken(partnerTokenUrl, partnerSessionToken, userId) }
+            clientFactory?.invoke(provider) ?: JanuaryPartnerClient.withClientTokenProvider(provider = provider)
+        }
         partnerTokenUrl.isEmpty() && BuildConfig.DEBUG && developmentApiKey.isNotEmpty() ->
             JanuaryPartnerClient(developmentApiKey)
         else -> null
