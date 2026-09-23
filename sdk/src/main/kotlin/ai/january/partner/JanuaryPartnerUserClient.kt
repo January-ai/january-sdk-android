@@ -37,6 +37,21 @@ import ai.january.partner.restaurants.GetRestaurantMenuItemsResponse
 import ai.january.partner.restaurants.SearchRestaurantMenuItemsResponse
 import ai.january.partner.restaurants.SearchRestaurantsRequest
 import ai.january.partner.restaurants.SearchRestaurantsResponse
+import ai.january.partner.waterlogs.CreateWaterLogRequest
+import ai.january.partner.waterlogs.DeleteWaterLogRequest
+import ai.january.partner.waterlogs.DeleteWaterLogResponse
+import ai.january.partner.waterlogs.ListWaterLogsRequest
+import ai.january.partner.waterlogs.ListWaterLogsResponse
+import ai.january.partner.waterlogs.VolumeUnit
+import ai.january.partner.waterlogs.WaterAmount
+import ai.january.partner.waterlogs.WaterLog
+import ai.january.partner.waterlogs.WaterLogsResource
+import ai.january.partner.weightlogs.CreateWeightLogRequest
+import ai.january.partner.weightlogs.ListWeightLogsRequest
+import ai.january.partner.weightlogs.ListWeightLogsResponse
+import ai.january.partner.weightlogs.WeightLog
+import ai.january.partner.weightlogs.WeightLogsResource
+import ai.january.partner.glucose.Weight
 
 /** A lightweight January client scoped to one partner-owned end-user identity. */
 public class JanuaryPartnerUserClient internal constructor(
@@ -49,6 +64,8 @@ public class JanuaryPartnerUserClient internal constructor(
         UserFoodAnalysisResource(client.foodAnalysis, context)
     public val foodLogs: UserFoodLogsResource = UserFoodLogsResource(client.foodLogs, context)
     public val glucose: UserGlucoseResource = UserGlucoseResource(client.glucose, context)
+    public val waterLogs: UserWaterLogsResource = UserWaterLogsResource(client.waterLogs, context)
+    public val weightLogs: UserWeightLogsResource = UserWeightLogsResource(client.weightLogs, context)
 }
 
 /** Food operations that automatically reuse a [PartnerUserContext]. */
@@ -140,6 +157,33 @@ public class UserFoodLogsResource internal constructor(
 
     public suspend fun delete(id: String): DeleteFoodLogResponse =
         resource.delete(DeleteFoodLogRequest(id, context))
+}
+
+/** Water log operations that automatically reuse a [PartnerUserContext]. */
+public class UserWaterLogsResource internal constructor(
+    private val resource: WaterLogsResource,
+    private val context: PartnerUserContext,
+) {
+    public suspend fun create(amount: WaterAmount, consumedAt: String? = null): WaterLog =
+        resource.create(CreateWaterLogRequest(amount, consumedAt, context))
+
+    public suspend fun list(start: String, end: String, unit: VolumeUnit): ListWaterLogsResponse =
+        resource.list(ListWaterLogsRequest(start, end, unit, context))
+
+    public suspend fun delete(id: String): DeleteWaterLogResponse =
+        resource.delete(DeleteWaterLogRequest(id, context))
+}
+
+/** Weight log operations that automatically reuse a [PartnerUserContext]. */
+public class UserWeightLogsResource internal constructor(
+    private val resource: WeightLogsResource,
+    private val context: PartnerUserContext,
+) {
+    public suspend fun create(weight: Weight, measuredAt: String? = null): WeightLog =
+        resource.create(CreateWeightLogRequest(weight, measuredAt, context))
+
+    public suspend fun list(start: String, end: String): ListWeightLogsResponse =
+        resource.list(ListWeightLogsRequest(start, end, context))
 }
 
 /** Glucose operations that replace request identity with the scoped context. */

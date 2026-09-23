@@ -65,7 +65,7 @@ internal data class ClientToken (
     /**
      * What this token may do — the exact scopes it was granted, echoed back so a caller can assert it minted what it meant to.
      *
-     * Values: FOODS_COLON_READ,FOOD_ANALYSIS_COLON_WRITE,FOOD_LOGS_COLON_READ,FOOD_LOGS_COLON_WRITE,GLUCOSE_COLON_READ,RESTAURANTS_COLON_READ
+     * Values: FOODS_COLON_READ,FOOD_ANALYSIS_COLON_WRITE,FOOD_LOGS_COLON_READ,FOOD_LOGS_COLON_WRITE,GLUCOSE_COLON_READ,RESTAURANTS_COLON_READ,WATER_LOGS_COLON_READ,WATER_LOGS_COLON_WRITE,WEIGHT_LOGS_COLON_READ,WEIGHT_LOGS_COLON_WRITE
      */
     @JsonClass(generateAdapter = false)
     internal enum class Scopes(val value: kotlin.String) {
@@ -74,7 +74,11 @@ internal data class ClientToken (
         @Json(name = "food_logs:read") FOOD_LOGS_COLON_READ("food_logs:read"),
         @Json(name = "food_logs:write") FOOD_LOGS_COLON_WRITE("food_logs:write"),
         @Json(name = "glucose:read") GLUCOSE_COLON_READ("glucose:read"),
-        @Json(name = "restaurants:read") RESTAURANTS_COLON_READ("restaurants:read");
+        @Json(name = "restaurants:read") RESTAURANTS_COLON_READ("restaurants:read"),
+        @Json(name = "water_logs:read") WATER_LOGS_COLON_READ("water_logs:read"),
+        @Json(name = "water_logs:write") WATER_LOGS_COLON_WRITE("water_logs:write"),
+        @Json(name = "weight_logs:read") WEIGHT_LOGS_COLON_READ("weight_logs:read"),
+        @Json(name = "weight_logs:write") WEIGHT_LOGS_COLON_WRITE("weight_logs:write");
     }
 
 }

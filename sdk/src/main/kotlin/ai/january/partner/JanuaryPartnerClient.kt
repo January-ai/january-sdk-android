@@ -10,9 +10,14 @@ import ai.january.partner.transport.apis.FoodsApi
 import ai.january.partner.transport.apis.GlucoseApi
 import ai.january.partner.transport.apis.PhotoScanningApi
 import ai.january.partner.transport.apis.RestaurantsApi
+import ai.january.partner.transport.apis.WaterLogsApi
+import ai.january.partner.transport.apis.WeightLogsApi
+import ai.january.partner.waterlogs.WaterLogsResource
+import ai.january.partner.weightlogs.WeightLogsResource
 import ai.january.partner.transport.infrastructure.ApiClient
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
@@ -30,6 +35,8 @@ public class JanuaryPartnerClient private constructor(
     public val foodAnalysis: FoodAnalysisResource
     public val foodLogs: FoodLogsResource
     public val glucose: GlucoseResource
+    public val waterLogs: WaterLogsResource
+    public val weightLogs: WeightLogsResource
 
     @Deprecated(
         message = "Local development only. Use withClientTokenProvider in production.",
@@ -53,6 +60,17 @@ public class JanuaryPartnerClient private constructor(
                 .build()
             chain.proceed(request)
         }
+        // Food analysis can take tens of seconds (the reasoning-based photo analyzer is the API's
+        // default), longer than OkHttp's 10-second read timeout. Those requests wait at least
+        // FOOD_ANALYSIS_READ_TIMEOUT_SECONDS; a longer timeout set on the builder is kept.
+        clientBuilder.addInterceptor { chain ->
+            val minimum = FOOD_ANALYSIS_READ_TIMEOUT_SECONDS * 1_000
+            if ("/v1.2/food-analysis/" in chain.request().url.encodedPath && chain.readTimeoutMillis() in 1 until minimum) {
+                chain.withReadTimeout(minimum, TimeUnit.MILLISECONDS).proceed(chain.request())
+            } else {
+                chain.proceed(chain.request())
+            }
+        }
         val apiClient = ApiClient(
             baseUrl = baseUrl,
             okHttpClientBuilder = clientBuilder,
@@ -63,6 +81,8 @@ public class JanuaryPartnerClient private constructor(
         foodAnalysis = FoodAnalysisResource(foodAnalysisApi)
         foodLogs = FoodLogsResource(apiClient.createService(FoodLogsApi::class.java))
         glucose = GlucoseResource(apiClient.createService(GlucoseApi::class.java))
+        waterLogs = WaterLogsResource(apiClient.createService(WaterLogsApi::class.java))
+        weightLogs = WeightLogsResource(apiClient.createService(WeightLogsApi::class.java))
     }
 
     /** Returns a lightweight client that reuses the supplied partner-owned identity. */
@@ -79,6 +99,9 @@ public class JanuaryPartnerClient private constructor(
         /** The published artifact version, generated from the Gradle project version. */
         internal const val SDK_VERSION: String = BuildConfig.SDK_VERSION
         private const val PRODUCTION_BASE_URL = "https://partners.january.ai"
+
+        /** The least time a photo, text or correction analysis waits for its answer. */
+        internal const val FOOD_ANALYSIS_READ_TIMEOUT_SECONDS: Int = 120
 
         /** Creates a client with a short-lived token managed by the integrating app. */
         @JvmStatic

@@ -2,14 +2,28 @@ package ai.january.partner
 
 import ai.january.partner.foodlogs.FoodLogSummaryGrouping
 import ai.january.partner.foodlogs.GetFoodLogSummaryRequest
+import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foodlogs.WeekStart
+import ai.january.partner.foods.DetectedFood
 import ai.january.partner.foods.SearchFoodsByNaturalLanguageRequest
+import ai.january.partner.foods.ServingSummary
+import ai.january.partner.glucose.GlucosePredictionProfile
+import ai.january.partner.glucose.Height
+import ai.january.partner.glucose.HeightUnit
+import ai.january.partner.glucose.PredictGlucoseRequest
+import ai.january.partner.glucose.Sex
+import ai.january.partner.glucose.Weight
+import ai.january.partner.glucose.WeightUnit
+import ai.january.partner.models.CompleteScanNutritionFacts
 import ai.january.partner.foods.SuggestFoodAlternativesRequest
 import ai.january.partner.models.FoodSelection
 import ai.january.partner.models.ServingSelection
 import ai.january.partner.photos.AnalysisEffort
 import ai.january.partner.photos.CorrectPhotoScanRequest
+import ai.january.partner.photos.FoodDetection
+import ai.january.partner.photos.FoodScan
 import ai.january.partner.photos.ScanFoodPhotoRequest
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -69,18 +83,122 @@ class ContractShapeTest {
         assertTrue(sent, sent.contains(""""quantity":2.0"""))
         assertTrue(sent, sent.contains(""""serving":{"id":"34073350","quantity":1.0,"unit":"large"}"""))
         assertTrue(sent, !sent.contains("servings"))
+        // The prior scan goes back field for field inside the correction wrapper.
+        assertTrue(sent, sent.startsWith(""""analysis":{"detections":[{"food":{"name":"eggs","id":"70382174","quantity":2.0,""".let { "{$it" }))
+        assertTrue(sent, sent.endsWith(""","instruction":"make it two eggs"}"""))
+        assertTrue(sent, sent.contains(""""total_nutrients":{"calories":{"value":206.8,"unit":"kcal"}"""))
+    }
+
+    @Test
+    fun correctionKeepsTheServingWeightItWasGiven(): Unit = runBlocking {
+        enqueue(TEXT_ANALYSIS.replace(""""unit": "large"}""", """"unit": "large", "weight_grams": 50}"""))
+        enqueue(TEXT_ANALYSIS)
+        val scan = client.foodAnalysis.analyzeDescription(SearchFoodsByNaturalLanguageRequest("three eggs"))
+        assertEquals(50.0, scan.detections.single().food.serving.weightGrams!!, 0.0)
+        server.takeRequest()
+
+        client.foodAnalysis.correct(CorrectPhotoScanRequest(scan, "make it two eggs"))
+
+        val sent = server.takeRequest().body.readUtf8()
+        assertTrue(sent, sent.contains(""""serving":{"id":"34073350","quantity":1.0,"unit":"large","weight_grams":50.0}"""))
+    }
+
+    @Test
+    fun correctionLeavesOutADetectionWithoutAServingSize(): Unit = runBlocking {
+        enqueue(TEXT_ANALYSIS)
+        fun detection(id: String, servingQuantity: Double?) = FoodDetection(
+            DetectedFood(
+                id = id,
+                name = "food $id",
+                brandName = null,
+                nutrients = CompleteScanNutritionFacts(),
+                serving = ServingSummary("11", servingQuantity, "cup"),
+                quantity = 2.0,
+            ),
+        )
+        val scan = FoodScan("Meal", CompleteScanNutritionFacts(), listOf(detection("1", 0.5), detection("2", null)))
+
+        client.foodAnalysis.correct(CorrectPhotoScanRequest(scan, "make it one cup"))
+
+        val sent = server.takeRequest().body.readUtf8()
+        assertTrue(sent, sent.contains(""""id":"1""""))
+        assertTrue(sent, sent.contains(""""serving":{"id":"11","quantity":0.5,"unit":"cup"}"""))
+        // No serving size is invented for the second food: it is left out.
+        assertTrue(sent, !sent.contains(""""id":"2""""))
+    }
+
+    @Test
+    fun glucosePredictionRejectsAFractionalAgeBeforeSending(): Unit = runBlocking {
+        fun request(age: Double) = PredictGlucoseRequest(
+            userProfile = GlucosePredictionProfile(age, Sex.FEMALE, Height(66.0, HeightUnit.INCHES), Weight(150.0, WeightUnit.POUNDS)),
+            foods = listOf(FoodSelection("70382174", ServingSelection("34073350", 1.0))),
+            startTime = java.time.OffsetDateTime.parse("2026-09-22T12:00:00-04:00"),
+        )
+
+        val failure = runCatching { client.glucose.predict(request(35.5)) }.exceptionOrNull()
+        assertTrue(failure.toString(), failure is JanuaryException)
+        assertEquals(ErrorCategory.VALIDATION, (failure as JanuaryException).category)
+        assertEquals(0, server.requestCount)
+
+        enqueue("""{"points":[{"minutes":0,"value":90}],"impact_score":"low","chart":{"min":70,"max":140}}""")
+        client.glucose.predict(request(35.0))
+        assertTrue(server.takeRequest().body.readUtf8().contains(""""age":35"""))
+    }
+
+    @Test
+    fun foodLogUpdateSendsOnlyTheFieldsSetAndRejectsAnEmptyPatch(): Unit = runBlocking {
+        enqueue("""{"id":"78129823-8ba2-4183-b13b-71f0e963c606","foods":[],"eaten_at":"2026-09-13T11:34:56Z","name":"Lunch"}""")
+        val user = PartnerUserContext(PartnerUserId("fixture-user"), "America/Chicago")
+
+        client.foodLogs.update(UpdateFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", name = "Lunch", user = user))
+        assertEquals("""{"name":"Lunch"}""", server.takeRequest().body.readUtf8())
+
+        val failure = runCatching {
+            client.foodLogs.update(UpdateFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", user = user))
+        }.exceptionOrNull() as JanuaryException
+        assertEquals(ErrorCategory.VALIDATION, failure.category)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun foodAnalysisWaitsLongerThanOtherRequests(): Unit = runBlocking {
+        // A builder with a 1-second read timeout, and answers that take 2 seconds.
+        val impatient = JanuaryPartnerClient.testing(
+            "fixture-api-key",
+            server.url("/").toString(),
+            OkHttpClient.Builder().readTimeout(1, TimeUnit.SECONDS),
+        )
+        server.enqueue(
+            MockResponse().setHeader("Content-Type", "application/json")
+                .setBody("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
+                .setHeadersDelay(2, TimeUnit.SECONDS),
+        )
+        server.enqueue(
+            MockResponse().setHeader("Content-Type", "application/json")
+                .setBody("""{"total_count":0,"items":[]}""")
+                .setHeadersDelay(2, TimeUnit.SECONDS),
+        )
+
+        // The analysis waits for its answer; any other request keeps the builder's timeout.
+        assertTrue(impatient.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg")).detections.isEmpty())
+        val search = runCatching { impatient.foods.search(ai.january.partner.foods.SearchFoodsRequest("banana")) }.exceptionOrNull()
+        assertEquals(ErrorCategory.TIMEOUT, (search as JanuaryException).category)
     }
 
     @Test
     fun photoScanSendsReasoningEffortOnlyWhenAsked(): Unit = runBlocking {
         enqueue("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
         enqueue("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
+        enqueue("""{"meal_name":null,"total_nutrients":{},"detections":[]}""")
 
         client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg"))
         client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg", reasoningEffort = AnalysisEffort.XHIGH))
+        client.foodAnalysis.analyzePhoto(ScanFoodPhotoRequest("https://example.com/meal.jpg", reasoningEffort = AnalysisEffort.NONE))
 
+        // Left out, the API picks its default (the reasoning-based analyzer); the SDK never sends one of its own.
         assertTrue(!server.takeRequest().body.readUtf8().contains("reasoning"))
         assertTrue(server.takeRequest().body.readUtf8().contains(""""reasoning":{"effort":"xhigh"}"""))
+        assertTrue(server.takeRequest().body.readUtf8().contains(""""reasoning":{"effort":"none"}"""))
     }
 
     @Test
@@ -92,6 +210,16 @@ class ContractShapeTest {
         assertEquals("brown rice", alternative.name)
         assertEquals("cup", alternative.servings.single().unit)
         assertEquals(0.5, alternative.servings.single().quantity!!, 0.0)
+        assertNull(alternative.servings.single().weightGrams)
+    }
+
+    @Test
+    fun alternativesKeepTheServingWeight(): Unit = runBlocking {
+        enqueue("""{"alternatives":[{"id":"70372230","name":"brown rice","brand_name":null,"nutrients":{"calories":{"value":108,"unit":"kcal"}},"servings":[{"id":"34113801","quantity":0.5,"unit":"cup","weight_grams":97.5}]}]}""")
+
+        val serving = client.foods.suggestAlternatives(SuggestFoodAlternativesRequest("1")).alternatives.single().servings.single()
+
+        assertEquals(97.5, serving.weightGrams!!, 0.0)
     }
 
     @Test

@@ -152,7 +152,8 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                 )
 
                 FormSection("Prediction profile", "Age, sex, body measurements, and health conditions influence the estimated response.") {
-                    MeasurementRow("Age", age, { age = numericText(it) }, "years", testTag = "glucose-age")
+                    // Whole years, as the API takes them.
+                    MeasurementRow("Age", age, { age = it.filter(Char::isDigit).take(3) }, "years", testTag = "glucose-age")
                     HorizontalDivider(color = JanuaryColors.Divider)
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
@@ -220,7 +221,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                     text = "Estimate glucose response",
                     onClick = ::predict,
                     modifier = Modifier.fillMaxWidth().testTag(if (loading) "glucose-loading" else "glucose-predict"),
-                    enabled = foods.isNotEmpty() && client != null,
+                    enabled = foods.isNotEmpty() && age.isNotEmpty() && client != null,
                     loading = loading,
                 )
                 if (client == null) AuthenticationRequiredCard()

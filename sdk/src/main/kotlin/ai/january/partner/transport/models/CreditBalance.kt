@@ -30,7 +30,7 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param plan The plan this allowance comes from.
+ * @param plan The plan this allowance comes from. `unlimited` is a partner with no ceiling, for whom both ceiling fields are `null`.
  * @param periodStart First day of the current billing period (UTC), inclusive.
  * @param periodEnd Last day of the current billing period (UTC), inclusive.
  * @param resetsAt When the allowance resets and `used_credits` returns to 0.
@@ -42,7 +42,7 @@ import com.squareup.moshi.JsonClass
 
 internal data class CreditBalance (
 
-    /* The plan this allowance comes from. */
+    /* The plan this allowance comes from. `unlimited` is a partner with no ceiling, for whom both ceiling fields are `null`. */
     @Json(name = "plan")
     val plan: kotlin.String,
 

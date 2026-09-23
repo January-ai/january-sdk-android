@@ -1,0 +1,30 @@
+appId: ai.january.partner.demo
+# Live flows: open the Tracking tab and remember the timezone and day it shows,
+# so scripts/live-verify.js asks the API about the same calendar day.
+---
+- tapOn:
+    id: tab-tracking
+- extendedWaitUntil:
+    visible:
+      id: food-log-user-card
+    timeout: 30000
+- copyTextFrom:
+    text: "[A-Z][A-Za-z]+/[A-Za-z_]+(/[A-Za-z_]+)?"
+- runScript:
+    file: scripts/live-verify.js
+    env:
+      CHECK: remember-timezone
+- runFlow:
+    file: scroll-to.yaml
+    env:
+      TARGET_ID: logs-day-label
+- copyTextFrom:
+    id: logs-day-label
+- runScript:
+    file: scripts/live-verify.js
+    env:
+      CHECK: remember-day
+- runScript:
+    file: scripts/live-verify.js
+    env:
+      CHECK: run-id

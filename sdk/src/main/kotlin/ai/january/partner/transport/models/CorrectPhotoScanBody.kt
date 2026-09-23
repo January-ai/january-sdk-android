@@ -23,7 +23,7 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.FoodScan
+import ai.january.partner.transport.models.CorrectionAnalysis
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -39,7 +39,7 @@ import com.squareup.moshi.JsonClass
 internal data class CorrectPhotoScanBody (
 
     @Json(name = "analysis")
-    val analysis: FoodScan,
+    val analysis: CorrectionAnalysis,
 
     /* Plain-English description of what to correct. */
     @Json(name = "instruction")

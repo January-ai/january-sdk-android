@@ -133,7 +133,8 @@ internal fun FoodPickerSheet(
         }
     }
 
-    LaunchedEffect(query, state.partnerUserId) {
+    // Keyed on the suppressed query too, so a search cancels a suggestion request still in flight.
+    LaunchedEffect(query, autocompleteSuppressedQuery, state.partnerUserId) {
         val value = query.trim()
         if (value.length !in 2..64 || value == autocompleteSuppressedQuery) {
             suggestions = emptyList()

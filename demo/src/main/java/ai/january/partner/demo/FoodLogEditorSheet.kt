@@ -54,6 +54,7 @@ internal fun FoodLogEditorSheet(
     state: DemoState,
     user: PartnerUserContext,
     existing: FoodLog? = null,
+    initialTimestamp: OffsetDateTime? = null,
     onDismiss: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -61,8 +62,10 @@ internal fun FoodLogEditorSheet(
     val userClient = remember(client, user) { client.forUser(user) }
     val coroutineScope = rememberCoroutineScope()
     var name by remember(existing) { mutableStateOf(existing?.name.orEmpty()) }
-    var timestamp by remember(existing) {
-        mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it).atZoneSameInstant(java.time.ZoneId.systemDefault()).toOffsetDateTime() }.getOrNull() } ?: OffsetDateTime.now())
+    // Times are shown and chosen in the end user's timezone, the one their days are grouped by.
+    val zone = remember(user.timezone) { userZone(user.timezone) }
+    var timestamp by remember(existing, zone) {
+        mutableStateOf(existing?.timestampUtc?.let { runCatching { OffsetDateTime.parse(it).atZoneSameInstant(zone).toOffsetDateTime() }.getOrNull() } ?: initialTimestamp ?: OffsetDateTime.now(zone))
     }
     var foods by remember(existing) { mutableStateOf(existing?.foods?.map(::selectedFood).orEmpty()) }
     var showFoodPicker by remember { mutableStateOf(false) }
@@ -76,7 +79,7 @@ internal fun FoodLogEditorSheet(
         coroutineScope.launch {
             runCatching {
                 val selections = foods.map {
-                    FoodSelection(it.food.id.value, ServingSelection(requireNotNull(it.serving.id).value, it.quantity))
+                    FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
                 }
                 val timestampUtc = timestamp.withOffsetSameInstant(ZoneOffset.UTC).toString()
                 if (existing == null) {
@@ -125,6 +128,8 @@ internal fun FoodLogEditorSheet(
                         shape = RoundedCornerShape(18.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Control, unfocusedContainerColor = JanuaryColors.Control, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
                         singleLine = true,
+                        keyboardOptions = doneKeyboard(),
+                        keyboardActions = rememberDoneActions(),
                     )
                 }
                 FoodLogCard { StartTimeRow(timestamp, label = "Date and time") { timestamp = it } }
@@ -163,7 +168,9 @@ internal fun FoodLogEditorSheet(
 
 private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSelectedFood {
     val serving = ServingOption(
-        id = logged.servingDetails.id?.let(::ServingId),
+        // A logged food carries the serving it was logged with; were it ever missing, the API
+        // refuses the update and the editor shows why.
+        id = ServingId(logged.servingDetails.id.orEmpty()),
         quantity = logged.servingDetails.quantity ?: 1.0,
         unit = logged.servingDetails.unit,
         scalingFactor = 1.0,
@@ -172,7 +179,7 @@ private fun selectedFood(logged: ai.january.partner.foodlogs.LoggedFood): DemoSe
     )
     return DemoSelectedFood(
         food = FoodSearchItem(
-            id = FoodId(requireNotNull(logged.id)),
+            id = FoodId(logged.id),
             name = logged.name,
             brandName = logged.brandName,
             calories = logged.nutrients.calories?.value,

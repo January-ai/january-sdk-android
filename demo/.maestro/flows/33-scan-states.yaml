@@ -1,0 +1,166 @@
+appId: ai.january.partner.demo
+name: Scan - camera and library entry points, remove and change photo, loading, image URL, corrected meal name
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-scan
+    timeout: 15000
+- tapOn:
+    id: tab-scan
+- assertVisible:
+    id: scan-guide
+# The camera opens January's scanner, which can be closed without a photo.
+# (Without a camera, as on CI emulators, the scanner reports that instead.)
+- tapOn:
+    id: scan-camera
+- extendedWaitUntil:
+    visible: "(Close scanner|Meal scan failed|Camera access is required)"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: Meal scan failed
+    commands:
+      - tapOn: Close
+- runFlow:
+    when:
+      visible: Close scanner
+    commands:
+      - tapOn: Close scanner
+- extendedWaitUntil:
+    visible:
+      id: scan-guide
+    timeout: 15000
+# The library opens the system photo picker; backing out keeps the guide.
+- tapOn:
+    id: scan-library
+- repeat:
+    while:
+      notVisible:
+        id: scan-camera
+    times: 3
+    commands:
+      - back
+      - waitForAnimationToEnd
+- assertVisible:
+    id: scan-guide
+# A chosen photo can be removed, or changed through the picker.
+- tapOn:
+    id: scan-sample
+- assertVisible:
+    id: scan-preview
+- tapOn:
+    id: scan-remove
+- assertVisible:
+    id: scan-guide
+- tapOn:
+    id: scan-sample
+- tapOn:
+    id: scan-change
+- repeat:
+    while:
+      notVisible:
+        id: scan-analyze
+    times: 3
+    commands:
+      - back
+      - waitForAnimationToEnd
+- assertVisible:
+    id: scan-preview
+# A slow analysis says it is working, then shows the meal.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-analysis/image
+      DELAY: "6"
+- tapOn:
+    id: scan-analyze
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible: "Complex meals can take a little longer.*"
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: scan-results
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-analysis/image
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-another
+- tapOn:
+    id: scan-another
+- assertVisible:
+    id: scan-guide
+# An image URL is analyzed like a photo, and the correction can rename the meal.
+- tapOn:
+    id: scan-image-url
+- tapOn:
+    id: image-url-input
+- inputText: https://example.com/meal.jpg
+- pressKey: Enter
+- tapOn:
+    id: image-url-use
+- extendedWaitUntil:
+    visible:
+      id: scan-preview
+    timeout: 15000
+- tapOn:
+    id: scan-analyze
+- extendedWaitUntil:
+    visible:
+      id: scan-results
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-correct
+- tapOn:
+    id: scan-correct
+- tapOn:
+    id: correction-meal-name
+- eraseText: 30
+- inputText: Late breakfast
+- pressKey: Enter
+- tapOn:
+    id: scan-correction-input
+- inputText: Half the oatmeal
+# The instruction is multi-line, so Enter adds a line; Done on the meal name
+# closes the keyboard instead.
+- tapOn:
+    id: correction-meal-name
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-correction-submit
+- tapOn:
+    id: scan-correction-submit
+# The correction closes back onto the results. (No swipe: a fling in the sheet
+# can carry on into dismissing it. The corrected name is checked in flows 07,
+# 12 and 20; what was sent is checked below.)
+- extendedWaitUntil:
+    notVisible:
+      id: scan-correction-input
+    timeout: 30000
+- assertVisible:
+    id: scan-results
+- assertNotVisible:
+    id: scan-correction-error
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/food-analysis/corrections
+      FIELD: body.analysis.meal_name
+      VALUE: '"Late breakfast"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/food-analysis/corrections
+      FIELD: body.instruction
+      VALUE: '"Half the oatmeal"'

@@ -194,13 +194,14 @@ for the complete contract.
 ## Common tasks
 
 After the first request, use the user-scoped client for Foods, Restaurants,
-Photo Scanning, Food Logs, and Glucose. Recreate it when the signed-in account
-changes.
+Photo Scanning, Food Logs, Water and Weight Logs, and Glucose. Recreate it when
+the signed-in account changes.
 
 - [Foods](Documentation/GitBook/guides/foods.md)
 - [Restaurants](Documentation/GitBook/guides/restaurants.md)
 - [Photo scanning](Documentation/GitBook/guides/photo-scanning.md)
 - [Food logs](Documentation/GitBook/guides/food-logs.md)
+- [Water and weight logs](Documentation/GitBook/guides/water-and-weight-logs.md)
 - [Glucose prediction](Documentation/GitBook/guides/glucose-prediction.md)
 - [Voice capture](Documentation/GitBook/guides/voice-capture.md)
 

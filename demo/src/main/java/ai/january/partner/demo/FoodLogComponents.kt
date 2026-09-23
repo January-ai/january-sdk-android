@@ -57,6 +57,7 @@ internal fun FoodLogUserCard(userId: String?, timezone: String, onSave: (String)
                 TextField(
                     value = draft, onValueChange = { draft = it }, placeholder = { Text("Stable end user ID", fontSize = 16.sp) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp), singleLine = true,
+                    keyboardOptions = doneKeyboard(), keyboardActions = rememberDoneActions(),
                     textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace, fontSize = 16.sp),
                     shape = RoundedCornerShape(18.dp),
                     colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Surface, unfocusedContainerColor = JanuaryColors.Surface, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),

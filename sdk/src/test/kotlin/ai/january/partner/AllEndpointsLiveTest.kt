@@ -19,6 +19,15 @@ import ai.january.partner.glucose.Gender
 import ai.january.partner.glucose.GlucosePredictionProfile
 import ai.january.partner.glucose.MedicalCondition
 import ai.january.partner.glucose.PredictGlucoseRequest
+import ai.january.partner.glucose.Weight
+import ai.january.partner.glucose.WeightUnit
+import ai.january.partner.waterlogs.CreateWaterLogRequest
+import ai.january.partner.waterlogs.DeleteWaterLogRequest
+import ai.january.partner.waterlogs.ListWaterLogsRequest
+import ai.january.partner.waterlogs.VolumeUnit
+import ai.january.partner.waterlogs.WaterAmount
+import ai.january.partner.weightlogs.CreateWeightLogRequest
+import ai.january.partner.weightlogs.ListWeightLogsRequest
 import ai.january.partner.models.FoodSelection
 import ai.january.partner.models.ServingSelection
 import ai.january.partner.photos.CorrectPhotoScanRequest
@@ -38,7 +47,7 @@ import org.junit.Test
 
 public class AllEndpointsLiveTest {
     @Test
-    public fun exercisesAllSeventeenClientOperations(): Unit = runBlocking {
+    public fun exercisesAllTwentyTwoClientOperations(): Unit = runBlocking {
         val apiKey = System.getenv("JANUARY_API_KEY")
         val rawUserId = System.getenv("JANUARY_END_USER_ID")
         assumeTrue("JANUARY_API_KEY is not configured.", !apiKey.isNullOrBlank())
@@ -53,7 +62,7 @@ public class AllEndpointsLiveTest {
 
         val search = client.foods.search(SearchFoodsRequest("banana", limit = 3, endUserId = userId))
         val food = search.items.firstOrNull() ?: error("foods.search returned no food.")
-        val serving = food.servings.firstOrNull { it.id != null } ?: error("foods.search returned no serving.")
+        val serving = food.servings.firstOrNull() ?: error("foods.search returned no serving.")
         pass("foods.search")
 
         client.foods.get(GetFoodRequest(food.id))
@@ -180,6 +189,44 @@ public class AllEndpointsLiveTest {
         )
         assertTrue(prediction.curve.isNotEmpty())
         pass("glucose.predict")
+
+        val today = LocalDate.now(ZoneOffset.UTC)
+        var createdWaterLogId: String? = null
+        try {
+            val water = client.waterLogs.create(
+                CreateWaterLogRequest(WaterAmount(8.0, VolumeUnit.FL_OZ), OffsetDateTime.now(ZoneOffset.UTC).toString(), user),
+            )
+            createdWaterLogId = water.id
+            assertEquals(VolumeUnit.FL_OZ, water.amount.unit)
+            pass("waterLogs.create")
+
+            val waterDays = client.waterLogs.list(
+                ListWaterLogsRequest(today.minusDays(1).toString(), today.plusDays(1).toString(), VolumeUnit.ML, user),
+            )
+            assertTrue(waterDays.items.any { it.total.value > 0 && it.total.unit == VolumeUnit.ML })
+            pass("waterLogs.list")
+
+            client.waterLogs.delete(DeleteWaterLogRequest(water.id, user))
+            createdWaterLogId = null
+            pass("waterLogs.delete")
+        } finally {
+            createdWaterLogId?.let { id -> runCatching { client.waterLogs.delete(DeleteWaterLogRequest(id, user)) } }
+        }
+
+        // The API cannot delete a weight, so the measurement goes to an end user of its own for this
+        // run, never into the configured user's history.
+        val weightUser = FoodLogUserContext(PartnerUserId("${userId.value}-weight-${UUID.randomUUID()}"), TIMEZONE)
+        val weight = client.weightLogs.create(
+            CreateWeightLogRequest(Weight(175.0, WeightUnit.POUNDS), OffsetDateTime.now(ZoneOffset.UTC).toString(), weightUser),
+        )
+        assertEquals(175.0, weight.weight.value, 0.0)
+        pass("weightLogs.create")
+
+        val weightDays = client.weightLogs.list(
+            ListWeightLogsRequest(today.minusDays(1).toString(), today.plusDays(1).toString(), weightUser),
+        )
+        assertTrue(weightDays.items.any { it.weight.unit == WeightUnit.POUNDS })
+        pass("weightLogs.list")
     }
 
     private fun pass(operation: String): Unit = println("PASS $operation")

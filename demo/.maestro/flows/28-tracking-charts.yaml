@@ -1,0 +1,124 @@
+appId: ai.january.partner.demo
+name: Tracking charts - water and weight history by week, month and year, then empty
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- runScript:
+    file: ../scripts/seed-history.js
+- tapOn:
+    id: tab-tracking
+- assertVisible:
+    id: tracking-screen
+# Water: daily bars for the week and month, monthly bars for the year. The
+# chart's accessibility summary names the range it shows.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart
+- extendedWaitUntil:
+    visible:
+      text: "Water, last 7 days: .*"
+    timeout: 15000
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-water-chart-week
+# Scrolling to the chart can leave its range buttons under the top bar,
+# where a tap lands on the bar; bring them to the middle first.
+- scrollUntilVisible:
+    element:
+      id: water-chart-range-month
+    direction: UP
+    centerElement: true
+    timeout: 8000
+    optional: true
+- tapOn:
+    id: water-chart-range-month
+- extendedWaitUntil:
+    visible:
+      text: "Water, last 30 days: .*"
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-range-year
+- tapOn:
+    id: water-chart-range-year
+- extendedWaitUntil:
+    visible:
+      text: "Water, last 12 months: 12 of 12 months logged.*"
+    timeout: 20000
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-water-chart-year
+# Weight: one line across the range, in the card's unit.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart
+- extendedWaitUntil:
+    visible:
+      text: "Weight, last 7 days: 3 entries.*"
+    timeout: 15000
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-weight-chart-week
+- scrollUntilVisible:
+    element:
+      id: weight-chart-range-month
+    direction: UP
+    centerElement: true
+    timeout: 8000
+    optional: true
+- tapOn:
+    id: weight-chart-range-month
+- extendedWaitUntil:
+    visible:
+      text: "Weight, last 30 days: 10 entries.*"
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-year
+- tapOn:
+    id: weight-chart-range-year
+# A year of weights is more than one request returns, so it takes several.
+- extendedWaitUntil:
+    visible:
+      # A weight every third day over the 11 to 12 months the span covers: 111 to 122.
+      text: "Weight, last 12 months: 1[0-2][0-9] entries.*"
+    timeout: 20000
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-weight-chart-year
+# With nothing in the range, each chart says so.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      EMPTY: "true"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-week
+- tapOn:
+    id: weight-chart-range-week
+- extendedWaitUntil:
+    visible:
+      id: weight-chart-empty
+    timeout: 15000
+- assertVisible: No weight logged in this range
+- assertNotVisible:
+    id: weight-chart
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      EMPTY: "true"
+- scrollUntilVisible:
+    element:
+      id: water-chart-range-week
+    direction: UP
+- tapOn:
+    id: water-chart-range-week
+- extendedWaitUntil:
+    visible:
+      id: water-chart-empty
+    timeout: 15000
+- assertVisible: No water logged in this range

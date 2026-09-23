@@ -30,25 +30,30 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Null only when the producer sent a serving with no id.
- * @param quantity How much of `unit` this serving is; null when the producer reported none.
+ * @param id Catalog serving id. Pass it back as serving_id when logging this food.
+ * @param quantity Positive amount of unit represented by this serving definition. In food analysis and food logs this is one catalog serving: consumed amount = food.quantity × food.serving.quantity (4 × 0.5 cup = 2 cups). Food alternatives instead report their recommended portion amount here.
  * @param unit Null only when the producer sent a serving with no unit.
+ * @param weightGrams Weight in grams of this serving definition. For food analysis and food logs this is one catalog serving, not the consumed portion: consumed grams = food.quantity × food.serving.weight_grams. Null when unknown.
  */
 
 
 internal data class ServingSummary (
 
-    /* Null only when the producer sent a serving with no id. */
+    /* Catalog serving id. Pass it back as serving_id when logging this food. */
     @Json(name = "id")
-    val id: kotlin.String?,
+    val id: kotlin.String,
 
-    /* How much of `unit` this serving is; null when the producer reported none. */
+    /* Positive amount of unit represented by this serving definition. In food analysis and food logs this is one catalog serving: consumed amount = food.quantity × food.serving.quantity (4 × 0.5 cup = 2 cups). Food alternatives instead report their recommended portion amount here. */
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal?,
+    val quantity: java.math.BigDecimal,
 
     /* Null only when the producer sent a serving with no unit. */
     @Json(name = "unit")
-    val unit: kotlin.String?
+    val unit: kotlin.String?,
+
+    /* Weight in grams of this serving definition. For food analysis and food logs this is one catalog serving, not the consumed portion: consumed grams = food.quantity × food.serving.weight_grams. Null when unknown. */
+    @Json(name = "weight_grams")
+    val weightGrams: java.math.BigDecimal?
 
 ) {
 

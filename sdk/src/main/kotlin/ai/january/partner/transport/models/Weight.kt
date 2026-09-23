@@ -23,7 +23,6 @@
 
 package ai.january.partner.transport.models
 
-import ai.january.partner.transport.models.WeightUnit
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -31,18 +30,19 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value`
+ * @param `value` Accepted range depends on unit: 2–1500 lb, 1–700 kg.
  * @param unit
  */
 
 
 internal data class Weight (
 
+    /* Accepted range depends on unit: 2–1500 lb, 1–700 kg. */
     @Json(name = "value")
     val `value`: java.math.BigDecimal,
 
     @Json(name = "unit")
-    val unit: WeightUnit
+    val unit: kotlin.String
 
 ) {
 

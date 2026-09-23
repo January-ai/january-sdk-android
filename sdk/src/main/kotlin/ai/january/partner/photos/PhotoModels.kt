@@ -12,7 +12,10 @@ public enum class AnalysisEffort { NONE, XHIGH }
 public data class ScanFoodPhotoRequest(
     public val image: String,
     public val endUserId: PartnerUserId? = null,
-    /** Null or [AnalysisEffort.NONE] uses the standard analyzer; [AnalysisEffort.XHIGH] uses the reasoning-based one. */
+    /**
+     * Null leaves the choice to the API, which uses the reasoning-based analyzer (as
+     * [AnalysisEffort.XHIGH] does); [AnalysisEffort.NONE] uses the standard analyzer.
+     */
     public val reasoningEffort: AnalysisEffort? = null,
 ) {
     public companion object {

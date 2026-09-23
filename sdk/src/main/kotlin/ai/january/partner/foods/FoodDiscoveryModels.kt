@@ -45,8 +45,13 @@ public data class ServingSummary(
     public val id: String?,
     public val quantity: Double? = null,
     public val unit: String?,
+    /** Weight in grams of one serving, when the catalog knows it. Consumed grams = `quantity` × `weightGrams`. */
+    @Json(name = "weight_grams") public val weightGrams: Double? = null,
 ) {
-    public constructor(id: Long, quantity: Double? = null, unit: String) : this(id.toString(), quantity, unit)
+    /** The shape before [weightGrams], kept for callers (Java callers too) that pass three arguments. */
+    public constructor(id: String?, quantity: Double?, unit: String?) : this(id, quantity, unit, null)
+
+    public constructor(id: Long, quantity: Double? = null, unit: String) : this(id.toString(), quantity, unit, null)
 }
 
 @Deprecated("Use ServingSummary. The amount eaten is now DetectedFood.quantity.", ReplaceWith("ServingSummary"))
@@ -77,7 +82,7 @@ public data class DetectedFood(
 /** A healthier alternative to a food, with the servings its nutrition can be read against. */
 @JsonClass(generateAdapter = false)
 public data class AlternativeFood(
-    public val id: String? = null,
+    public val id: String,
     public val name: String?,
     @Json(name = "brand_name") public val brandName: String? = null,
     public val nutrients: CompleteScanNutritionFacts,

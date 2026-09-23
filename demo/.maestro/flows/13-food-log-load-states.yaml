@@ -42,6 +42,17 @@ tags:
       id: food-logs-error
     timeout: 15000
 - takeScreenshot: demo/.maestro/artifacts/android-logs-error
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-logs-error-details
+- tapOn:
+    id: food-logs-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-logs-error-details-body
+- assertVisible: parity-request
 - runScript:
     file: ../scripts/control-fixture.js
     env:

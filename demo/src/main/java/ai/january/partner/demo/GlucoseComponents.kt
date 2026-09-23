@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -80,8 +79,6 @@ import kotlinx.coroutines.launch
 
 private val GoldText = androidx.compose.ui.graphics.Color(0xFF6E5613)
 
-internal fun numericText(value: String): String = value.filter { it.isDigit() || it == '.' }
-
 @Composable
 internal fun FormSection(title: String, detail: String? = null, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -110,7 +107,8 @@ internal fun MeasurementRow(label: String, value: String, onChange: (String) -> 
                 fontFamily = FontFamily.Monospace,
                 textAlign = TextAlign.End,
             ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            keyboardOptions = doneKeyboard(KeyboardType.Number),
+            keyboardActions = rememberDoneActions(),
             singleLine = true,
         )
         Text(unit, modifier = Modifier.padding(start = 10.dp), fontSize = 14.sp, color = JanuaryColors.Muted)

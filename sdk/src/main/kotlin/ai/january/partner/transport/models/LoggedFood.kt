@@ -24,7 +24,7 @@
 package ai.january.partner.transport.models
 
 import ai.january.partner.transport.models.NutritionFacts
-import ai.january.partner.transport.models.ServingDetails
+import ai.january.partner.transport.models.ServingSummary
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -32,23 +32,23 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param foodId Food id from a search or food-analysis result. Null only when the upstream sent a food with no id.
+ * @param foodId Food id from a search or food-analysis result.
  * @param name Null only when the upstream sent none.
  * @param brandName Null for generic (non-branded) foods.
  * @param imageUrl
  * @param glycemicIndex
  * @param glycemicLoad
  * @param nutrients
- * @param quantity How many of the serving below were consumed. Null only when the upstream sent no consumed quantity.
+ * @param quantity Number of selected servings consumed. Consumed amount = food.quantity × food.serving.quantity, in food.serving.unit (4 × 0.5 cup = 2 cups). Nutrients are already scaled to this portion. Null when unavailable.
  * @param serving
  */
 
 
 internal data class LoggedFood (
 
-    /* Food id from a search or food-analysis result. Null only when the upstream sent a food with no id. */
+    /* Food id from a search or food-analysis result. */
     @Json(name = "food_id")
-    val foodId: kotlin.String?,
+    val foodId: kotlin.String,
 
     /* Null only when the upstream sent none. */
     @Json(name = "name")
@@ -70,12 +70,12 @@ internal data class LoggedFood (
     @Json(name = "nutrients")
     val nutrients: NutritionFacts,
 
-    /* How many of the serving below were consumed. Null only when the upstream sent no consumed quantity. */
+    /* Number of selected servings consumed. Consumed amount = food.quantity × food.serving.quantity, in food.serving.unit (4 × 0.5 cup = 2 cups). Nutrients are already scaled to this portion. Null when unavailable. */
     @Json(name = "quantity")
     val quantity: java.math.BigDecimal?,
 
     @Json(name = "serving")
-    val serving: ServingDetails
+    val serving: ServingSummary
 
 ) {
 

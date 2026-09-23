@@ -1,0 +1,25 @@
+appId: ai.january.partner.demo
+# Start voice input with the button FIELD_ID names and leave it again. A capture
+# ends by itself after two seconds of silence, and an emulator without a
+# microphone signal hears none, so either the recording bar is still up (cancel
+# it) or the "Voice input unavailable" dialog has replaced it (dismiss it).
+#
+#   - runFlow:
+#       file: ../voice-cancel.yaml
+#       env:
+#         FIELD_ID: search-voice
+---
+- tapOn:
+    id: ${FIELD_ID}
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible: "(Cancel voice input|Voice input unavailable)"
+    timeout: 15000
+- tapOn:
+    text: Cancel voice input
+    optional: true
+- runFlow:
+    when:
+      visible: Voice input unavailable
+    commands:
+      - tapOn: OK

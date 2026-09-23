@@ -15,10 +15,36 @@ tags:
 - assertVisible: Settings
 - assertVisible: January SDK
 - assertVisible: Connected
+# Launched against the fixture server, so it names the test client, not a missing credential.
+- assertVisible: Test client supplied at launch
 - assertVisible: End user ID
 - assertVisible: parity-user
+- assertVisible:
+    id: settings-sheet
 - takeScreenshot: demo/.maestro/artifacts/android-settings
+# The end user ID is editable; requests and the Tracking tab follow it.
+- tapOn:
+    id: settings-user-id
+- eraseText: 30
+- inputText: parity-user-2
+- pressKey: Enter
+- waitForAnimationToEnd
 - tapOn:
     id: settings-close
-- assertNotVisible:
-    id: settings-sheet
+# The first tap can land while the keyboard is still closing.
+- runFlow:
+    when:
+      visible:
+        id: settings-sheet
+    commands:
+      - tapOn:
+          id: settings-close
+- extendedWaitUntil:
+    notVisible:
+      id: settings-sheet
+    timeout: 10000
+- tapOn:
+    id: tab-tracking
+- extendedWaitUntil:
+    visible: parity-user-2
+    timeout: 15000

@@ -1,0 +1,132 @@
+appId: ai.january.partner.demo
+name: Tracking - the day is on the end user's clock, not the device's, and moves with their timezone
+tags:
+  - fixture
+---
+# The end user's clock is far from the device's: UTC-11 (Pago Pago) until 10:30
+# UTC and UTC+14 (Kiritimati) after, so their day is never the UTC day.
+- evalScript: "${output.farZone = new Date().getUTCHours() * 60 + new Date().getUTCMinutes() < 630 ? 'Pacific/Pago_Pago' : 'Pacific/Kiritimati'}"
+- evalScript: "${output.farOffset = output.farZone == 'Pacific/Pago_Pago' ? '-11' : '14'}"
+- runScript:
+    file: ../scripts/reset-fixture.js
+- retry:
+    maxRetries: 2
+    commands:
+      - stopApp
+      - launchApp:
+          clearState: false
+          stopApp: true
+          arguments:
+            januaryFixtureOrigin: "${typeof FIXTURE_ORIGIN === 'undefined' ? 'http://10.0.2.2:18766' : FIXTURE_ORIGIN}"
+            januaryFixtureTimezone: ${output.farZone}
+      - tapOn:
+          text: "Close app"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: search-screen
+          timeout: 120000
+- runScript:
+    file: ../scripts/zone-day.js
+    env:
+      OFFSET_HOURS: ${output.farOffset}
+      NAME: farToday
+- runScript:
+    file: ../scripts/zone-day.js
+    env:
+      OFFSET_HOURS: ${output.farOffset}
+      DAYS: "-1"
+      NAME: farYesterday
+# Today is the user's today, and the day's loads ask for it in their zone.
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: logs-day-label
+      text: ${output.farToday}
+    direction: DOWN
+    centerElement: true
+    timeout: 30000
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      FIELD: query.end_date
+      VALUE: '"${output.farToday}"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      FIELD: query.timezone
+      VALUE: '"${output.farZone}"'
+# Water logged for the day before is dated noon on the user's clock.
+- tapOn:
+    id: logs-day-previous
+    retryTapIfNoChange: true
+- assertVisible:
+    id: logs-day-label
+    text: ${output.farYesterday}
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      METHOD: POST
+      FIELD: body.consumed_at
+      MATCHES: "^${output.farYesterday}T12:00(:00)?[+-]1[14]:00$"
+# A new timezone starts the day over on that zone's today: Africa/Abidjan, UTC.
+- scrollUntilVisible:
+    element:
+      id: settings-button
+    direction: UP
+- tapOn:
+    id: settings-button
+# On a shorter screen the timezone row starts below the fold of the sheet.
+- scrollUntilVisible:
+    element:
+      text: Timezone
+    direction: DOWN
+    timeout: 15000
+- tapOn: Timezone
+- tapOn: Africa/Abidjan
+- tapOn:
+    id: settings-close
+    waitToSettleTimeoutMs: 500
+- runFlow:
+    when:
+      visible:
+        id: settings-sheet
+    commands:
+      - tapOn:
+          id: settings-close
+          waitToSettleTimeoutMs: 500
+- runScript:
+    file: ../scripts/zone-day.js
+    env:
+      OFFSET_HOURS: "0"
+      NAME: utcToday
+- scrollUntilVisible:
+    element:
+      id: logs-day-label
+      text: ${output.utcToday}
+    direction: DOWN
+    centerElement: true
+    timeout: 30000
+- assertVisible: Today
+- assertNotVisible:
+    id: logs-day-today
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      FIELD: query.timezone
+      VALUE: '"Africa/Abidjan"'

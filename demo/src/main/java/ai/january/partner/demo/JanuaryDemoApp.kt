@@ -47,7 +47,10 @@ fun JanuaryDemoApp(providedState: DemoState? = null) {
         when (destination) {
             AppDestination.SEARCH -> SearchScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
             AppDestination.SCAN -> ScanScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
-            AppDestination.FOOD_LOGS -> FoodLogsScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
+            // Keyed on the end user (and timezone): a change of user starts these screens afresh, so
+            // nothing the previous user saw, logged, or still had loading carries over.
+            AppDestination.TRACKING -> key(state.partnerContext) { TrackingScreen(state, { showSettings = true }, Modifier.padding(innerPadding)) }
+            AppDestination.FOOD_LOGS -> key(state.partnerContext) { FoodLogsScreen(state, { showSettings = true }, Modifier.padding(innerPadding)) }
             AppDestination.GLUCOSE -> GlucoseScreen(state, { showSettings = true }, Modifier.padding(innerPadding))
         }
     }

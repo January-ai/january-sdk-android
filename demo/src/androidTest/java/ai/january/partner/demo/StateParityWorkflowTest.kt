@@ -106,7 +106,7 @@ class StateParityWorkflowTest {
         control("/v1.2/food-analysis/corrections");tap("Try again");waitText("Corrected breakfast");capture("correction-result")
     }
     @Test fun foodLogsLoadCreateEditDeleteAndRetry() {
-        desc("Food Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
+        desc("Logs");capture("logs-initial");reveal("No food logs in this range");capture("logs-empty")
         control("/v1.2/food-logs",500,4);tap("Refresh food logs");capture("logs-loading");waitText("January couldn’t complete the request");reveal("Try again");capture("logs-error")
         control("/v1.2/food-logs");tap("Try again");waitText("No food logs in this range")
         desc("Add food log");capture("log-new");reveal("Save food log").assertIsNotEnabled();tap("Add first food");capture("food-picker-initial");addFood()

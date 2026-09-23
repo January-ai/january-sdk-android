@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param mealName A name for the meal as a whole. Null on text analyses — the caller already has the words.
+ * @param mealName A name for the meal as a whole. Null on text analyses — the caller already has the words. Corrections preserve a null meal name.
  * @param totalNutrients
  * @param detections Detected foods. Always present — an empty array means nothing was recognized.
  */
@@ -40,7 +40,7 @@ import com.squareup.moshi.JsonClass
 
 internal data class FoodScan (
 
-    /* A name for the meal as a whole. Null on text analyses — the caller already has the words. */
+    /* A name for the meal as a whole. Null on text analyses — the caller already has the words. Corrections preserve a null meal name. */
     @Json(name = "meal_name")
     val mealName: kotlin.String?,
 

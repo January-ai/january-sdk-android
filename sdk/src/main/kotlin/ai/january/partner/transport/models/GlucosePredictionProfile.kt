@@ -47,7 +47,7 @@ import com.squareup.moshi.JsonClass
 internal data class GlucosePredictionProfile (
 
     @Json(name = "age")
-    val age: java.math.BigDecimal,
+    val age: kotlin.Int,
 
     @Json(name = "sex")
     val sex: Sex,

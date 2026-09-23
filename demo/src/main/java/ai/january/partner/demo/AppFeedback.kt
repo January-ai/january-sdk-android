@@ -50,11 +50,32 @@ internal fun errorTitle(error: Throwable): String = when ((error as? ai.january.
 }
 
 /**
+ * Whether a failed create may have been recorded anyway. Creates are not idempotent, and a timeout,
+ * a dropped connection, a server error or an unreadable answer can come after the server saved the
+ * entry. Only a request the API refused, or one that was never sent, is safe to send again as it is.
+ */
+internal fun mayHaveBeenSaved(failure: Throwable): Boolean = when ((failure as? ai.january.partner.JanuaryException)?.category) {
+    ai.january.partner.ErrorCategory.VALIDATION,
+    ai.january.partner.ErrorCategory.AUTHENTICATION,
+    ai.january.partner.ErrorCategory.AUTHORIZATION,
+    ai.january.partner.ErrorCategory.NOT_FOUND,
+    ai.january.partner.ErrorCategory.RATE_LIMITED,
+    -> false
+    ai.january.partner.ErrorCategory.TIMEOUT,
+    ai.january.partner.ErrorCategory.TRANSPORT,
+    ai.january.partner.ErrorCategory.SERVER,
+    ai.january.partner.ErrorCategory.DECODING,
+    null,
+    -> true
+}
+
+/**
  * [testTag] tags the card; its technical-details disclosure becomes "$testTag-details" and the
- * disclosed body "$testTag-details-body". [retryTestTag] tags the retry button.
+ * disclosed body "$testTag-details-body". [retryTestTag] tags the retry button. [note] follows the
+ * error's message, for what the retry will do.
  */
 @Composable
-fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null, testTag: String? = null, retryTestTag: String? = null) {
+fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null, testTag: String? = null, retryTestTag: String? = null, note: String? = null) {
     DemoCard(testTag?.let { Modifier.testTag(it) } ?: Modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -62,6 +83,7 @@ fun ErrorCard(error: Throwable, retry: (() -> Unit)? = null, testTag: String? = 
                 Text(errorTitle(error), style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Rust)
             }
             Text(error.localizedMessage ?: "The request could not be completed.", color = JanuaryColors.Body)
+            note?.let { Text(it, color = JanuaryColors.Body, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold) }
             (error as? ai.january.partner.JanuaryException)?.let { failure ->
                 if (failure.httpStatus != null || failure.requestId != null) {
                     DetailDisclosure(

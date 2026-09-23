@@ -45,6 +45,9 @@ jobs:
       - name: Validate README and GitBook
         run: node scripts/check-documentation.mjs
 
+      - name: Check that the UI suite exercises every test tag
+        run: node scripts/ui-coverage.mjs
+
       - name: Test and build the SDK
         run: ./gradlew --no-daemon :sdk:testDebugUnitTest :sdk:lintDebug :sdk:assembleRelease
 

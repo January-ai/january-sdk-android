@@ -1,0 +1,141 @@
+appId: ai.january.partner.demo
+name: Tracking day view - water total and weight, previous day is empty
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- runScript:
+    file: ../scripts/seed-fixture.js
+- tapOn:
+    id: tab-tracking
+- assertVisible:
+    id: tracking-screen
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: logs-day-label
+- assertVisible: Today
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals
+    direction: DOWN
+    timeout: 30000
+# The seeded log is dated an hour ago, so today's totals count it.
+- assertVisible: 1 log
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: DOWN
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible: Logged 8 fl oz
+- extendedWaitUntil:
+    visible:
+      id: water-total
+    timeout: 15000
+- assertVisible: 8 fl oz
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-water
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- extendedWaitUntil:
+    visible:
+      text: 236.6 ml
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-delete-last
+- tapOn:
+    id: water-delete-last
+# The day's total sits at the top of the water card, above the button.
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-kg
+- tapOn:
+    id: weight-unit-kg
+# Log the prefilled value, which the switch to kg converted from 150 lb.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 15000
+- assertVisible: Logged 68 kg
+- extendedWaitUntil:
+    visible:
+      id: weight-day
+    timeout: 15000
+- assertVisible: 68 kg
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-weight
+# The previous day has nothing: no food logs, no water, no weight. Center the
+# day picker so the tap cannot land on the navigation bar above it.
+- scrollUntilVisible:
+    element:
+      id: logs-day-previous
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: logs-day-previous
+- assertVisible:
+    id: logs-day-today
+- scrollUntilVisible:
+    element:
+      id: food-logs-empty
+    direction: DOWN
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: weight-empty
+    direction: DOWN
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: logs-day-today
+    direction: UP
+    centerElement: true
+- tapOn:
+    id: logs-day-today
+- scrollUntilVisible:
+    element:
+      id: logs-day-label
+    direction: UP
+# "Back to today" only shows on other days.
+- assertNotVisible:
+    id: logs-day-today
+- scrollUntilVisible:
+    element:
+      id: food-log-0
+    direction: DOWN
+    timeout: 15000

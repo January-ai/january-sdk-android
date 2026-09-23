@@ -31,7 +31,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param endUserId Your stable ID for the end user this token acts as. The token is bound to it; requests made with the token act only on this user.
- * @param scopes What the token may do. **Required** — name only the scopes this token needs (least privilege), never the full set out of convenience. A read-only food-lookup screen asks for `[\"foods:read\"]`; a logging screen adds `food_logs:write`. Valid scopes: foods:read, food_analysis:write, food_logs:read, food_logs:write, glucose:read, restaurants:read.
+ * @param scopes What the token may do. **Required** — name only the scopes this token needs (least privilege), never the full set out of convenience. A read-only food-lookup screen asks for `[\"foods:read\"]`; a logging screen adds `food_logs:write`. Valid scopes: foods:read, food_analysis:write, food_logs:read, food_logs:write, glucose:read, restaurants:read, water_logs:read, water_logs:write, weight_logs:read, weight_logs:write.
  * @param ttlSeconds How long the token stays valid, in seconds. Between 300 and 7200; defaults to 1800.
  */
 
@@ -42,7 +42,7 @@ internal data class CreateClientTokenBody (
     @Json(name = "end_user_id")
     val endUserId: kotlin.String,
 
-    /* What the token may do. **Required** — name only the scopes this token needs (least privilege), never the full set out of convenience. A read-only food-lookup screen asks for `[\"foods:read\"]`; a logging screen adds `food_logs:write`. Valid scopes: foods:read, food_analysis:write, food_logs:read, food_logs:write, glucose:read, restaurants:read. */
+    /* What the token may do. **Required** — name only the scopes this token needs (least privilege), never the full set out of convenience. A read-only food-lookup screen asks for `[\"foods:read\"]`; a logging screen adds `food_logs:write`. Valid scopes: foods:read, food_analysis:write, food_logs:read, food_logs:write, glucose:read, restaurants:read, water_logs:read, water_logs:write, weight_logs:read, weight_logs:write. */
     @Json(name = "scopes")
     val scopes: kotlin.collections.List<CreateClientTokenBody.Scopes>,
 
@@ -53,9 +53,9 @@ internal data class CreateClientTokenBody (
 ) {
 
     /**
-     * What the token may do. **Required** — name only the scopes this token needs (least privilege), never the full set out of convenience. A read-only food-lookup screen asks for `[\"foods:read\"]`; a logging screen adds `food_logs:write`. Valid scopes: foods:read, food_analysis:write, food_logs:read, food_logs:write, glucose:read, restaurants:read.
+     * What the token may do. **Required** — name only the scopes this token needs (least privilege), never the full set out of convenience. A read-only food-lookup screen asks for `[\"foods:read\"]`; a logging screen adds `food_logs:write`. Valid scopes: foods:read, food_analysis:write, food_logs:read, food_logs:write, glucose:read, restaurants:read, water_logs:read, water_logs:write, weight_logs:read, weight_logs:write.
      *
-     * Values: FOODS_COLON_READ,FOOD_ANALYSIS_COLON_WRITE,FOOD_LOGS_COLON_READ,FOOD_LOGS_COLON_WRITE,GLUCOSE_COLON_READ,RESTAURANTS_COLON_READ
+     * Values: FOODS_COLON_READ,FOOD_ANALYSIS_COLON_WRITE,FOOD_LOGS_COLON_READ,FOOD_LOGS_COLON_WRITE,GLUCOSE_COLON_READ,RESTAURANTS_COLON_READ,WATER_LOGS_COLON_READ,WATER_LOGS_COLON_WRITE,WEIGHT_LOGS_COLON_READ,WEIGHT_LOGS_COLON_WRITE
      */
     @JsonClass(generateAdapter = false)
     internal enum class Scopes(val value: kotlin.String) {
@@ -64,7 +64,11 @@ internal data class CreateClientTokenBody (
         @Json(name = "food_logs:read") FOOD_LOGS_COLON_READ("food_logs:read"),
         @Json(name = "food_logs:write") FOOD_LOGS_COLON_WRITE("food_logs:write"),
         @Json(name = "glucose:read") GLUCOSE_COLON_READ("glucose:read"),
-        @Json(name = "restaurants:read") RESTAURANTS_COLON_READ("restaurants:read");
+        @Json(name = "restaurants:read") RESTAURANTS_COLON_READ("restaurants:read"),
+        @Json(name = "water_logs:read") WATER_LOGS_COLON_READ("water_logs:read"),
+        @Json(name = "water_logs:write") WATER_LOGS_COLON_WRITE("water_logs:write"),
+        @Json(name = "weight_logs:read") WEIGHT_LOGS_COLON_READ("weight_logs:read"),
+        @Json(name = "weight_logs:write") WEIGHT_LOGS_COLON_WRITE("weight_logs:write");
     }
 
 }

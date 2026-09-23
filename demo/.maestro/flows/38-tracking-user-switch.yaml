@@ -1,0 +1,228 @@
+appId: ai.january.partner.demo
+name: Tracking - switching the end user shows only the new user's day, and no delete-last until they log
+tags:
+  - fixture
+---
+# In client-token mode the fixture server keeps each end user's logs, water and
+# weights apart, like the API, so the new user's day is really empty.
+- runFlow: ../client-token-bootstrap.yaml
+- runScript:
+    file: ../scripts/seed-fixture.js
+    env:
+      USER: parity-user
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: food-log-0
+    direction: DOWN
+    timeout: 30000
+# As parity-user: log water and a weight, so both "Logged" lines and
+# delete-last are showing.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible:
+    id: water-delete-last
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 15000
+# The next user's day answers slowly and then fails, so what shows while it
+# loads, and after, is the new user's state alone.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs
+      DELAY: "8"
+      STATUS: "500"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+      DELAY: "8"
+      STATUS: "500"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "500"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "500"
+# Switch to parity-user-2 in Settings; the ID takes effect when the sheet closes.
+- tapOn:
+    id: settings-button
+- tapOn:
+    id: settings-user-id
+- eraseText: 30
+- inputText: parity-user-2
+- pressKey: Enter
+- waitForAnimationToEnd
+- tapOn:
+    id: settings-close
+    waitToSettleTimeoutMs: 500
+- runFlow:
+    when:
+      visible:
+        id: settings-sheet
+    commands:
+      - tapOn:
+          id: settings-close
+          waitToSettleTimeoutMs: 500
+# While the new user's day loads, and after it fails, none of the previous
+# user's day shows: no meals, no totals, no water or weight entry, no delete-last.
+- assertVisible: parity-user-2
+# The loading row is transient: on a slow emulator it can finish before the flow
+# scrolls to it, so it is checked where possible (without waiting for spinners to
+# settle between scrolls); what follows holds either way.
+- scrollUntilVisible:
+    element:
+      id: food-logs-loading
+    direction: DOWN
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 300
+    timeout: 8000
+    optional: true
+# The optional scroll above may have gone past the food logs: look back up
+# first, then down while the slow load finishes.
+- scrollUntilVisible:
+    element:
+      id: food-logs-error
+    direction: UP
+    timeout: 10000
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: food-logs-error
+    direction: DOWN
+    timeout: 20000
+- assertNotVisible:
+    id: food-log-0
+- scrollUntilVisible:
+    element:
+      id: food-logs-summary-error
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: food-logs-totals-count
+- scrollUntilVisible:
+    element:
+      id: water-error
+    direction: DOWN
+    timeout: 15000
+- assertNotVisible:
+    id: water-logged
+- assertNotVisible:
+    id: water-delete-last
+- scrollUntilVisible:
+    element:
+      id: weight-error
+    direction: DOWN
+    timeout: 15000
+- assertNotVisible:
+    id: weight-logged
+# Once it loads, the day is the new user's alone: no meals, no totals, no water,
+# no weight, empty charts, and still no delete-last.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+- scrollUntilVisible:
+    element:
+      id: food-logs-refresh
+    direction: UP
+    timeout: 15000
+- tapOn:
+    id: food-logs-refresh
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+      text: 0 logs
+    direction: UP
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: food-logs-empty
+    direction: DOWN
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: DOWN
+    timeout: 15000
+- assertNotVisible:
+    id: water-delete-last
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-retry
+- tapOn:
+    id: water-chart-retry
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      id: water-chart-empty
+    direction: UP
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: weight-empty
+    direction: DOWN
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-retry
+- tapOn:
+    id: weight-chart-retry
+    retryTapIfNoChange: true
+# The weight card ends the screen, so its chart is never above: look down, which
+# also waits out the chart's loading without scrolling it out of view.
+- scrollUntilVisible:
+    element:
+      id: weight-chart-empty
+    direction: DOWN
+    timeout: 15000
+# Logging as the new user brings delete-last back.
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible:
+    id: water-delete-last

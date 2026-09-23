@@ -32,20 +32,16 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param id Catalog food id, or null when the producer matched none.
  * @param name Null only when the producer sent a food with no name.
  * @param brandName Null for generic (non-branded) foods.
- * @param quantity Number of catalog servings consumed, ready to use as food-log quantity. For 40 g from a 100 g serving this is 0.4. Null when the producer supplied no usable portion.
+ * @param id Matched catalog food id. Pass it back as food_id when logging this food.
+ * @param quantity Positive number of selected catalog servings consumed. Use it unchanged as food-log quantity. Display the consumed amount as food.quantity × food.serving.quantity, followed by food.serving.unit: 4 × 0.5 cup = 2 cups; 0.4 × 100 g = 40 g. Nutrients already describe this consumed portion; do not multiply them again.
  * @param serving
  * @param nutrients
  */
 
 
 internal data class DetectedFood (
-
-    /* Catalog food id, or null when the producer matched none. */
-    @Json(name = "id")
-    val id: kotlin.String?,
 
     /* Null only when the producer sent a food with no name. */
     @Json(name = "name")
@@ -55,9 +51,13 @@ internal data class DetectedFood (
     @Json(name = "brand_name")
     val brandName: kotlin.String?,
 
-    /* Number of catalog servings consumed, ready to use as food-log quantity. For 40 g from a 100 g serving this is 0.4. Null when the producer supplied no usable portion. */
+    /* Matched catalog food id. Pass it back as food_id when logging this food. */
+    @Json(name = "id")
+    val id: kotlin.String,
+
+    /* Positive number of selected catalog servings consumed. Use it unchanged as food-log quantity. Display the consumed amount as food.quantity × food.serving.quantity, followed by food.serving.unit: 4 × 0.5 cup = 2 cups; 0.4 × 100 g = 40 g. Nutrients already describe this consumed portion; do not multiply them again. */
     @Json(name = "quantity")
-    val quantity: java.math.BigDecimal?,
+    val quantity: java.math.BigDecimal,
 
     @Json(name = "serving")
     val serving: ServingSummary,

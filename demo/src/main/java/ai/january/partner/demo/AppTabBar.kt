@@ -8,8 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.CenterFocusWeak
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,11 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-internal enum class AppDestination(val label: String, val icon: ImageVector) {
-    SEARCH("Search", Icons.Filled.Search),
-    SCAN("Scan", Icons.Filled.CenterFocusWeak),
-    FOOD_LOGS("Food Logs", Icons.Filled.ListAlt),
-    GLUCOSE("Glucose", Icons.Filled.ShowChart),
+/** [tag] is the Maestro id; it stays stable when a label is renamed. */
+internal enum class AppDestination(val label: String, val icon: ImageVector, val tag: String) {
+    SEARCH("Search", Icons.Filled.Search, "tab-search"),
+    SCAN("Scan", Icons.Filled.CenterFocusWeak, "tab-scan"),
+    TRACKING("Tracking", Icons.Filled.Insights, "tab-tracking"),
+    FOOD_LOGS("Logs", Icons.Filled.EventNote, "tab-food-logs"),
+    GLUCOSE("Glucose", Icons.Filled.ShowChart, "tab-glucose"),
 }
 
 
@@ -52,7 +55,7 @@ internal fun AppTabBar(selected: AppDestination, onSelect: (AppDestination) -> U
                     Modifier.weight(1f).fillMaxSize().clip(RoundedCornerShape(50))
                         .background(if (item == selected) androidx.compose.ui.graphics.Color(0xFFEBE9E6) else androidx.compose.ui.graphics.Color.Transparent)
                         .selectable(selected = item == selected, role = Role.Tab, onClick = { onSelect(item) })
-                        .testTag("tab-${item.label.lowercase().replace(' ', '-')}"),
+                        .testTag(item.tag),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {

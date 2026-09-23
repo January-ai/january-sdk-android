@@ -31,13 +31,14 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param `value`
+ * @param `value` Accepted range depends on unit: 20–108 in, 50–275 cm.
  * @param unit
  */
 
 
 internal data class Height (
 
+    /* Accepted range depends on unit: 20–108 in, 50–275 cm. */
     @Json(name = "value")
     val `value`: java.math.BigDecimal,
 

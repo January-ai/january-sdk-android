@@ -21,6 +21,8 @@ val prediction = user.glucose.predict(
 )
 ```
 
-Height accepts inches or centimeters; weight accepts pounds or kilograms. A UI
-should display imperial height as feet plus inches, not one raw-inch field.
+Age is in whole years; a fractional age is rejected with a `VALIDATION`
+`JanuaryException` before anything is sent. Height accepts inches or
+centimeters; weight accepts pounds or kilograms. A UI should display imperial
+height as feet plus inches, not one raw-inch field.
 Predictions are informational and are not diagnosis or treatment guidance.

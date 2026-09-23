@@ -1,0 +1,46 @@
+appId: ai.january.partner.demo
+# Live flows start here instead of bootstrap.yaml: launch the demo in its normal
+# mode, which asks the token relay it was built with (january.partnerTokenUrl)
+# for client tokens, then sign in as END_USER_ID (default maestro-live-user)
+# through Settings. The defaults live in expressions rather than an `env:`
+# block, because a subflow's own env replaces the value passed on the command
+# line.
+---
+- retry:
+    maxRetries: 2
+    commands:
+      - stopApp
+      - launchApp:
+          clearState: false
+          stopApp: true
+      - tapOn:
+          text: "Close app"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: search-screen
+          timeout: 60000
+- tapOn:
+    id: settings-button
+- assertVisible: Client token provider
+- tapOn:
+    id: settings-user-id
+- eraseText: 80
+- inputText: "${typeof END_USER_ID === 'undefined' ? 'maestro-live-user' : END_USER_ID}"
+- pressKey: Enter
+- assertVisible: "${typeof END_USER_ID === 'undefined' ? 'maestro-live-user' : END_USER_ID}"
+- waitForAnimationToEnd
+- tapOn:
+    id: settings-close
+# The first tap can land while the keyboard is still closing.
+- runFlow:
+    when:
+      visible:
+        id: settings-sheet
+    commands:
+      - tapOn:
+          id: settings-close
+- extendedWaitUntil:
+    notVisible:
+      id: settings-sheet
+    timeout: 10000

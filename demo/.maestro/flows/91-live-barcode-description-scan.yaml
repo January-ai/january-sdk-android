@@ -1,0 +1,109 @@
+appId: ai.january.partner.demo
+name: Live - barcode lookup, meal description with glucose prediction, sample photo scan and correction
+tags:
+  - live
+---
+- runFlow: ../live-bootstrap.yaml
+# Barcode (BARCODE, default a Coca-Cola bottle).
+- tapOn:
+    id: search-mode-barcode
+- tapOn:
+    id: search-input
+- inputText: "${typeof BARCODE === 'undefined' ? '049000006346' : BARCODE}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-result-0
+    timeout: 30000
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-10-barcode"
+- tapOn:
+    id: food-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-macros
+    timeout: 30000
+- tapOn:
+    id: food-detail-back
+# Description, then the glucose prediction for the detected foods.
+- scrollUntilVisible:
+    element:
+      id: search-mode-description
+    direction: UP
+- tapOn:
+    id: search-mode-description
+- tapOn:
+    id: search-input
+- inputText: a bowl of oatmeal with honey and a banana
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: search-submit
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible:
+      id: description-results
+    timeout: 60000
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-11-description"
+- scrollUntilVisible:
+    element:
+      text: Show glucose prediction
+    direction: DOWN
+    timeout: 30000
+- tapOn: Show glucose prediction
+- scrollUntilVisible:
+    element:
+      text: "(?i)likely meal peak"
+    direction: DOWN
+    timeout: 60000
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-12-description-glucose"
+# The sample photo, analyzed, then corrected.
+- tapOn:
+    id: tab-scan
+- tapOn:
+    id: scan-sample
+- tapOn:
+    id: scan-analyze
+- extendedWaitUntil:
+    visible:
+      id: scan-results
+    timeout: 90000
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-13-scan"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-correct
+- tapOn:
+    id: scan-correct
+- tapOn:
+    id: correction-meal-name
+- eraseText: 60
+- inputText: Diner lunch
+- tapOn:
+    id: scan-correction-input
+- inputText: There were no fries, only the burger
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-correction-submit
+- tapOn:
+    id: scan-correction-submit
+- extendedWaitUntil:
+    notVisible:
+      id: scan-correction-input
+    timeout: 90000
+- assertNotVisible:
+    id: scan-correction-error
+- extendedWaitUntil:
+    visible:
+      id: scan-results
+    timeout: 15000
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-14-scan-corrected"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-another
+- tapOn:
+    id: scan-another
+- assertVisible:
+    id: scan-guide

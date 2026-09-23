@@ -19,7 +19,7 @@ public class FoodPortion private constructor(
 ) {
     /** The exact selection sent by food-log and glucose-prediction requests. */
     public val selection: FoodSelection
-        get() = FoodSelection(foodId.value, ServingSelection(requireNotNull(serving.id).value, quantity))
+        get() = FoodSelection(foodId.value, ServingSelection(serving.id.value, quantity))
 
     public companion object {
         @JvmStatic
@@ -36,7 +36,7 @@ public class FoodPortion private constructor(
                     ?: fail(FoodPortionError.SERVING_NOT_FOUND)
             }
             val servingQuantity = selected.quantity
-            if (selected.id == null || servingQuantity == null || !servingQuantity.isFinite() || servingQuantity <= 0 ||
+            if (servingQuantity == null || !servingQuantity.isFinite() || servingQuantity <= 0 ||
                 !selected.scalingFactor.isFinite() || selected.scalingFactor <= 0
             ) {
                 fail(FoodPortionError.INVALID_SERVING)

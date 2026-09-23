@@ -1,0 +1,259 @@
+appId: ai.january.partner.demo
+name: Tracking day view - water and weight failures and retry
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "400"
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: water-error
+    direction: DOWN
+    timeout: 15000
+- assertVisible: Check the information you entered
+- takeScreenshot: demo/.maestro/artifacts/android-tracking-water-error
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-error-details
+- tapOn:
+    id: water-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-error-details-body
+- assertVisible: "400"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "200"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-retry
+- tapOn:
+    id: water-retry
+    retryTapIfNoChange: true
+# The day's total sits at the top of the water card, above the retry button.
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: water-error
+# The water chart failed with the same request and retries on its own.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-retry
+- tapOn:
+    id: water-chart-retry
+- scrollUntilVisible:
+    element:
+      id: water-chart-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: water-chart-error
+# A server error on a save may come after the weight was saved, and the create is
+# not idempotent: "Try again" reloads the day instead of logging it twice.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "500"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- scrollUntilVisible:
+    element:
+      id: weight-error
+    direction: DOWN
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: "The weight may have been saved anyway.*"
+    direction: DOWN
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-error-details
+- tapOn:
+    id: weight-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-error-details-body
+- assertVisible: "500"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "200"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-retry
+- tapOn:
+    id: weight-retry
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      id: weight-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: weight-error
+- assertNotVisible:
+    id: weight-logged
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      FIELD: method
+      VALUE: '"GET"'
+# A save the API refused was not recorded: "Try again" sends it again.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "429"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+# Look for the card's title, not the card: the card can first show as a sliver
+# at the bottom of the screen. With its retry button in view, the whole card is,
+# and it has no "may have been saved" note.
+- scrollUntilVisible:
+    element:
+      text: Too many requests
+    direction: DOWN
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-retry
+- assertVisible: Too many requests
+- assertNotVisible: "The weight may have been saved anyway.*"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "200"
+- tapOn:
+    id: weight-retry
+    retryTapIfNoChange: true
+# "Logged" shows once the save answers, usually already in view: wait for it there
+# before looking further up, so a scroll cannot carry it out of view first.
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 10000
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: weight-logged
+    direction: UP
+    timeout: 15000
+- assertVisible: Logged 150 lb
+- assertNotVisible:
+    id: weight-error
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      METHOD: POST
+      FIELD: body.weight.value
+      VALUE: "150"
+# The same holds for water: after a server error, "Try again" only reloads the
+# day. And since the failed save may have been kept after the one before it, the
+# earlier entry is no longer offered as the last one to delete.
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-delete-last
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: water-total
+      text: 8 fl oz
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "503"
+- tapOn:
+    id: water-log
+- scrollUntilVisible:
+    element:
+      text: "The water may have been saved anyway.*"
+    direction: DOWN
+    timeout: 15000
+# Back at the log button, where the Logged line and Delete last would sit below it.
+- scrollUntilVisible:
+    element:
+      id: water-log
+    direction: UP
+    centerElement: true
+    timeout: 15000
+- assertNotVisible:
+    id: water-delete-last
+- assertNotVisible:
+    id: water-logged
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "200"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-retry
+- tapOn:
+    id: water-retry
+    retryTapIfNoChange: true
+# The reloaded day has the first entry only (the fixture kept nothing from the
+# failed save), and still no delete-last.
+- scrollUntilVisible:
+    element:
+      id: water-total
+      text: 8 fl oz
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: water-error
+- assertNotVisible:
+    id: water-delete-last
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      FIELD: method
+      VALUE: '"GET"'
