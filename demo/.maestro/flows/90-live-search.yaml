@@ -1,0 +1,106 @@
+appId: ai.january.partner.demo
+name: Live - food search with suggestions, food detail, serving, glucose response, alternatives
+tags:
+  - live
+---
+- runFlow: ../live-bootstrap.yaml
+- tapOn:
+    id: search-input
+- inputText: greek yog
+- extendedWaitUntil:
+    visible:
+      id: autocomplete-suggestions
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-01-suggestions
+- tapOn:
+    id: autocomplete-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-result-0
+    timeout: 30000
+- assertVisible: RESULTS · JANUARY FOOD DATABASE
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-02-search-results
+- tapOn:
+    id: food-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-detail-screen
+    timeout: 30000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-macros
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-03-food-detail
+# Pick another serving when the food has one.
+- tapOn:
+    id: food-serving-unit
+- runFlow:
+    when:
+      visible:
+        id: food-serving-option-1
+    commands:
+      - tapOn:
+          id: food-serving-option-1
+- runFlow:
+    when:
+      visible:
+        id: food-serving-option-0
+    commands:
+      - tapOn:
+          id: food-serving-option-0
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-macros
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-04-food-serving
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-check-glucose
+- tapOn:
+    id: food-check-glucose
+- extendedWaitUntil:
+    visible:
+      id: food-glucose-result
+    timeout: 45000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-05-food-glucose
+- tapOn: Close Glucose response
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-alternatives
+- tapOn:
+    id: food-alternatives
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: alternatives-refresh
+- tapOn:
+    id: alternatives-refresh
+- extendedWaitUntil:
+    notVisible:
+      id: alternatives-loading
+    timeout: 60000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: "alternatives-(results|empty)"
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-06-alternatives
+- runFlow:
+    when:
+      visible:
+        id: alternative-result-0
+    commands:
+      - tapOn:
+          id: alternative-result-0
+      - extendedWaitUntil:
+          visible:
+            id: food-macros
+          timeout: 30000
+      - takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-07-alternative-detail
+      - back
+- tapOn: Close Food alternatives
+- tapOn:
+    id: food-detail-back
+- assertVisible:
+    id: search-results

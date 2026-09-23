@@ -59,7 +59,8 @@ typing anything else never opens the suggestion list.
 - To assert a loading state, slow its route with `control-fixture.js`
   (`DELAY`) and trigger it with `waitToSettleTimeoutMs: 500` on the tap, so
   the spinner is still there when the assertion runs.
-- Tag every flow `fixture` or `parity`; CI runs both tags.
+- Tag every flow `fixture` or `parity`; CI runs both tags. Flows tagged `live`
+  run against the January API instead (see below).
 - The Tracking tab (`tab-tracking`, `tracking-screen`) is a day view
   (`logs-day-previous`, `logs-day-next`, `logs-day-today`, `logs-day-label`)
   showing that day's food logs and totals (`food-logs-totals`), water
@@ -90,6 +91,53 @@ an id that no longer exists in the demo is an error. Tags built at run time are
 expanded from the rules at the top of the script (for example
 `water-chart-range-week`), and list rows such as `food-result-0` stand for
 their whole list.
+
+## Live flows against a local relay
+
+Flows tagged `live` (`90-` onward) run the demo against the January API through
+your token relay and compare what it shows with what the API returns for the
+same end user: food logs, the day's totals, water and weight entries, and the
+water and weight charts. They create food logs and water entries and delete
+them again, and the last one logs two weights, which the API keeps, so use a
+test end user.
+
+A full run makes about 170 API requests (the demo's own requests plus the
+checks), so check your account's request allowance first. `run-live.mjs`
+prints the estimate per flow and can run part of the suite.
+
+1. Start the token relay (Terminal 1 in the [root README](../../README.md)) and
+   build the demo against it: `january.partnerTokenUrl` in `local.properties`
+   as that README describes, then `./gradlew :demo:installDebug`.
+2. Run the live flows:
+
+   ```bash
+   node demo/.maestro/run-live.mjs --end-user my-test-user
+   # or a part of them, within an estimated number of requests
+   node demo/.maestro/run-live.mjs --end-user my-test-user --only 93,94 --budget 100
+   ```
+
+   The runner first checks, with one request, that the API answers for this
+   user, then runs one flow at a time with a pause between them. When the API
+   answers `429 rate_limited` it stops instead of failing every remaining
+   step, and it lists the flows it did not start. The weight flow runs only
+   when every flow before it passed. Maestro's debug output, the screenshots
+   and `live-verification.log` (every check the flows made, tokens removed)
+   go to `demo/.maestro/artifacts/live`, which git ignores. A single flow also
+   runs directly: `maestro test -e END_USER_ID=my-test-user
+   demo/.maestro/flows/94-live-water.yaml`.
+
+`live-bootstrap.yaml` launches the demo normally and enters `END_USER_ID` in
+Settings; `live-tracking-context.yaml` reads the day and timezone the Tracking
+tab shows, so `scripts/live-verify.js` asks the API about the same calendar
+day. The script mints its own client token from the relay and never prints it.
+Other settings, each passed with `-e`:
+
+| Setting | Default |
+| --- | --- |
+| `RELAY_TOKEN_URL`, the relay as your computer reaches it | `http://127.0.0.1:8787/api/january/client-token` |
+| `RELAY_TOKEN`, for a relay on your network or on Vercel | none |
+| `SHOTS`, where screenshots go | `demo/.maestro/artifacts/live` (git-ignored) |
+| `BARCODE`, `RESTAURANT`, `MENU_ITEM` | `049000006346`, `Starbucks`, `latte` |
 
 ## In CI
 

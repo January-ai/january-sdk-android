@@ -1,0 +1,187 @@
+appId: ai.january.partner.demo
+name: Live - create, list, edit and delete a food log, with the day's totals, checked against the API
+tags:
+  - live
+---
+- runFlow: ../live-bootstrap.yaml
+- runFlow: ../live-tracking-context.yaml
+# Create today's log from the Tracking tab.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-create
+- tapOn:
+    id: food-log-create
+- tapOn:
+    id: food-log-name
+- inputText: E2E lunch ${output.runId}
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-add-food
+- tapOn:
+    id: food-log-add-food
+- tapOn:
+    id: food-picker-input
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 30000
+- tapOn:
+    id: food-picker-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-serving-add
+    timeout: 30000
+- tapOn:
+    id: food-serving-add
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-save
+- tapOn:
+    id: food-log-save
+- extendedWaitUntil:
+    notVisible:
+      id: food-log-editor
+    timeout: 45000
+- scrollUntilVisible:
+    element:
+      text: E2E lunch ${output.runId}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-30-food-log-created
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: food-log
+      NAME: E2E lunch ${output.runId}
+      FOOD: oat
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+    direction: UP
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: food-logs-totals-count
+      text: "[0-9]+ logs?"
+    timeout: 30000
+- copyTextFrom:
+    id: food-logs-totals-count
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: log-count
+# Edit: rename it.
+- scrollUntilVisible:
+    element:
+      text: E2E lunch ${output.runId}
+    direction: DOWN
+    timeout: 30000
+- tapOn: E2E lunch ${output.runId}
+- extendedWaitUntil:
+    visible:
+      id: food-log-detail
+    timeout: 15000
+- tapOn:
+    id: food-log-edit
+- tapOn:
+    id: food-log-name
+- eraseText: 60
+- inputText: E2E dinner ${output.runId}
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-save
+- tapOn:
+    id: food-log-save
+- extendedWaitUntil:
+    notVisible:
+      id: food-log-editor
+    timeout: 45000
+- scrollUntilVisible:
+    element:
+      text: E2E dinner ${output.runId}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-31-food-log-edited
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: food-log
+      NAME: E2E dinner ${output.runId}
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: food-log
+      NAME: E2E lunch ${output.runId}
+      PRESENT: "false"
+# The Logs tab lists it for this week and for today.
+- tapOn:
+    id: tab-food-logs
+- scrollUntilVisible:
+    element:
+      text: E2E dinner ${output.runId}
+    direction: DOWN
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: logs-range-today
+    direction: UP
+    timeout: 15000
+- tapOn:
+    id: logs-range-today
+- scrollUntilVisible:
+    element:
+      text: E2E dinner ${output.runId}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-32-logs-tab
+# Delete it.
+- tapOn: E2E dinner ${output.runId}
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-delete
+- tapOn:
+    id: food-log-delete
+- tapOn:
+    id: confirm-delete-food-log
+- extendedWaitUntil:
+    visible:
+      id: food-logs-screen
+    timeout: 30000
+- extendedWaitUntil:
+    notVisible:
+      text: E2E dinner ${output.runId}
+    timeout: 30000
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: food-log
+      NAME: E2E dinner ${output.runId}
+      PRESENT: "false"
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+    direction: DOWN
+    timeout: 30000
+- extendedWaitUntil:
+    visible:
+      id: food-logs-totals-count
+      text: "[0-9]+ logs?"
+    timeout: 30000
+- copyTextFrom:
+    id: food-logs-totals-count
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: log-count
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-33-food-log-deleted

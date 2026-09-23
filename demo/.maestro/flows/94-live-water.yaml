@@ -1,0 +1,294 @@
+appId: ai.january.partner.demo
+name: Live - water in fl oz and ml with delete-last, cup, and the previous day, checked against the API
+tags:
+  - live
+---
+- runFlow: ../live-bootstrap.yaml
+- runFlow: ../live-tracking-context.yaml
+# Start from the day's total as the API has it.
+- scrollUntilVisible:
+    element:
+      id: "water-(total|empty)"
+    direction: DOWN
+    timeout: 30000
+- copyTextFrom:
+    id: "water-(total|empty)"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: fl_oz
+# 8 fl oz (the prefilled amount), checked, then deleted.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 30000
+- assertVisible: Logged 8 fl oz
+- scrollUntilVisible:
+    element:
+      id: water-total
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: water-total
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: fl_oz
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-40-water-fl-oz
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-delete-last
+- tapOn:
+    id: water-delete-last
+- extendedWaitUntil:
+    notVisible:
+      id: water-delete-last
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "water-(total|empty)"
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: "water-(total|empty)"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: fl_oz
+# 250 ml, checked in ml, then deleted.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: water-amount
+- inputText: "250"
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 30000
+- assertVisible: Logged 250 ml
+- scrollUntilVisible:
+    element:
+      id: water-total
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: water-total
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: ml
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-41-water-ml
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-delete-last
+- tapOn:
+    id: water-delete-last
+- extendedWaitUntil:
+    notVisible:
+      id: water-delete-last
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "water-(total|empty)"
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: "water-(total|empty)"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: ml
+# Cup: the demo shows whatever the API answers, either the day's total in cups
+# or the reason the API gave, and a cup entry is only kept if the API took it.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-cup
+- tapOn:
+    id: water-unit-cup
+- extendedWaitUntil:
+    notVisible:
+      id: water-loading
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        id: water-error
+    commands:
+      - assertVisible:
+          id: water-error
+      - runFlow:
+          file: ../scroll-to.yaml
+          env:
+            TARGET_ID: water-error-details
+      - tapOn:
+          id: water-error-details
+      - runFlow:
+          file: ../scroll-to.yaml
+          env:
+            TARGET_ID: water-error-details-body
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-42-water-cup
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: water-amount
+- inputText: "1"
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: "water-logged|water-error"
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-43-water-cup-log
+- runFlow:
+    when:
+      visible:
+        id: water-logged
+    commands:
+      - runFlow:
+          file: ../scroll-to.yaml
+          env:
+            TARGET_ID: water-delete-last
+      - tapOn:
+          id: water-delete-last
+      - extendedWaitUntil:
+          notVisible:
+            id: water-delete-last
+          timeout: 30000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- scrollUntilVisible:
+    element:
+      id: "water-(total|empty)"
+    direction: UP
+    timeout: 30000
+- assertNotVisible:
+    id: water-error
+- copyTextFrom:
+    id: "water-(total|empty)"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: ml
+# The previous day: water logged there lands on that day, then is deleted.
+# Leaving the tab first drops the focus from the amount field, so no keyboard
+# toolbar covers the day arrows; the tab comes back in fl oz with 8 prefilled.
+- tapOn:
+    id: tab-search
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: logs-day-previous
+    direction: UP
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: logs-day-previous
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: logs-day-today
+- copyTextFrom:
+    id: logs-day-label
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: remember-day
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: water-total
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: water-total
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: ml
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-46-water-previous-day
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-delete-last
+- tapOn:
+    id: water-delete-last
+- extendedWaitUntil:
+    notVisible:
+      id: water-delete-last
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "water-(total|empty)"
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: "water-(total|empty)"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water
+      UNIT: ml
+- scrollUntilVisible:
+    element:
+      id: logs-day-next
+    direction: UP
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: logs-day-next
+- assertNotVisible:
+    id: logs-day-today

@@ -1,0 +1,129 @@
+appId: ai.january.partner.demo
+name: Live - water and weight charts by week, month and year match the API
+tags:
+  - live
+---
+- runFlow: ../live-bootstrap.yaml
+- runFlow: ../live-tracking-context.yaml
+# Water in ml, each range summarized as the API's daily totals say.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-range-week
+- tapOn:
+    id: water-chart-range-week
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water-chart
+      RANGE: week
+      UNIT: ml
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-50-water-week
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-range-month
+- tapOn:
+    id: water-chart-range-month
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water-chart
+      RANGE: month
+      UNIT: ml
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-51-water-month
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-range-year
+- tapOn:
+    id: water-chart-range-year
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: water-chart
+      RANGE: year
+      UNIT: ml
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 45000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-52-water-year
+# Weight in kg.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-kg
+- tapOn:
+    id: weight-unit-kg
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-week
+- tapOn:
+    id: weight-chart-range-week
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight-chart
+      RANGE: week
+      UNIT: kg
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-53-weight-week
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-month
+- tapOn:
+    id: weight-chart-range-month
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight-chart
+      RANGE: month
+      UNIT: kg
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-54-weight-month
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-year
+- tapOn:
+    id: weight-chart-range-year
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight-chart
+      RANGE: year
+      UNIT: kg
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 45000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-55-weight-year

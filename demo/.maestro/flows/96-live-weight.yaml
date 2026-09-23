@@ -1,0 +1,111 @@
+appId: ai.january.partner.demo
+name: Live - weight in lb and kg, checked against the API and the weight chart
+tags:
+  - live
+---
+# The API keeps weight entries (they cannot be deleted), so this flow runs last
+# and starts by confirming the API answers before it logs anything.
+- runFlow: ../live-bootstrap.yaml
+- runFlow: ../live-tracking-context.yaml
+- scrollUntilVisible:
+    element:
+      id: "weight-(day|empty)"
+    direction: DOWN
+    timeout: 30000
+- copyTextFrom:
+    id: "weight-(day|empty)"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight
+# Weight in pounds, then kilograms; the day shows the latest.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-lb
+- tapOn:
+    id: weight-unit-lb
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: weight-value
+- inputText: "165.4"
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 30000
+- assertVisible: Logged 165.4 lb
+- scrollUntilVisible:
+    element:
+      id: weight-day
+      text: 165.4 lb
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: weight-day
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-60-weight-lb
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-kg
+- tapOn:
+    id: weight-unit-kg
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: weight-value
+- inputText: "75.2"
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+      text: Logged 75.2 kg
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: weight-day
+      text: 75.2 kg
+    direction: UP
+    timeout: 30000
+- copyTextFrom:
+    id: weight-day
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-61-weight-kg
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-week
+- tapOn:
+    id: weight-chart-range-week
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: weight-chart
+      RANGE: week
+      UNIT: kg
+- scrollUntilVisible:
+    element:
+      text: ${output.expectedChart}
+    direction: DOWN
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-62-weight-chart

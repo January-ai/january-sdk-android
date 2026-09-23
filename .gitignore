@@ -11,3 +11,6 @@ local.properties
 
 # Kotlin compiler session data
 .kotlin/
+
+# Screenshots from the live Maestro flows show real API data.
+demo/.maestro/artifacts/live/

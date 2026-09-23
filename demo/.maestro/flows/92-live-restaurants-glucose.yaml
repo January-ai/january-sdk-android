@@ -1,0 +1,112 @@
+appId: ai.january.partner.demo
+name: Live - nearby restaurants, a menu, a menu item's glucose impact, menu item search, glucose prediction
+tags:
+  - live
+---
+- runFlow: ../live-bootstrap.yaml
+- tapOn:
+    id: search-scope-restaurants
+- tapOn:
+    id: restaurant-search-input
+- inputText: "${typeof RESTAURANT === 'undefined' ? 'Starbucks' : RESTAURANT}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: restaurant-result-0
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-20-restaurants
+- tapOn:
+    id: restaurant-result-0
+- extendedWaitUntil:
+    visible:
+      id: "restaurant-menu-item-0|menu-empty"
+    timeout: 60000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-21-menu
+- runFlow:
+    when:
+      visible:
+        id: restaurant-menu-item-0
+    commands:
+      - tapOn:
+          id: restaurant-menu-item-0
+      - extendedWaitUntil:
+          visible:
+            id: menu-item-detail-screen
+          timeout: 15000
+      - runFlow:
+          file: ../scroll-to.yaml
+          env:
+            TARGET_ID: menu-glucose-button
+      - tapOn:
+          id: menu-glucose-button
+      - extendedWaitUntil:
+          visible:
+            id: "food-glucose-(result|error)"
+          timeout: 45000
+      - takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-22-menu-item-glucose
+      - tapOn: Close Glucose response
+      - tapOn:
+          id: menu-item-detail-back
+- tapOn:
+    id: restaurant-detail-back
+- tapOn:
+    id: restaurant-mode-menu
+- tapOn:
+    id: restaurant-search-input
+- eraseText: 40
+- inputText: "${typeof MENU_ITEM === 'undefined' ? 'latte' : MENU_ITEM}"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: menu-result-0
+    timeout: 30000
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-23-menu-items
+- tapOn:
+    id: menu-result-0
+- extendedWaitUntil:
+    visible:
+      id: menu-item-detail-screen
+    timeout: 15000
+- tapOn:
+    id: menu-item-detail-back
+# Glucose prediction for a meal built in the food picker.
+- tapOn:
+    id: tab-glucose
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-add-food
+- tapOn:
+    id: glucose-add-food
+- tapOn:
+    id: food-picker-input
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 30000
+- tapOn:
+    id: food-picker-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-serving-add
+    timeout: 30000
+- tapOn:
+    id: food-serving-add
+- assertVisible:
+    id: glucose-food-0
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-predict
+- waitForAnimationToEnd
+- tapOn:
+    id: glucose-predict
+- extendedWaitUntil:
+    visible:
+      id: glucose-results-screen
+    timeout: 60000
+- assertVisible:
+    id: glucose-chart
+- takeScreenshot: ${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-24-glucose
