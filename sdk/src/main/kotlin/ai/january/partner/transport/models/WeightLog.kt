@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param weight
- * @param measuredAt When the weight was measured. UTC, with milliseconds.
+ * @param createdAt When the weight was measured. UTC, with milliseconds.
  */
 
 
@@ -42,8 +42,8 @@ internal data class WeightLog (
     val weight: Weight,
 
     /* When the weight was measured. UTC, with milliseconds. */
-    @Json(name = "measured_at")
-    val measuredAt: java.time.OffsetDateTime
+    @Json(name = "created_at")
+    val createdAt: java.time.OffsetDateTime
 
 ) {
 

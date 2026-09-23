@@ -33,7 +33,7 @@ import com.squareup.moshi.JsonClass
  *
  * @param id Save this id to update or delete the log. Null only when the upstream sent a log with no id — such a log cannot be addressed.
  * @param foods
- * @param eatenAt When the meal was eaten. UTC, with milliseconds.
+ * @param createdAt When the meal was eaten. UTC, with milliseconds.
  * @param name Null when no name was given.
  */
 
@@ -48,8 +48,8 @@ internal data class FoodLog (
     val foods: kotlin.collections.List<LoggedFood>,
 
     /* When the meal was eaten. UTC, with milliseconds. */
-    @Json(name = "eaten_at")
-    val eatenAt: java.time.OffsetDateTime,
+    @Json(name = "created_at")
+    val createdAt: java.time.OffsetDateTime,
 
     /* Null when no name was given. */
     @Json(name = "name")

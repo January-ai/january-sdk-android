@@ -1,7 +1,10 @@
 package ai.january.partner
 
+import ai.january.partner.foodlogs.CreateFoodLogRequest
 import ai.january.partner.foodlogs.FoodLogSummaryGrouping
+import ai.january.partner.foodlogs.GetFoodLogRequest
 import ai.january.partner.foodlogs.GetFoodLogSummaryRequest
+import ai.january.partner.foodlogs.ListFoodLogsRequest
 import ai.january.partner.foodlogs.UpdateFoodLogRequest
 import ai.january.partner.foodlogs.WeekStart
 import ai.january.partner.foods.DetectedFood
@@ -147,7 +150,7 @@ class ContractShapeTest {
 
     @Test
     fun foodLogUpdateSendsOnlyTheFieldsSetAndRejectsAnEmptyPatch(): Unit = runBlocking {
-        enqueue("""{"id":"78129823-8ba2-4183-b13b-71f0e963c606","foods":[],"eaten_at":"2026-09-13T11:34:56Z","name":"Lunch"}""")
+        enqueue("""{"id":"78129823-8ba2-4183-b13b-71f0e963c606","foods":[],"created_at":"2026-09-13T11:34:56Z","name":"Lunch"}""")
         val user = PartnerUserContext(PartnerUserId("fixture-user"), "America/Chicago")
 
         client.foodLogs.update(UpdateFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", name = "Lunch", user = user))
@@ -158,6 +161,27 @@ class ContractShapeTest {
         }.exceptionOrNull() as JanuaryException
         assertEquals(ErrorCategory.VALIDATION, failure.category)
         assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun foodLogsSendCreatedAtAndReadItBackAsTimestampUtc(): Unit = runBlocking {
+        val user = PartnerUserContext(PartnerUserId("fixture-user"), "America/Chicago")
+        val food = FoodSelection("1", ServingSelection("2", 1.0))
+        val log = """{"id":"78129823-8ba2-4183-b13b-71f0e963c606","foods":[],"created_at":"2026-09-13T11:34:56.123Z","name":"Lunch"}"""
+        repeat(3) { enqueue(log) }
+        enqueue("""{"items":[$log]}""")
+
+        val created = client.foodLogs.create(CreateFoodLogRequest(listOf(food), "2026-09-13T06:34:56-05:00", "Lunch", user))
+        val updated = client.foodLogs.update(
+            UpdateFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", timestampUtc = "2026-09-13T06:34:56-05:00", user = user),
+        )
+        val fetched = client.foodLogs.get(GetFoodLogRequest("78129823-8ba2-4183-b13b-71f0e963c606", user))
+        val listed = client.foodLogs.list(ListFoodLogsRequest("2026-09-13", "2026-09-13", user)).items.single()
+
+        val createBody = server.takeRequest().body.readUtf8()
+        assertTrue(createBody, createBody.contains(""""created_at":"2026-09-13T06:34:56-05:00""""))
+        assertEquals("""{"created_at":"2026-09-13T06:34:56-05:00"}""", server.takeRequest().body.readUtf8())
+        listOf(created, updated, fetched, listed).forEach { assertEquals("2026-09-13T11:34:56.123Z", it.timestampUtc) }
     }
 
     @Test

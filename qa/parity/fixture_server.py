@@ -16,7 +16,7 @@ def detected(id='101',name='Fixture oatmeal'):return dict(id=str(id),name=name,b
 def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=detected(),confidence='high')],total_nutrients=NUTRIENTS)
 # The end user's timezone in the demos' fixture launches (FixtureLaunch.kt on Android).
 DEMO_TIMEZONE='America/New_York'
-def seeded_eaten_at():
+def seeded_created_at():
  # An hour ago, so the seeded log is in the past, but never before today's first minute in the demo's
  # timezone: between midnight and 1 AM an hour ago is yesterday, and flows expect the log today.
  now=datetime.now(timezone.utc)
@@ -43,7 +43,7 @@ def summary(q,logs):
  # One bucket per day, like group_by=day; every day in the range is present.
  buckets=[];totals={};logs_count=0;days_with_logs=0
  for day in day_range(q):
-  day_logs=[l for l in logs if local_day(l['eaten_at'],q)==day];nutrients={}
+  day_logs=[l for l in logs if local_day(l['created_at'],q)==day];nutrients={}
   for l in day_logs:
    for f in l['foods']:add_nutrients(nutrients,f['nutrients'])
   buckets.append(dict(start_date=day,end_date=day,logs_count=len(day_logs),days_with_logs=1 if day_logs else 0,nutrients=nutrients))
@@ -52,7 +52,7 @@ def summary(q,logs):
  return dict(group_by='day',week_start=None,timezone=q.get('timezone','UTC'),start_date=q.get('start_date'),end_date=q.get('end_date',q.get('start_date')),buckets=buckets,totals=dict(logs_count=logs_count,days_with_logs=days_with_logs,nutrients=totals),average_per_logged_day=dict(nutrients=average))
 def log(name='Fixture breakfast'):
  f=food(); f.pop('servings');f.pop('type');f.pop('barcode');f.update(food_id=f.pop('id'),quantity=1,serving=dict(id='11',quantity=1,unit='cup',weight_grams=100))
- return dict(id='11111111-1111-4111-8111-111111111111',name=name,eaten_at=seeded_eaten_at(),foods=[f])
+ return dict(id='11111111-1111-4111-8111-111111111111',name=name,created_at=seeded_created_at(),foods=[f])
 ML_PER_FL_OZ=29.5735
 ML_PER_UNIT=dict(fl_oz=ML_PER_FL_OZ,cup=8*ML_PER_FL_OZ,ml=1)
 def volume(ml,unit):return dict(value=round(ml/ML_PER_UNIT.get(unit,1),1),unit=unit)
@@ -70,10 +70,10 @@ def history():
  today=datetime.now().astimezone().replace(hour=12,minute=0,second=0,microsecond=0).astimezone(timezone.utc);water=[];weights=[]
  for i in range(400):
   at=(today-timedelta(days=i)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
-  if i%4!=3:water.append(dict(id='history-%d'%i,ml=1400+(i*137)%900,consumed_at=at))
+  if i%4!=3:water.append(dict(id='history-%d'%i,ml=1400+(i*137)%900,created_at=at))
   if i%3==0:
    kg=round(70+i*0.012+((i*7)%5)*0.1,1)
-   weights.append(dict(weight=dict(value=round(kg/0.45359237,1),unit='lb') if i%12==0 else dict(value=kg,unit='kg'),measured_at=at))
+   weights.append(dict(weight=dict(value=round(kg/0.45359237,1),unit='lb') if i%12==0 else dict(value=kg,unit='kg'),created_at=at))
  return water,weights
 LIST_LIMIT=100
 # Food logs, water and weights are kept per end user, like the API. A client token from the token
@@ -152,29 +152,29 @@ class Handler(BaseHTTPRequestHandler):
   elif '/water-logs' in path:
    if self.command=='POST':
     amount=body.get('amount',{});ml=float(amount.get('value',0))*ML_PER_UNIT.get(amount.get('unit'),1)
-    result=dict(id=str(__import__('uuid').uuid4()),amount=dict(value=amount.get('value'),unit=amount.get('unit')),consumed_at=stamp(body.get('consumed_at')))
-    mine('water',user).append(dict(id=result['id'],ml=ml,consumed_at=result['consumed_at']));return self.respond(result,201)
+    result=dict(id=str(__import__('uuid').uuid4()),amount=dict(value=amount.get('value'),unit=amount.get('unit')),created_at=stamp(body.get('created_at')))
+    mine('water',user).append(dict(id=result['id'],ml=ml,created_at=result['created_at']));return self.respond(result,201)
    if self.command=='DELETE':
     state['water'][user]=[w for w in mine('water',user) if w['id']!=path.rsplit('/',1)[1]];return self.respond(None,204)
    totals={}
-   for w in mine('water',user):day=local_day(w['consumed_at'],q);totals[day]=totals.get(day,0)+w['ml']
+   for w in mine('water',user):day=local_day(w['created_at'],q);totals[day]=totals.get(day,0)+w['ml']
    result=dict(items=[] if empty else [dict(date=d,total=volume(ml,q.get('unit','fl_oz'))) for d,ml in sorted(totals.items()) if in_range(d,q)][-LIST_LIMIT:])
   elif '/weight-logs' in path:
    if self.command=='POST':
-    result=dict(weight=body.get('weight'),measured_at=stamp(body.get('measured_at')))
+    result=dict(weight=body.get('weight'),created_at=stamp(body.get('created_at')))
     mine('weights',user).append(result);return self.respond(result,201)
    latest={}
    for w in mine('weights',user):
-    day=local_day(w['measured_at'],q)
-    if day not in latest or w['measured_at']>=latest[day]['measured_at']:latest[day]=w
+    day=local_day(w['created_at'],q)
+    if day not in latest or w['created_at']>=latest[day]['created_at']:latest[day]=w
    result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items()) if in_range(d,q)][-LIST_LIMIT:])
   elif path.endswith('/food-logs/summary'):result=summary(q,mine('logs',user))
   elif '/food-logs' in path:
-   if self.command=='GET':result=dict(items=[] if empty else [l for l in mine('logs',user) if in_range(local_day(l['eaten_at'],q),q)])
+   if self.command=='GET':result=dict(items=[] if empty else [l for l in mine('logs',user) if in_range(local_day(l['created_at'],q),q)])
    elif self.command=='DELETE':state['logs'][user]=[];result=dict(status='success')
    else:
     result=log(body.get('name') or 'Fixture breakfast')
-    if body.get('eaten_at'):result['eaten_at']=stamp(body['eaten_at'])
+    if body.get('created_at'):result['created_at']=stamp(body['created_at'])
     state['logs'][user]=[result]
   else:return self.respond(dict(message='Unmapped fixture route '+path),404)
   self.respond(result)

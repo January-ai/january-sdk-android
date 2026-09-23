@@ -21,6 +21,14 @@ class TrackingDraftsTest {
         assertEquals("240", convertWaterDraft("8.1", VolumeUnit.FL_OZ, VolumeUnit.ML))
     }
 
+    @Test fun theLimitsOfTheOtherUnitsStayWithinTheCupRange() {
+        // The API takes 0.1–101.4 cups; one decimal keeps every loggable fl oz or ml amount inside it.
+        assertEquals("0.1", convertWaterDraft("1", VolumeUnit.FL_OZ, VolumeUnit.CUP))
+        assertEquals("0.1", convertWaterDraft("30", VolumeUnit.ML, VolumeUnit.CUP))
+        assertEquals("101.4", convertWaterDraft("811.5", VolumeUnit.FL_OZ, VolumeUnit.CUP))
+        assertEquals("101.4", convertWaterDraft("24000", VolumeUnit.ML, VolumeUnit.CUP))
+    }
+
     @Test fun weightKeepsItsAmountAcrossUnits() {
         assertEquals("68", convertWeightDraft("150", WeightUnit.POUNDS, WeightUnit.KILOGRAMS))
         assertEquals("149.9", convertWeightDraft("68", WeightUnit.KILOGRAMS, WeightUnit.POUNDS))

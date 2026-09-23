@@ -90,12 +90,12 @@ public class UserScopedClientTest {
         assertEquals(null, requests[4].getHeader("January-End-User-ID"))
 
         val createBody = requests[0].body.readUtf8()
-        assertTrue(createBody.contains("\"eaten_at\":\"$timestamp\""))
+        assertTrue(createBody.contains("\"created_at\":\"$timestamp\""))
         assertEquals(2, "\"serving_id\"".toRegex().findAll(createBody).count())
         assertEquals("2023-09-12", requests[1].requestUrl!!.queryParameter("start_date"))
         assertEquals("2024-09-15", requests[1].requestUrl!!.queryParameter("end_date"))
         val updateBody = requests[2].body.readUtf8()
-        assertTrue(updateBody.contains("\"eaten_at\":\"$timestamp\""))
+        assertTrue(updateBody.contains("\"created_at\":\"$timestamp\""))
         assertEquals(2, "\"serving_id\"".toRegex().findAll(updateBody).count())
         assertTrue(requests[4].body.readUtf8().contains("\"foods\""))
     }
@@ -177,6 +177,6 @@ public class UserScopedClientTest {
         const val FOOD_ITEM =
             """{"id":"1","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":null,"servings":[{"id":"2","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
         const val FOOD_LOG =
-            """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"eaten_at":"2024-09-13T11:34:56Z","name":"Lunch"}"""
+            """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"created_at":"2024-09-13T11:34:56Z","name":"Lunch"}"""
     }
 }

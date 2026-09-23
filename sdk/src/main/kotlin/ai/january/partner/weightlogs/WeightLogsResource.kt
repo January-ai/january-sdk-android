@@ -17,11 +17,11 @@ public class WeightLogsResource internal constructor(private val api: WeightLogs
     public suspend fun create(request: CreateWeightLogRequest): WeightLog {
         val body = CreateWeightLogBody(
             weight = TransportWeight(BigDecimal.valueOf(request.weight.value), request.weight.unit.value),
-            measuredAt = request.measuredAt?.let(OffsetDateTime::parse),
+            createdAt = request.measuredAt?.let(OffsetDateTime::parse),
         )
         return executeApiCall(
             operation = { api.createWeightLog(body, request.user.endUserId.value) },
-            transform = { WeightLog(it.weight.toPublic(), it.measuredAt.toString()) },
+            transform = { WeightLog(it.weight.toPublic(), it.createdAt.toString()) },
         )
     }
 

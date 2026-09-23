@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param weight
- * @param measuredAt When the weight was measured — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now.
+ * @param createdAt When the weight was measured — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now.
  */
 
 
@@ -42,8 +42,8 @@ internal data class CreateWeightLogBody (
     val weight: Weight,
 
     /* When the weight was measured — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now. */
-    @Json(name = "measured_at")
-    val measuredAt: java.time.OffsetDateTime? = null
+    @Json(name = "created_at")
+    val createdAt: java.time.OffsetDateTime? = null
 
 ) {
 

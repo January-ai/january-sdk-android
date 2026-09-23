@@ -32,7 +32,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param foods
- * @param eatenAt When the meal was eaten — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now.
+ * @param createdAt When the meal was eaten — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now.
  * @param name
  */
 
@@ -43,8 +43,8 @@ internal data class CreateFoodLogBody (
     val foods: kotlin.collections.List<FoodLogInputFood>,
 
     /* When the meal was eaten — any ISO-8601 offset; stored and returned in UTC with milliseconds. Omitted = now. */
-    @Json(name = "eaten_at")
-    val eatenAt: java.time.OffsetDateTime? = null,
+    @Json(name = "created_at")
+    val createdAt: java.time.OffsetDateTime? = null,
 
     @Json(name = "name")
     val name: kotlin.String? = null

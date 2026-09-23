@@ -42,7 +42,7 @@ public class WaterAndWeightLogsResourceTest {
     }
 
     @Test
-    public fun waterLogCreateSendsTheAmountAndDecodesTheLog(): Unit = runBlocking {
+    public fun waterLogCreateSendsCreatedAtAndReadsItBackAsConsumedAt(): Unit = runBlocking {
         enqueue(WATER_LOG, 201)
 
         val log = client.waterLogs.create(CreateWaterLogRequest(WaterAmount(8.0, VolumeUnit.FL_OZ), "2026-09-10T14:30:15Z", user))
@@ -51,7 +51,7 @@ public class WaterAndWeightLogsResourceTest {
         assertEquals("POST", request.method)
         assertEquals("/v1.2/water-logs", request.path)
         assertEquals("oren-sdk-test", request.getHeader("January-End-User-ID"))
-        assertEquals("""{"amount":{"value":8.0,"unit":"fl_oz"},"consumed_at":"2026-09-10T14:30:15Z"}""", request.body.readUtf8())
+        assertEquals("""{"amount":{"value":8.0,"unit":"fl_oz"},"created_at":"2026-09-10T14:30:15Z"}""", request.body.readUtf8())
         assertEquals("9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607", log.id)
         assertEquals(WaterAmount(8.0, VolumeUnit.FL_OZ), log.amount)
         assertEquals("2026-09-10T14:30:15.123Z", log.consumedAt)
@@ -67,16 +67,16 @@ public class WaterAndWeightLogsResourceTest {
     }
 
     @Test
-    public fun waterLogsSendAndDecodeCups(): Unit = runBlocking {
-        enqueue("""{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":0.5,"unit":"cup"},"consumed_at":"2026-09-10T14:30:15.123Z"}""", 201)
+    public fun waterLogsSendAndDecodeCupsFromTheMinimum(): Unit = runBlocking {
+        enqueue("""{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":0.1,"unit":"cup"},"created_at":"2026-09-10T14:30:15.123Z"}""", 201)
         enqueue("""{"items":[{"date":"2026-09-10","total":{"value":8.5,"unit":"cup"}}]}""")
 
-        val log = client.waterLogs.create(CreateWaterLogRequest(WaterAmount(0.5, VolumeUnit.CUP), user = user))
+        val log = client.waterLogs.create(CreateWaterLogRequest(WaterAmount(0.1, VolumeUnit.CUP), user = user))
         val days = client.waterLogs.list(ListWaterLogsRequest("2026-09-10", "2026-09-10", VolumeUnit.CUP, user)).items
 
-        assertEquals("""{"amount":{"value":0.5,"unit":"cup"}}""", server.takeRequest().body.readUtf8())
+        assertEquals("""{"amount":{"value":0.1,"unit":"cup"}}""", server.takeRequest().body.readUtf8())
         assertEquals("cup", server.takeRequest().requestUrl!!.queryParameter("unit"))
-        assertEquals(WaterAmount(0.5, VolumeUnit.CUP), log.amount)
+        assertEquals(WaterAmount(0.1, VolumeUnit.CUP), log.amount)
         assertEquals(Volume(8.5, VolumeUnit.CUP), days.single().total)
         assertEquals(listOf("fl_oz", "ml", "cup"), VolumeUnit.entries.map { it.value })
         assertEquals(VolumeUnit.CUP, VolumeUnit.fromValue("cup"))
@@ -123,7 +123,7 @@ public class WaterAndWeightLogsResourceTest {
     }
 
     @Test
-    public fun weightLogCreateSendsTheWeightAndDecodesTheLog(): Unit = runBlocking {
+    public fun weightLogCreateSendsCreatedAtAndReadsItBackAsMeasuredAt(): Unit = runBlocking {
         enqueue(WEIGHT_LOG, 201)
 
         val log = client.weightLogs.create(CreateWeightLogRequest(Weight(150.0, WeightUnit.POUNDS), "2026-09-10T14:30:15Z", user))
@@ -131,7 +131,7 @@ public class WaterAndWeightLogsResourceTest {
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/v1.2/weight-logs", request.path)
-        assertEquals("""{"weight":{"value":150.0,"unit":"lb"},"measured_at":"2026-09-10T14:30:15Z"}""", request.body.readUtf8())
+        assertEquals("""{"weight":{"value":150.0,"unit":"lb"},"created_at":"2026-09-10T14:30:15Z"}""", request.body.readUtf8())
         assertEquals(Weight(150.0, WeightUnit.POUNDS), log.weight)
         assertEquals("2026-09-10T14:30:15.123Z", log.measuredAt)
     }
@@ -219,7 +219,7 @@ public class WaterAndWeightLogsResourceTest {
     }
 
     private companion object {
-        const val WATER_LOG = """{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":8,"unit":"fl_oz"},"consumed_at":"2026-09-10T14:30:15.123Z"}"""
-        const val WEIGHT_LOG = """{"weight":{"value":150,"unit":"lb"},"measured_at":"2026-09-10T14:30:15.123Z"}"""
+        const val WATER_LOG = """{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":8,"unit":"fl_oz"},"created_at":"2026-09-10T14:30:15.123Z"}"""
+        const val WEIGHT_LOG = """{"weight":{"value":150,"unit":"lb"},"created_at":"2026-09-10T14:30:15.123Z"}"""
     }
 }

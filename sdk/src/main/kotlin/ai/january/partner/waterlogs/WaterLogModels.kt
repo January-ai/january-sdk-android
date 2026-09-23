@@ -19,7 +19,7 @@ public enum class VolumeUnit(public val value: String) {
 }
 
 /**
- * An amount of water: 1–811.5 fl oz, 0.125–101.4 cups (1 cup = 8 fl oz), or
+ * An amount of water: 1–811.5 fl oz, 0.1–101.4 cups (1 cup = 8 fl oz), or
  * 30–24,000 ml. An end user's total is capped at 24 L (about 811 fl oz) per day.
  */
 public data class WaterAmount(public val value: Double, public val unit: VolumeUnit)

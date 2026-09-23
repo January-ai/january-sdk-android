@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* 0.3.1 sends and reads the API's `created_at` for food, water, and weight logs and keeps `timestampUtc`, `consumedAt`, and `measuredAt`; 0.3.0's food, water, and weight logs don't work with the current API, so upgrade to 0.3.1
+* Water logs take 0.1–101.4 cups
 * Breaking: `AlternativeFood.id`, `ServingOption.id`, `RestaurantMenuEntry.id`, and `LoggedFood.id` are non-null; the API always returns these catalog IDs
 * Photo analysis uses the API's default, the reasoning-based analyzer, unless `reasoningEffort` is set; `AnalysisEffort.NONE` selects the standard analyzer
 * Food analyses wait at least 120 seconds for their answer
