@@ -57,10 +57,11 @@ def stamp(value):
  else:parsed=datetime.now(timezone.utc)
  return parsed.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.')+'%03dZ'%(parsed.microsecond//1000)
 def history():
- # About 13 months of water and weight ending today (noon UTC, so the same calendar day in
- # any timezone within 11 hours of UTC): water on three days in four, a weight every third
- # day drifting down toward today, every fourth weight logged in pounds.
- today=datetime.now(timezone.utc).replace(hour=12,minute=0,second=0,microsecond=0);water=[];weights=[]
+ # About 13 months of water and weight ending today at local noon on this host, which shares
+ # the device's timezone (a UTC date would be tomorrow's on an American evening): water on
+ # three days in four, a weight every third day drifting down toward today, every fourth
+ # weight logged in pounds.
+ today=datetime.now().astimezone().replace(hour=12,minute=0,second=0,microsecond=0).astimezone(timezone.utc);water=[];weights=[]
  for i in range(400):
   at=(today-timedelta(days=i)).strftime('%Y-%m-%dT%H:%M:%S.000Z')
   if i%4!=3:water.append(dict(id='history-%d'%i,ml=1400+(i*137)%900,consumed_at=at))
