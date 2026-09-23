@@ -19,7 +19,7 @@ public class FoodLogsResource internal constructor(private val api: FoodLogsApi)
     public suspend fun create(request: CreateFoodLogRequest): FoodLog {
         val body = CreateFoodLogBody(
             foods = request.foods.map { it.toTransport() },
-            eatenAt = request.timestampUtc?.let(OffsetDateTime::parse),
+            createdAt = request.timestampUtc?.let(OffsetDateTime::parse),
             name = request.name,
         )
         return executeApiCall(
@@ -78,7 +78,7 @@ public class FoodLogsResource internal constructor(private val api: FoodLogsApi)
         }
         val body = UpdateFoodLogBody(
             foods = request.foods?.map { it.toTransport() },
-            eatenAt = request.timestampUtc?.let(OffsetDateTime::parse),
+            createdAt = request.timestampUtc?.let(OffsetDateTime::parse),
             name = request.name,
         )
         return executeApiCall(
@@ -117,7 +117,7 @@ private fun ai.january.partner.transport.models.FoodLog.toPublic() = FoodLog(
             ),
         )
     },
-    timestampUtc = eatenAt.toString(),
+    timestampUtc = createdAt.toString(),
     name = name,
 )
 

@@ -17,7 +17,7 @@ public class WaterLogsResource internal constructor(private val api: WaterLogsAp
     public suspend fun create(request: CreateWaterLogRequest): WaterLog {
         val body = CreateWaterLogBody(
             amount = TransportWaterAmount(BigDecimal.valueOf(request.amount.value), request.amount.unit.value),
-            consumedAt = request.consumedAt?.let(OffsetDateTime::parse),
+            createdAt = request.consumedAt?.let(OffsetDateTime::parse),
         )
         return executeApiCall(
             operation = { api.createWaterLog(body, request.user.endUserId.value) },
@@ -51,7 +51,7 @@ public class WaterLogsResource internal constructor(private val api: WaterLogsAp
 private fun ai.january.partner.transport.models.WaterLog.toPublic() = WaterLog(
     id = id,
     amount = WaterAmount(amount.value.toDouble(), volumeUnit(amount.unit)),
-    consumedAt = consumedAt.toString(),
+    consumedAt = createdAt.toString(),
 )
 
 internal fun volumeUnit(value: String): VolumeUnit = VolumeUnit.fromValue(value)

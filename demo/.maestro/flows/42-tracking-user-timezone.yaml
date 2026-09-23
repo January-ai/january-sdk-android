@@ -81,7 +81,7 @@ tags:
     env:
       ROUTE: /v1.2/water-logs
       METHOD: POST
-      FIELD: body.consumed_at
+      FIELD: body.created_at
       MATCHES: "^${output.farYesterday}T12:00(:00)?[+-]1[14]:00$"
 # A new timezone starts the day over on that zone's today: Africa/Abidjan, UTC.
 - scrollUntilVisible:

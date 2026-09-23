@@ -149,8 +149,8 @@ public class PublicSurfaceTest {
         const val envelope = """{"total_count":0,"items":[]}"""
         const val foodItem = """{"id":"1","type":"generic","name":"Banana","brand_name":null,"nutrients":{},"glycemic_index":null,"glycemic_load":null,"image_url":null,"barcode":null,"servings":[{"id":"2","quantity":1,"unit":"serving","scaling_factor":1,"weight_grams":100,"is_primary":true}]}"""
         const val photo = """{"meal_name":"Fixture meal","total_nutrients":{},"detections":[]}"""
-        const val foodLog = """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"eaten_at":"2026-08-22T12:00:00Z","name":"Fixture"}"""
-        const val waterLog = """{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":8,"unit":"fl_oz"},"consumed_at":"2026-08-22T12:00:00.000Z"}"""
-        const val weightLog = """{"weight":{"value":150,"unit":"lb"},"measured_at":"2026-08-22T12:00:00.000Z"}"""
+        const val foodLog = """{"id":"00000000-0000-0000-0000-000000000001","foods":[],"created_at":"2026-08-22T12:00:00Z","name":"Fixture"}"""
+        const val waterLog = """{"id":"9c1f2a3b-4d5e-4f60-8a71-b2c3d4e5f607","amount":{"value":8,"unit":"fl_oz"},"created_at":"2026-08-22T12:00:00.000Z"}"""
+        const val weightLog = """{"weight":{"value":150,"unit":"lb"},"created_at":"2026-08-22T12:00:00.000Z"}"""
     }
 }
