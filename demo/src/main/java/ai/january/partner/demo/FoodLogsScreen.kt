@@ -66,6 +66,7 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     val coroutineScope = rememberCoroutineScope()
     var span by remember { mutableStateOf(FoodLogTimeSpan.CURRENT_WEEK) }
     val range = span.dateRange(timezone = state.timezone)
+    val zone = remember(state.timezone) { runCatching { java.time.ZoneId.of(state.timezone) }.getOrDefault(java.time.ZoneId.systemDefault()) }
     var logs by remember { mutableStateOf<List<FoodLog>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<Throwable?>(null) }
@@ -160,7 +161,7 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                             }
                         }
                         error?.let { ErrorCard(it, ::load, testTag = "food-logs-error", retryTestTag = "food-logs-retry") }
-                        logs.forEachIndexed { index, log -> FoodLogRow(log, Modifier.testTag("food-log-$index")) { selectedLog = log } }
+                        logs.forEachIndexed { index, log -> FoodLogRow(log, Modifier.testTag("food-log-$index"), zone) { selectedLog = log } }
                         if (!loading && error == null && logs.isEmpty()) {
                             EmptyStateCard(
                                 Icons.Outlined.Assignment,
@@ -182,14 +183,14 @@ fun FoodLogsScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
 }
 
 @Composable
-internal fun FoodLogRow(log: FoodLog, modifier: Modifier = Modifier, onClick: () -> Unit) {
+internal fun FoodLogRow(log: FoodLog, modifier: Modifier = Modifier, zone: java.time.ZoneId = java.time.ZoneId.systemDefault(), onClick: () -> Unit) {
     FoodLogCard(modifier.clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             FoodLogMealIcon()
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(log.name?.takeIf(String::isNotBlank) ?: "Meal", style = MaterialTheme.typography.titleMedium)
                 Text(log.foods.joinToString { it.name ?: "Unnamed food" }, maxLines = 2)
-                Text("${localLogDate(log.timestampUtc)} · ${log.foods.size} food${if (log.foods.size == 1) "" else "s"}", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
+                Text("${localLogDate(log.timestampUtc, zone)} · ${log.foods.size} food${if (log.foods.size == 1) "" else "s"}", color = JanuaryColors.Muted, style = MaterialTheme.typography.bodySmall)
             }
             Icon(Icons.Outlined.ChevronRight, null, tint = JanuaryColors.Subdued)
         }
@@ -236,7 +237,7 @@ internal fun FoodLogDetailScreen(
         DemoScreen {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 Text(log.name?.takeIf(String::isNotBlank) ?: "Meal", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-                Text(localLogDate(log.timestampUtc), color = JanuaryColors.Muted)
+                Text(localLogDate(log.timestampUtc, user.timezone?.let { runCatching { java.time.ZoneId.of(it) }.getOrNull() } ?: java.time.ZoneId.systemDefault()), color = JanuaryColors.Muted)
                 log.foods.forEach { LoggedFoodCard(it) }
                 Column {
                     Row(Modifier.fillMaxWidth().clickable { showTechnicalDetails = !showTechnicalDetails }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -306,8 +307,9 @@ private fun LoggedFoodCard(food: LoggedFood) {
     }
 }
 
-internal fun localLogDate(value: String): String = runCatching {
-    OffsetDateTime.parse(value).atZoneSameInstant(java.time.ZoneId.systemDefault()).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
+/** A log's time in [zone], the end user's timezone, so it falls on the same day the list is grouped by. */
+internal fun localLogDate(value: String, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String = runCatching {
+    OffsetDateTime.parse(value).atZoneSameInstant(zone).format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
 }.getOrDefault(value)
 
 internal fun formatLogNumber(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value).trimEnd('0').trimEnd('.')

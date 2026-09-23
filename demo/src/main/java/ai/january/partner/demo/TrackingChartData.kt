@@ -81,6 +81,13 @@ fun convertWeight(weight: Weight, to: WeightUnit): Double = when {
     else -> weight.value / KILOGRAMS_PER_POUND
 }
 
+/**
+ * A day's weight in the unit the card is set to: exactly as logged when the units match, otherwise
+ * converted and shown to one decimal place, like the chart.
+ */
+fun weightText(weight: Weight, unit: WeightUnit): String =
+    if (weight.unit == unit) formatLogNumber(weight.value) else formatChartNumber(convertWeight(weight, unit))
+
 /** Each day's weight in [unit], oldest first, whatever unit it was logged in. */
 fun weightPoints(items: List<Pair<LocalDate, Weight>>, unit: WeightUnit): List<ChartValue> =
     items.sortedBy { it.first }.map { (date, weight) -> ChartValue(date, convertWeight(weight, unit)) }

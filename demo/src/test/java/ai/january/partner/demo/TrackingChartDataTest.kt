@@ -17,6 +17,15 @@ class TrackingChartDataTest {
         assertEquals(1, requestChunks(chartSpan(ChartRange.MONTH, today)).size)
     }
 
+    @Test fun dayWeightFollowsTheCardUnit() {
+        // Logged in the card's unit: shown exactly as logged.
+        assertEquals("160.5", weightText(Weight(160.5, WeightUnit.POUNDS), WeightUnit.POUNDS))
+        assertEquals("75.25", weightText(Weight(75.25, WeightUnit.KILOGRAMS), WeightUnit.KILOGRAMS))
+        // Logged in the other unit: converted, to one decimal place.
+        assertEquals("75", weightText(Weight(165.4, WeightUnit.POUNDS), WeightUnit.KILOGRAMS))
+        assertEquals("165.8", weightText(Weight(75.2, WeightUnit.KILOGRAMS), WeightUnit.POUNDS))
+    }
+
     @Test fun yearStartsOnTheFirstOfTheMonthElevenMonthsBack() {
         assertEquals(DateSpan(LocalDate.parse("2025-10-01"), today), chartSpan(ChartRange.YEAR, today))
     }

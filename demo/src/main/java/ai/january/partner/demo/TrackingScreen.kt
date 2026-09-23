@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -69,8 +70,10 @@ import ai.january.partner.weightlogs.DailyWeight
 import ai.january.partner.waterlogs.Volume
 import ai.january.partner.waterlogs.WaterAmount
 import java.time.LocalDate
+import java.time.Duration
 import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import kotlinx.coroutines.CancellationException
@@ -78,6 +81,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -90,7 +94,14 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     val client = state.client
     val coroutineScope = rememberCoroutineScope()
     val zone = remember(state.timezone) { runCatching { ZoneId.of(state.timezone) }.getOrDefault(ZoneId.systemDefault()) }
-    val today = remember(zone) { LocalDate.now(zone) }
+    // Today in the user's timezone, moving on at midnight while the screen stays open.
+    val today by produceState(LocalDate.now(zone), zone) {
+        while (true) {
+            val now = ZonedDateTime.now(zone)
+            delay(Duration.between(now, now.toLocalDate().plusDays(1).atStartOfDay(zone)).toMillis() + 1_000)
+            value = LocalDate.now(zone)
+        }
+    }
     var day by rememberSaveable { mutableStateOf(today.toString()) }
     val selectedDay = LocalDate.parse(day)
     val isToday = selectedDay == today
@@ -104,6 +115,11 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     val userContext = state.partnerContext
     val userClient = state.userClient
     var loadJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    // Each of the day's loads replaces the previous one of its kind, and a change of day cancels them
+    // all, so an answer for another day can never overwrite the day on screen.
+    var summaryJob by remember { mutableStateOf<Job?>(null) }
+    var waterJob by remember { mutableStateOf<Job?>(null) }
+    var weightJob by remember { mutableStateOf<Job?>(null) }
 
     var waterUnit by rememberSaveable { mutableStateOf(VolumeUnit.FL_OZ) }
     var waterText by rememberSaveable { mutableStateOf("8") }
@@ -151,16 +167,16 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 throw cancelled
             } catch (failure: Exception) {
                 error = failure
-            } finally {
-                loading = false
             }
+            loading = false
         }
     }
 
     fun loadSummary() {
+        summaryJob?.cancel()
         val sdk = userClient ?: return
         summaryError = null
-        coroutineScope.launch {
+        summaryJob = coroutineScope.launch {
             try {
                 summary = sdk.foodLogs.getSummary(day, day)
             } catch (cancelled: CancellationException) {
@@ -173,10 +189,11 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     }
 
     fun loadWater() {
+        waterJob?.cancel()
         val sdk = userClient ?: return
         waterLoading = true
         waterError = null
-        coroutineScope.launch {
+        waterJob = coroutineScope.launch {
             try {
                 waterTotal = sdk.waterLogs.list(day, day, waterUnit).items.firstOrNull { it.date == day }?.total
             } catch (cancelled: CancellationException) {
@@ -184,17 +201,17 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
             } catch (failure: Exception) {
                 waterError = failure
                 failedWaterAction = TrackingAction.LOAD
-            } finally {
-                waterLoading = false
             }
+            waterLoading = false
         }
     }
 
     fun loadWeight() {
+        weightJob?.cancel()
         val sdk = userClient ?: return
         weightLoading = true
         weightError = null
-        coroutineScope.launch {
+        weightJob = coroutineScope.launch {
             try {
                 dayWeight = sdk.weightLogs.list(day, day).items.firstOrNull { it.date == day }?.weight
             } catch (cancelled: CancellationException) {
@@ -202,9 +219,8 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
             } catch (failure: Exception) {
                 weightError = failure
                 failedWeightAction = TrackingAction.LOAD
-            } finally {
-                weightLoading = false
             }
+            weightLoading = false
         }
     }
 
@@ -334,6 +350,9 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
     fun retryWeight() = if (failedWeightAction == TrackingAction.LOG) logWeight() else loadWeight()
 
     LaunchedEffect(userContext, client, day) {
+        summaryJob?.cancel()
+        waterJob?.cancel()
+        weightJob?.cancel()
         loadJob?.cancelAndJoin()
         logs = emptyList()
         summary = null
@@ -347,14 +366,16 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
         waterError = null
         weightError = null
         loading = false
+        waterLoading = false
+        weightLoading = false
         if (userClient != null) load()
     }
     LaunchedEffect(waterUnit) { if (userClient != null) loadWater() }
-    LaunchedEffect(userContext, client, waterRange, waterUnit) {
+    LaunchedEffect(userContext, client, waterRange, waterUnit, today) {
         waterHistory = null
         if (userClient != null) loadWaterHistory()
     }
-    LaunchedEffect(userContext, client, weightRange) {
+    LaunchedEffect(userContext, client, weightRange, today) {
         weightHistory = null
         if (userClient != null) loadWeightHistory()
     }
@@ -419,7 +440,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                             }
                         }
                         error?.let { ErrorCard(it, ::loadFoodLogs, testTag = "food-logs-error", retryTestTag = "food-logs-retry") }
-                        logs.forEachIndexed { index, log -> FoodLogRow(log, Modifier.testTag("food-log-$index")) { selectedLog = log } }
+                        logs.forEachIndexed { index, log -> FoodLogRow(log, Modifier.testTag("food-log-$index"), zone) { selectedLog = log } }
                         if (!loading && error == null && logs.isEmpty()) {
                             EmptyStateCard(
                                 Icons.Outlined.Assignment,
@@ -483,7 +504,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                     Text(if (isToday) "Today's weight" else "Day's weight", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                                     if (weightLoading) LoadingSpinner(Modifier.testTag("weight-loading"), JanuaryColors.Green)
                                     else Text(
-                                        dayWeight?.let { "${formatLogNumber(it.value)} ${it.unit.value}" } ?: "Nothing logged",
+                                        dayWeight?.let { "${weightText(it, weightUnit)} ${weightUnit.value}" } ?: "Nothing logged",
                                         Modifier.testTag(if (dayWeight == null) "weight-empty" else "weight-day"),
                                         fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold,
                                     )
