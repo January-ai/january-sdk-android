@@ -297,6 +297,12 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 if (day == targetDay) {
                     waterError = failure
                     failedWaterAction = if (mayHaveBeenSaved(failure)) TrackingAction.CHECK_LOG else TrackingAction.LOG
+                    // The failed save may have been kept after the previous one, so the previous one is
+                    // no longer known to be the last: don't offer it for "Delete last".
+                    if (mayHaveBeenSaved(failure)) {
+                        lastWaterLogId = null
+                        lastWaterLogged = null
+                    }
                 }
             } finally {
                 waterSaving = false
@@ -354,6 +360,7 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                 if (day == targetDay) {
                     weightError = failure
                     failedWeightAction = if (mayHaveBeenSaved(failure)) TrackingAction.CHECK_LOG else TrackingAction.LOG
+                    if (mayHaveBeenSaved(failure)) lastWeightLogged = null
                 }
             } finally {
                 weightSaving = false
@@ -511,7 +518,8 @@ fun TrackingScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modif
                                     Text("Logged ${formatLogNumber(it.value)} ${it.unit.label()}", Modifier.testTag("water-logged"), color = JanuaryColors.Green, fontWeight = FontWeight.SemiBold)
                                 }
                                 if (lastWaterLogId != null) {
-                                    DemoSecondaryButton("Delete last water log", ::deleteLastWater, Modifier.fillMaxWidth().testTag("water-delete-last"))
+                                    // Not while a save is on its way: until it answers, the last entry isn't known.
+                                    DemoSecondaryButton("Delete last water log", ::deleteLastWater, Modifier.fillMaxWidth().testTag("water-delete-last"), enabled = !waterSaving)
                                 }
                                 val waterSpan = chartSpan(waterRange, today)
                                 val bars = waterHistory?.let { items ->

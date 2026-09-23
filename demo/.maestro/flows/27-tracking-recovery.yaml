@@ -181,12 +181,9 @@ tags:
       METHOD: POST
       FIELD: body.weight.value
       VALUE: "150"
-# The same holds for water: after a server error, "Try again" only reloads the day.
-- runScript:
-    file: ../scripts/control-fixture.js
-    env:
-      ROUTE: /v1.2/water-logs
-      STATUS: "503"
+# The same holds for water: after a server error, "Try again" only reloads the
+# day. And since the failed save may have been kept after the one before it, the
+# earlier entry is no longer offered as the last one to delete.
 - scrollUntilVisible:
     element:
       id: water-log
@@ -195,11 +192,31 @@ tags:
     timeout: 15000
 - tapOn:
     id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-delete-last
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: water-total
+      text: 8 fl oz
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "503"
+- tapOn:
+    id: water-log
 - scrollUntilVisible:
     element:
       text: "The water may have been saved anyway.*"
     direction: DOWN
     timeout: 15000
+- assertNotVisible:
+    id: water-delete-last
+- assertNotVisible:
+    id: water-logged
 - runScript:
     file: ../scripts/control-fixture.js
     env:
@@ -212,13 +229,18 @@ tags:
 - tapOn:
     id: water-retry
     retryTapIfNoChange: true
+# The reloaded day has the first entry only (the fixture kept nothing from the
+# failed save), and still no delete-last.
 - scrollUntilVisible:
     element:
-      id: water-empty
+      id: water-total
+      text: 8 fl oz
     direction: UP
     timeout: 15000
 - assertNotVisible:
     id: water-error
+- assertNotVisible:
+    id: water-delete-last
 - runScript:
     file: ../scripts/assert-request.js
     env:
