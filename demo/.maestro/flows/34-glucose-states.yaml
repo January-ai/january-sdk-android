@@ -1,0 +1,167 @@
+appId: ai.january.partner.demo
+name: Glucose - profile edits reach the request, prediction loading, result, back, start over
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-glucose
+    timeout: 15000
+- tapOn:
+    id: tab-glucose
+- assertVisible:
+    id: glucose-screen
+# Without a food there is nothing to estimate yet.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-predict
+- assertVisible: Estimate glucose response
+- scrollUntilVisible:
+    element:
+      id: glucose-sex-male
+    direction: UP
+- tapOn:
+    id: glucose-sex-male
+# 6 ft 0 in.
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: glucose-height-feet
+- inputText: "6"
+- pressKey: Enter
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: glucose-height-inches
+- inputText: "0"
+- pressKey: Enter
+- tapOn:
+    id: glucose-sex-female
+- tapOn:
+    id: glucose-height-unit-metric
+- assertVisible: "182\\.9"
+- tapOn:
+    id: glucose-height-unit-imperial
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-health-conditions
+- tapOn:
+    id: glucose-health-conditions
+- assertVisible:
+    id: conditions-screen
+- tapOn:
+    id: condition-prediabetes
+- assertVisible: Selected
+- tapOn:
+    id: conditions-back
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-health-conditions
+- assertVisible: 1 selected
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-add-food
+- tapOn:
+    id: glucose-add-food
+- tapOn:
+    id: food-picker-input
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 15000
+- tapOn:
+    id: food-picker-result-0
+- tapOn:
+    id: food-serving-add
+- assertVisible:
+    id: glucose-food-0
+# A slow prediction shows its loading state, then the result screen.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/glucose/predictions
+      DELAY: "6"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-predict
+- waitForAnimationToEnd
+- tapOn:
+    id: glucose-predict
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: glucose-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: glucose-results-screen
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/glucose/predictions
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/glucose/predictions
+      FIELD: body.user_profile.height
+      VALUE: '{"value": 72, "unit": "in"}'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/glucose/predictions
+      FIELD: body.user_profile.sex
+      VALUE: '"female"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/glucose/predictions
+      FIELD: body.user_profile.health_conditions
+      VALUE: '["prediabetes"]'
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-result
+- assertVisible: Fixture oatmeal
+# Back keeps the meal; Start over clears it.
+- tapOn:
+    id: glucose-result-back
+- extendedWaitUntil:
+    visible:
+      id: glucose-screen
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-food-0
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-predict
+- waitForAnimationToEnd
+- tapOn:
+    id: glucose-predict
+- extendedWaitUntil:
+    visible:
+      id: glucose-results-screen
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-start-over
+- tapOn:
+    id: glucose-start-over
+- extendedWaitUntil:
+    visible:
+      id: glucose-screen
+    timeout: 15000
+- assertNotVisible:
+    id: glucose-food-0

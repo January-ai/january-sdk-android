@@ -22,6 +22,17 @@ tags:
     timeout: 15000
 - assertVisible: Check the information you entered
 - takeScreenshot: demo/.maestro/artifacts/android-tracking-water-error
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-error-details
+- tapOn:
+    id: water-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-error-details-body
+- assertVisible: "400"
 - runScript:
     file: ../scripts/control-fixture.js
     env:
@@ -71,20 +82,34 @@ tags:
       id: weight-error
     direction: DOWN
     timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-error-details
+- tapOn:
+    id: weight-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-error-details-body
+- assertVisible: "500"
 - runScript:
     file: ../scripts/control-fixture.js
     env:
       ROUTE: /v1.2/weight-logs
       STATUS: "200"
+# "Try again" repeats the failed save, not just a reload of the day.
 - runFlow:
     file: ../scroll-to.yaml
     env:
-      TARGET_ID: weight-log
+      TARGET_ID: weight-retry
 - tapOn:
-    id: weight-log
-- extendedWaitUntil:
-    visible:
+    id: weight-retry
+- scrollUntilVisible:
+    element:
       id: weight-logged
+    direction: UP
     timeout: 15000
+- assertVisible: Logged 150 lb
 - assertNotVisible:
     id: weight-error

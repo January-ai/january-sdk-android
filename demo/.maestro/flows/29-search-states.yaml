@@ -1,0 +1,170 @@
+appId: ai.january.partner.demo
+name: Food search - chrome, voice, autocomplete, loading, recipe category, description and barcode states
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: search-content
+    timeout: 15000
+- assertVisible:
+    id: app-root
+- assertVisible:
+    id: app-navigation-bar
+- assertVisible:
+    id: app-navigation-title
+# Voice input can be started and left again, whichever way the capture ends.
+- runFlow:
+    file: ../voice-cancel.yaml
+    env:
+      FIELD_ID: search-voice
+- extendedWaitUntil:
+    visible:
+      id: search-input
+    timeout: 15000
+# The fixture suggests foods for "ban…"; picking one searches for it.
+- tapOn:
+    id: search-input
+- inputText: ban
+- extendedWaitUntil:
+    visible:
+      id: autocomplete-suggestions
+    timeout: 15000
+- assertVisible: banana bread
+# Typing alone is not a search, so there is no "No foods found" yet.
+- assertNotVisible:
+    id: empty-results
+- tapOn:
+    id: autocomplete-result-1
+- extendedWaitUntil:
+    visible:
+      id: search-results
+    timeout: 15000
+- assertNotVisible:
+    id: autocomplete-suggestions
+# A suggestion request still in flight when the search is submitted must not
+# open the list over the results once it answers.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/autocomplete
+      DELAY: "3"
+- tapOn:
+    id: search-input
+- eraseText: 20
+- inputText: bana
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-result-0
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/autocomplete
+# Give the delayed suggestions time to answer; the list must stay closed.
+- extendedWaitUntil:
+    visible:
+      id: autocomplete-suggestions
+    timeout: 6000
+    optional: true
+- assertVisible:
+    id: food-result-0
+- assertNotVisible:
+    id: autocomplete-suggestions
+# A slow search shows its loading state, then the results.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      DELAY: "6"
+- tapOn:
+    id: category-recipe
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: search-submit
+- tapOn:
+    id: search-submit
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: search-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: food-result-0
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+- tapOn:
+    id: category-all
+# Description: a sentence with no recognisable food still shows the meal's
+# nutrition, and a failure is explained.
+- scrollUntilVisible:
+    element:
+      id: search-mode-description
+    direction: UP
+- tapOn:
+    id: search-mode-description
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-analysis/text
+      EMPTY: "true"
+- tapOn:
+    id: search-input
+- eraseText: 20
+- inputText: just water
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: search-submit
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible:
+      id: description-results
+    timeout: 15000
+- assertVisible: Analyze another meal
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-analysis/text
+      STATUS: "500"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: search-submit
+- tapOn:
+    id: search-submit
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: January couldn.t complete the request
+# Barcode: an unknown code is a not-found error.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/barcode/000000000000
+      STATUS: "404"
+- scrollUntilVisible:
+    element:
+      id: search-mode-barcode
+    direction: UP
+- tapOn:
+    id: search-mode-barcode
+- tapOn:
+    id: search-input
+- eraseText: 20
+- inputText: "000000000000"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: search-error
+    timeout: 15000
+- assertVisible: No matching result was found

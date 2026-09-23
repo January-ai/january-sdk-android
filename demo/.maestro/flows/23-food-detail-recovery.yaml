@@ -34,6 +34,11 @@ tags:
     visible:
       id: food-glucose-error
     timeout: 15000
+- tapOn:
+    id: food-glucose-error-details
+- assertVisible:
+    id: food-glucose-error-details-body
+- assertVisible: parity-request
 - runScript:
     file: ../scripts/control-fixture.js
     env:
@@ -68,6 +73,17 @@ tags:
     visible:
       id: alternatives-error
     timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: alternatives-error-details
+- tapOn:
+    id: alternatives-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: alternatives-error-details-body
+- assertVisible: parity-request
 - runScript:
     file: ../scripts/control-fixture.js
     env:

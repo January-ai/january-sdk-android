@@ -1,0 +1,141 @@
+appId: ai.january.partner.demo
+name: Tracking - switching the end user drops the previous user's day, entries and delete-last
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- runScript:
+    file: ../scripts/seed-fixture.js
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: food-log-0
+    direction: DOWN
+    timeout: 30000
+# As parity-user: log water and a weight, so both "Logged" lines and
+# delete-last are showing.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible:
+    id: water-delete-last
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+- extendedWaitUntil:
+    visible:
+      id: weight-logged
+    timeout: 15000
+# The next user's day answers slowly, so what shows meanwhile is visible.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs
+      DELAY: "9"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+      DELAY: "9"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      DELAY: "6"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      DELAY: "6"
+# Switch to parity-user-2 in Settings; the ID takes effect when the sheet closes.
+- tapOn:
+    id: settings-button
+- tapOn:
+    id: settings-user-id
+- eraseText: 30
+- inputText: parity-user-2
+- pressKey: Enter
+- waitForAnimationToEnd
+- tapOn:
+    id: settings-close
+    waitToSettleTimeoutMs: 500
+- runFlow:
+    when:
+      visible:
+        id: settings-sheet
+    commands:
+      - tapOn:
+          id: settings-close
+          waitToSettleTimeoutMs: 500
+# While the new user's day loads, none of the previous user's day shows.
+- assertVisible: parity-user-2
+# Spinners never settle, so do not wait for them between scrolls.
+- scrollUntilVisible:
+    element:
+      id: food-logs-loading
+    direction: DOWN
+    visibilityPercentage: 50
+    waitToSettleTimeoutMs: 300
+    timeout: 8000
+- assertVisible:
+    id: food-logs-totals-count
+    text: "—"
+- assertNotVisible:
+    id: food-log-0
+- scrollUntilVisible:
+    element:
+      id: water-card
+    direction: DOWN
+    visibilityPercentage: 30
+    timeout: 15000
+- assertNotVisible:
+    id: water-logged
+- assertNotVisible:
+    id: water-delete-last
+- scrollUntilVisible:
+    element:
+      id: weight-card
+    direction: DOWN
+    visibilityPercentage: 30
+    timeout: 15000
+- assertNotVisible:
+    id: weight-logged
+# Once the day has loaded, delete-last is still not offered: nothing has been
+# logged as this user yet.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- extendedWaitUntil:
+    notVisible:
+      id: water-loading
+    timeout: 15000
+- assertNotVisible:
+    id: water-delete-last
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible:
+    id: water-delete-last

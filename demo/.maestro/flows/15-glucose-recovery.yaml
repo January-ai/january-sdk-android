@@ -54,6 +54,17 @@ tags:
 - assertVisible:
     id: glucose-food-0
 - takeScreenshot: demo/.maestro/artifacts/android-glucose-error
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-error-details
+- tapOn:
+    id: glucose-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-error-details-body
+- assertVisible: parity-request
 - runScript:
     file: ../scripts/control-fixture.js
     env:

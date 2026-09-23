@@ -1,0 +1,16 @@
+appId: ai.january.partner.demo
+# Focus a text field and empty it. The demo's number fields are right-aligned,
+# so a tap can leave the cursor before the digits; move it to the end first.
+#
+#   - runFlow:
+#       file: ../clear-field.yaml
+#       env:
+#         FIELD_ID: water-amount
+---
+- tapOn:
+    id: ${FIELD_ID}
+- repeat:
+    times: 8
+    commands:
+      - pressKey: Remote Dpad Right
+- eraseText: 12

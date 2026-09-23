@@ -1,0 +1,336 @@
+appId: ai.january.partner.demo
+name: Tracking - day totals and their failure, custom water and weight entries, loading and chart failures, next day
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-tracking
+    timeout: 15000
+- runScript:
+    file: ../scripts/seed-fixture.js
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+    direction: DOWN
+    timeout: 30000
+- assertVisible: 1 log
+# The day's totals fail on their own, with details, and retry.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+      STATUS: "500"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-logs-refresh
+- tapOn:
+    id: food-logs-refresh
+- scrollUntilVisible:
+    element:
+      id: food-logs-summary-error-details
+    direction: UP
+    timeout: 15000
+- assertVisible:
+    id: food-logs-summary-error
+- tapOn:
+    id: food-logs-summary-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-logs-summary-error-details-body
+- assertVisible: parity-request
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-logs-summary-retry
+- tapOn:
+    id: food-logs-summary-retry
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+    direction: UP
+    timeout: 15000
+- assertVisible: 1 log
+# Water: a custom amount in cups, then the total in fluid ounces.
+- scrollUntilVisible:
+    element:
+      id: water-card
+    direction: DOWN
+    visibilityPercentage: 30
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-amount
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: water-amount
+- inputText: "2"
+- pressKey: Enter
+- tapOn:
+    id: water-unit-cup
+- extendedWaitUntil:
+    visible:
+      id: water-empty
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-log
+- tapOn:
+    id: water-log
+- extendedWaitUntil:
+    visible:
+      id: water-logged
+    timeout: 15000
+- assertVisible: Logged 2 cup
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      METHOD: POST
+      FIELD: body.amount
+      VALUE: '{"value": 2, "unit": "cup"}'
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-fl-oz
+- tapOn:
+    id: water-unit-fl-oz
+- extendedWaitUntil:
+    visible:
+      text: 16 fl oz
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-delete-last
+- tapOn:
+    id: water-delete-last
+- scrollUntilVisible:
+    element:
+      id: water-empty
+    direction: UP
+    timeout: 15000
+# A slow day total shows its spinner.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      DELAY: "6"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-unit-ml
+- tapOn:
+    id: water-unit-ml
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: water-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: water-empty
+    timeout: 15000
+# A slow chart range shows its spinner too.
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-range-month
+- tapOn:
+    id: water-chart-range-month
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: water-chart-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: water-chart-empty
+    timeout: 15000
+# A failed chart range explains itself, with details, and retries.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+      STATUS: "500"
+- tapOn:
+    id: water-chart-range-year
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-error
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-error-details
+- tapOn:
+    id: water-chart-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-error-details-body
+- assertVisible: "500"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/water-logs
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: water-chart-retry
+- tapOn:
+    id: water-chart-retry
+- scrollUntilVisible:
+    element:
+      id: water-chart-empty
+    direction: UP
+    timeout: 15000
+- assertNotVisible:
+    id: water-chart-error
+# Weight: a custom value in pounds.
+- scrollUntilVisible:
+    element:
+      id: weight-card
+    direction: DOWN
+    visibilityPercentage: 30
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-value
+- runFlow:
+    file: ../clear-field.yaml
+    env:
+      FIELD_ID: weight-value
+- inputText: "160.5"
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-unit-lb
+- tapOn:
+    id: weight-unit-lb
+# A slow save and reload show the day's spinner.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      DELAY: "5"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-log
+- tapOn:
+    id: weight-log
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: weight-loading
+    timeout: 10000
+- extendedWaitUntil:
+    visible:
+      id: weight-day
+    timeout: 15000
+- assertVisible: 160.5 lb
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      METHOD: POST
+      FIELD: body.weight
+      VALUE: '{"value": 160.5, "unit": "lb"}'
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-range-month
+- tapOn:
+    id: weight-chart-range-month
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: weight-chart-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: weight-chart
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+      STATUS: "500"
+- tapOn:
+    id: weight-chart-range-year
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-error
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-error-details
+- tapOn:
+    id: weight-chart-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-error-details-body
+- assertVisible: "500"
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/weight-logs
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart-retry
+- tapOn:
+    id: weight-chart-retry
+- extendedWaitUntil:
+    notVisible:
+      id: weight-chart-error
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: weight-chart-range-year
+    direction: UP
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: weight-chart
+# Next day from yesterday comes back to today. Leaving the tab first drops the
+# focus from the weight field, so no keyboard toolbar covers the day arrows.
+- tapOn:
+    id: tab-search
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: logs-day-previous
+    direction: UP
+    centerElement: true
+    timeout: 30000
+- tapOn:
+    id: logs-day-previous
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: logs-day-today
+- tapOn:
+    id: logs-day-next
+- assertNotVisible:
+    id: logs-day-today
+- assertVisible: Today

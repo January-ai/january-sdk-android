@@ -1,0 +1,137 @@
+appId: ai.january.partner.demo
+name: Food detail - serving choice, glucose loading, alternatives loading and detail, incomplete detail, back
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: search-input
+    timeout: 15000
+- tapOn:
+    id: search-input
+- inputText: oatmeal
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-result-0
+    timeout: 15000
+- tapOn:
+    id: food-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-detail-screen
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-serving-controls
+- tapOn:
+    id: food-serving-unit
+- tapOn:
+    id: food-serving-option-1
+- assertVisible: "oz · 28.35 g"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-macros
+# 1 oz is 0.2835 of the 100-calorie cup.
+- assertVisible: "28.35"
+# A slow prediction shows its loading state, then the curve.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/glucose/predictions
+      DELAY: "6"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-check-glucose
+- tapOn:
+    id: food-check-glucose
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: food-glucose-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: food-glucose-result
+    timeout: 15000
+- tapOn: Close Glucose response
+# Slow alternatives show their loading state; a suggestion opens its own detail.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/101/alternatives
+      DELAY: "6"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-alternatives
+- tapOn:
+    id: food-alternatives
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: alternatives-refresh
+- tapOn:
+    id: alternatives-refresh
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: alternatives-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: alternatives-results
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: alternative-result-0
+- tapOn:
+    id: alternative-result-0
+- extendedWaitUntil:
+    visible: Fixture lentils
+    timeout: 15000
+# Back returns from the suggestion to the list of alternatives.
+- back
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: alternatives-results
+- tapOn: Close Food alternatives
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/101/alternatives
+- tapOn:
+    id: food-detail-back
+- extendedWaitUntil:
+    visible:
+      id: search-results
+    timeout: 15000
+# When the full food cannot be loaded, the detail keeps the search result's serving and says so.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/101
+      STATUS: "500"
+- tapOn:
+    id: food-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-detail-screen
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: Complete serving details could not be loaded.*
+    direction: DOWN
+    timeout: 20000
+- assertVisible:
+    id: food-macros
+- tapOn:
+    id: food-detail-back
+- assertVisible:
+    id: search-results

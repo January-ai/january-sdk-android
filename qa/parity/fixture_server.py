@@ -11,11 +11,17 @@ NUTRIENTS = {k: {'value':v,'unit':u} for k,v,u in [('calories',100,'kcal'),('pro
 SERVINGS = [dict(id='11',quantity=1,unit='cup',scaling_factor=1,weight_grams=100,is_primary=True),dict(id='12',quantity=1,unit='oz',scaling_factor=0.2835,weight_grams=28.35,is_primary=False)]
 def food(id='101',name='Fixture oatmeal',full=True):return dict(id=str(id),type='generic',name=name,brand_name='January fixture',nutrients=NUTRIENTS,glycemic_index=52,glycemic_load=12,image_url=None,barcode=None,servings=SERVINGS if full else SERVINGS[:1])
 PREDICTION = dict(points=[dict(minutes=m,value=v) for m,v in [(0,90),(30,125),(60,140),(90,115),(120,95)]],impact_score='medium',chart=dict(min=70,max=140))
+def suggestion(id,name):return dict(id=str(id),type='generic',name=name,brand_name=None,image_url=None,nutrients=NUTRIENTS)
 def detected(id='101',name='Fixture oatmeal'):return dict(id=str(id),name=name,brand_name='January fixture',nutrients=NUTRIENTS,quantity=1,serving=dict(id='11',quantity=1,unit='cup'))
 def scan(name='Fixture breakfast'):return dict(meal_name=name,detections=[dict(food=detected(),confidence='high')],total_nutrients=NUTRIENTS)
+# The end user's timezone in the demos' fixture launches (FixtureLaunch.kt on Android).
+DEMO_TIMEZONE='America/New_York'
 def seeded_eaten_at():
- # An hour ago, so the seeded log always falls in the demo's default date range.
- return (datetime.now(timezone.utc)-timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ')
+ # An hour ago, so the seeded log is in the past, but never before today's first minute in the demo's
+ # timezone: between midnight and 1 AM an hour ago is yesterday, and flows expect the log today.
+ now=datetime.now(timezone.utc)
+ start_of_today=datetime.now(__import__('zoneinfo').ZoneInfo(DEMO_TIMEZONE)).replace(hour=0,minute=1,second=0,microsecond=0)
+ return max(now-timedelta(hours=1),start_of_today.astimezone(timezone.utc)).strftime('%Y-%m-%dT%H:%M:%SZ')
 def local_day(ts,q):
  # The calendar day of a UTC timestamp in the request's timezone, like the API.
  try:zone=__import__('zoneinfo').ZoneInfo(q.get('timezone','UTC'))
@@ -87,7 +93,12 @@ class Handler(BaseHTTPRequestHandler):
   if path=='/__seed':state['logs']=[log()];return self.respond({})
   if path=='/__seed_history':state['water'],state['weights']=history();return self.respond({})
   if path=='/__requests':return self.respond(state['requests'])
-  state['requests'].append(dict(method=self.command,path=path,query=q,body=body))
+  state['requests'].append(dict(method=self.command,path=path,query=q,body=body,auth=self.headers.get('Authorization'),end_user=self.headers.get('January-End-User-ID')))
+  if path=='/api/january/client-token':
+   # Stands in for a token relay: the token names the end user it was minted for.
+   user=self.headers.get('January-End-User-ID','')
+   if not user:return self.respond(dict(code='invalid_request',message='January-End-User-ID is required.'),400)
+   return self.respond(dict(token='fixture-token-'+user,expires_in=3600))
   rule=state['rules'].get(path,{})
   delay=float(rule.get('delay',0))
   if delay:time.sleep(delay)
@@ -97,7 +108,9 @@ class Handler(BaseHTTPRequestHandler):
     restaurant_id=path.split('/restaurants/',1)[1].split('/menu-items',1)[0]
     return self.respond(dict(code='not_found',message='No restaurant with id '+restaurant_id+'. Use an id from a GET /v1.2/restaurants result.'),status)
    return self.respond(dict(code='fixture_error',message='The test request could not be completed.',request_id='parity-request',docs_url='https://example.invalid/fixture-docs'),status)
-  if path.endswith('/autocomplete'):result=dict(items=[])
+  if path.endswith('/autocomplete'):
+   # Suggestions only for "ban…" (as in the API's "ban" → banana example), so no other flow's typing opens the list.
+   result=dict(items=[] if empty or not q.get('query','').lower().startswith('ban') else [suggestion('101','banana'),suggestion('102','banana bread')])
   elif path.endswith('/alternatives'):result=dict(alternatives=[] if empty else [food('102','Fixture lentils')])
   elif path.endswith('/foods/101'):result=food()
   elif path.endswith('/foods/102'):result=food(102,'Fixture lentils')

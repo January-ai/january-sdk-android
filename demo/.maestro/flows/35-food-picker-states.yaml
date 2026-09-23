@@ -1,0 +1,122 @@
+appId: ai.january.partner.demo
+name: Food picker - voice, suggestions, loading, error details, and a late suggestion after searching
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-glucose
+    timeout: 15000
+- tapOn:
+    id: tab-glucose
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: glucose-add-food
+- tapOn:
+    id: glucose-add-food
+- assertVisible:
+    id: food-picker-empty
+# Voice input opens the recording bar; cancelling brings the field back.
+- runFlow:
+    file: ../voice-cancel.yaml
+    env:
+      FIELD_ID: food-picker-voice
+- extendedWaitUntil:
+    visible:
+      id: food-picker-input
+    timeout: 15000
+# Suggestions for "ban…"; picking one searches for it, slowly here.
+- tapOn:
+    id: food-picker-input
+- inputText: ban
+- extendedWaitUntil:
+    visible:
+      id: food-picker-suggestions
+    timeout: 15000
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+      DELAY: "6"
+- tapOn:
+    id: food-picker-suggestion-0
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: food-picker-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 15000
+- assertNotVisible:
+    id: food-picker-suggestions
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/foods
+      FIELD: query.query
+      VALUE: '"banana"'
+# A suggestion still in flight when the search is submitted stays closed.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/autocomplete
+      DELAY: "3"
+- tapOn:
+    id: food-picker-input
+- eraseText: 20
+- inputText: bana
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: food-picker-suggestions
+    timeout: 6000
+    optional: true
+- assertNotVisible:
+    id: food-picker-suggestions
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/autocomplete
+# Loading the chosen food's servings fails, with details, then retries.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/101
+      STATUS: "500"
+- tapOn:
+    id: food-picker-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-picker-error
+    timeout: 15000
+- tapOn:
+    id: food-picker-error-details
+- assertVisible:
+    id: food-picker-error-details-body
+- assertVisible: parity-request
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/foods/101
+- tapOn:
+    id: food-picker-retry
+- extendedWaitUntil:
+    visible:
+      id: food-serving-sheet
+    timeout: 15000
+- tapOn:
+    id: food-serving-add
+- assertVisible:
+    id: glucose-food-0

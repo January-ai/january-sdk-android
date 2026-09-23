@@ -1,0 +1,148 @@
+appId: ai.january.partner.demo
+name: Restaurant search - filters, loading, empty, error with details and retry, menu items, back to foods
+tags:
+  - fixture
+---
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: search-scope-restaurants
+    timeout: 15000
+- tapOn:
+    id: search-scope-restaurants
+- assertVisible:
+    id: restaurant-search-screen
+- assertVisible:
+    id: restaurants-initial
+- tapOn:
+    id: restaurant-mode-menu
+- tapOn:
+    id: restaurant-mode-restaurants
+- tapOn:
+    id: restaurant-filters-button
+- assertVisible:
+    id: restaurant-filters
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurant-filters-apply
+- tapOn:
+    id: restaurant-filters-apply
+- assertNotVisible:
+    id: restaurant-filters
+# A slow search shows its loading state, then the nearby restaurants.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/restaurants
+      DELAY: "6"
+- tapOn:
+    id: restaurant-search-input
+- inputText: Fixture Cafe
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurant-search-submit
+- tapOn:
+    id: restaurant-search-submit
+    waitToSettleTimeoutMs: 500
+- extendedWaitUntil:
+    visible:
+      id: restaurants-loading
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: restaurant-results
+    timeout: 15000
+- assertVisible:
+    id: restaurant-result-0
+# Nothing nearby.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/restaurants
+      EMPTY: "true"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurant-search-submit
+- tapOn:
+    id: restaurant-search-submit
+- extendedWaitUntil:
+    visible:
+      id: restaurants-empty
+    timeout: 15000
+- assertVisible: No nearby matches
+# A failure explains itself, discloses the technical details, and retries.
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/restaurants
+      STATUS: "500"
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurant-search-submit
+- tapOn:
+    id: restaurant-search-submit
+- extendedWaitUntil:
+    visible:
+      id: restaurants-error
+    timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurants-error-details
+- tapOn:
+    id: restaurants-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurants-error-details-body
+- assertVisible: parity-request
+- runScript:
+    file: ../scripts/control-fixture.js
+    env:
+      ROUTE: /v1.2/restaurants
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurants-error-retry
+- tapOn:
+    id: restaurants-error-retry
+- extendedWaitUntil:
+    visible:
+      id: restaurant-result-0
+    timeout: 15000
+- assertNotVisible:
+    id: restaurants-error
+# Menu items near the location.
+- scrollUntilVisible:
+    element:
+      id: restaurant-mode-menu
+    direction: UP
+- tapOn:
+    id: restaurant-mode-menu
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: restaurant-search-submit
+- tapOn:
+    id: restaurant-search-submit
+- extendedWaitUntil:
+    visible:
+      id: menu-results
+    timeout: 15000
+- assertVisible:
+    id: menu-result-0
+- scrollUntilVisible:
+    element:
+      id: search-scope-foods
+    direction: UP
+- tapOn:
+    id: search-scope-foods
+- assertVisible:
+    id: search-screen
+# The restaurant query carries over, but no food search has run yet.
+- assertNotVisible:
+    id: empty-results

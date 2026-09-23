@@ -1,0 +1,99 @@
+appId: ai.january.partner.demo
+name: Client tokens - a new end user gets a token minted for them, and requests use it
+tags:
+  - fixture
+---
+# Launched with januaryFixtureClientTokens, the demo mints its client tokens
+# from the fixture server's token route (as from a token relay) instead of using
+# the stub token, and the fixture server records each mint's end user and each
+# request's token.
+- runScript:
+    file: ../scripts/reset-fixture.js
+- retry:
+    maxRetries: 2
+    commands:
+      - stopApp
+      - launchApp:
+          clearState: false
+          stopApp: true
+          arguments:
+            januaryFixtureOrigin: "${typeof FIXTURE_ORIGIN === 'undefined' ? 'http://10.0.2.2:18766' : FIXTURE_ORIGIN}"
+            januaryFixtureClientTokens: "true"
+      - tapOn:
+          text: "Close app"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            id: search-screen
+          timeout: 120000
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+      text: "[0-9]+ logs?"
+    direction: DOWN
+    timeout: 30000
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /api/january/client-token
+      METHOD: POST
+      FIELD: end_user
+      VALUE: '"parity-user"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+      FIELD: auth
+      VALUE: '"Bearer fixture-token-parity-user"'
+# Switch to parity-user-2: the next requests carry a token minted for them.
+- scrollUntilVisible:
+    element:
+      id: settings-button
+    direction: UP
+- tapOn:
+    id: settings-button
+- tapOn:
+    id: settings-user-id
+- eraseText: 30
+- inputText: parity-user-2
+- pressKey: Enter
+- waitForAnimationToEnd
+- tapOn:
+    id: settings-close
+- runFlow:
+    when:
+      visible:
+        id: settings-sheet
+    commands:
+      - tapOn:
+          id: settings-close
+- extendedWaitUntil:
+    visible: parity-user-2
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+      text: "[0-9]+ logs?"
+    direction: DOWN
+    timeout: 30000
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /api/january/client-token
+      METHOD: POST
+      FIELD: end_user
+      VALUE: '"parity-user-2"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/food-logs/summary
+      FIELD: auth
+      VALUE: '"Bearer fixture-token-parity-user-2"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/water-logs
+      FIELD: auth
+      VALUE: '"Bearer fixture-token-parity-user-2"'

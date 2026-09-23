@@ -26,6 +26,17 @@ tags:
     visible:
       id: scan-error
     timeout: 15000
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-error-details
+- tapOn:
+    id: scan-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-error-details-body
+- assertVisible: parity-request
 - runScript:
     file: ../scripts/control-fixture.js
     env:
@@ -67,6 +78,17 @@ tags:
       id: scan-correction-error
     timeout: 15000
 - assertVisible: retry correction
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-correction-error-details
+- tapOn:
+    id: scan-correction-error-details
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: scan-correction-error-details-body
+- assertVisible: parity-request
 - runScript:
     file: ../scripts/control-fixture.js
     env:
