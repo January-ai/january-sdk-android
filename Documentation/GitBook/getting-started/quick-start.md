@@ -106,17 +106,25 @@ import kotlinx.coroutines.withContext
 private class PartnerBackendTokenProvider(
     endpoint: String,
     private val sessionToken: String,
+    private val endUserId: String,
 ) : JanuaryTokenProvider {
     private val endpointUrl = URL(endpoint)
 
     override suspend fun fetchClientToken(): JanuaryClientToken =
         withContext(Dispatchers.IO) {
             val connection = (endpointUrl.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
+                requestMethod = "POST"
+                doOutput = true
+                setFixedLengthStreamingMode(0)
                 connectTimeout = 10_000
                 readTimeout = 10_000
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("Authorization", "Bearer $sessionToken")
+                // Your backend identifies the user from its own session; the local
+                // token relay has no session and mints for this header instead.
+                setRequestProperty("January-End-User-ID", endUserId)
+                if (sessionToken.isNotBlank()) {
+                    setRequestProperty("Authorization", "Bearer $sessionToken")
+                }
             }
             try {
                 val status = connection.responseCode
@@ -149,9 +157,6 @@ class MainActivity : Activity() {
         require(BuildConfig.JANUARY_TOKEN_URL.isNotBlank()) {
             "Pass -PjanuaryTokenUrl=https://your-backend.example/january-token"
         }
-        require(BuildConfig.PARTNER_SESSION_TOKEN.isNotBlank()) {
-            "Pass -PpartnerSessionToken=<your-app-session-token>"
-        }
         require(BuildConfig.JANUARY_END_USER_ID.isNotBlank()) {
             "Pass -PjanuaryEndUserId=<your-stable-user-id>"
         }
@@ -160,6 +165,7 @@ class MainActivity : Activity() {
             PartnerBackendTokenProvider(
                 endpoint = BuildConfig.JANUARY_TOKEN_URL,
                 sessionToken = BuildConfig.PARTNER_SESSION_TOKEN,
+                endUserId = BuildConfig.JANUARY_END_USER_ID,
             ),
         )
         val user = january.forUser(
@@ -193,7 +199,8 @@ class MainActivity : Activity() {
 
 ## 4. Build and run
 
-Use an HTTPS token endpoint that returns a production client token:
+Use an HTTPS token endpoint that returns a production client token. It receives
+a `POST` with your app session in `Authorization`:
 
 ```bash
 ./gradlew :app:installDebug \
@@ -204,6 +211,12 @@ Use an HTTPS token endpoint that returns a production client token:
 adb shell am start -n \
   com.example.januaryquickstart/.MainActivity
 ```
+
+To try it against the local [token relay](https://github.com/January-ai/january-token-relay)
+instead, pass `-PjanuaryTokenUrl=http://10.0.2.2:8787/api/january/client-token`
+and leave out `-PpartnerSessionToken`: the relay mints for the
+`January-End-User-ID` header. An `http://` URL also needs cleartext traffic
+allowed for that host in a debug-only network security configuration.
 
 Expected screen output begins with `Connected`, followed by up to five food
 names. An error is rendered with either a January error category or an
