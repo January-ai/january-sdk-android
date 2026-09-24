@@ -61,7 +61,7 @@ public class FoodsResourceTest {
         assertEquals("Bearer fixture-api-key", request.getHeader("Authorization"))
         assertEquals(null, request.getHeader("January-End-User-ID"))
         assertTrue(request.getHeader("User-Agent")!!.startsWith("JanuaryPartnerSDK-Android/${JanuaryPartnerClient.SDK_VERSION}"))
-        assertEquals("0.3.1", JanuaryPartnerClient.SDK_VERSION)
+        assertEquals("0.3.2", JanuaryPartnerClient.SDK_VERSION)
         assertEquals("/v1.2/foods", request.requestUrl!!.encodedPath)
         assertEquals("banana", request.requestUrl!!.queryParameter("query"))
         assertEquals("branded", request.requestUrl!!.queryParameter("type"))
