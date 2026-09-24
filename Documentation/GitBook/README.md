@@ -1,7 +1,8 @@
 # January SDK for Android
 
-Build food discovery, meal scanning, food logging, and glucose-prediction
-experiences in native Android apps with Kotlin coroutines and typed models.
+Build food discovery, meal scanning, restaurant search, voice capture, logging
+for food, water, and weight, and glucose-prediction experiences in native Android
+apps with Kotlin coroutines and typed models.
 
 ## Start here
 
@@ -32,8 +33,8 @@ Android app ◀──── { token, expiresIn } ─────┘
 
 ## Requirements
 
-* Android API 24+ with compile SDK 36 (core library desugaring below API 26)
-* Gradle 9.5.1 and Android Gradle Plugin 9.2.1 for the current source checkout
+* Android API 24+ with compile SDK 36, and core library desugaring (`desugar_jdk_libs` 2.1.5 or later) enabled in the app
+* Gradle 9.5.1 and Android Gradle Plugin 9.2.1 (verified toolchain)
 * Java 17
 * Kotlin coroutines
 

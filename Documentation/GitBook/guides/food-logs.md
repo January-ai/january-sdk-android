@@ -16,8 +16,9 @@ val log = user.foodLogs.create(
 )
 
 val logs = user.foodLogs.list("2026-08-01", "2026-08-31")
-user.foodLogs.update(log.id, name = "Post-workout breakfast")
-user.foodLogs.delete(log.id)
+val logId = requireNotNull(log.id) { "January did not return a Food Log ID." }
+user.foodLogs.update(logId, name = "Post-workout breakfast")
+user.foodLogs.delete(logId)
 ```
 
 For a weekly or daily overview, ask for a summary instead of paging through

@@ -1,8 +1,9 @@
 # January SDK for Android
 
 The official Kotlin SDK for January food discovery, restaurants, meal scanning,
-food logs, and glucose prediction. It supports Android API 24+ (with core library desugaring below API 26), Java 17, and
-Kotlin coroutines.
+voice capture, food, water, and weight logging, and glucose prediction. It
+supports Android API 24+, Java 17, and Kotlin coroutines; apps that use it
+enable core library desugaring.
 
 ## Quick start: run the demo with client tokens
 
@@ -106,7 +107,7 @@ app. The private, debug-only shortcut at the end is the sole local exception.
 ### Optional: deploy the relay to Vercel
 
 If localhost is inconvenient, follow the relay's
-[Vercel deployment guide](https://github.com/January-ai/january-token-relay#deploy).
+[Vercel deployment guide](https://github.com/January-ai/january-token-relay#optional-deploy-to-vercel).
 Set `JANUARY_API_KEY` and a long random `RELAY_TOKEN` in Vercel, then use:
 
 ```properties
@@ -133,8 +134,10 @@ dependencies {
 }
 ```
 
-If your app's `minSdk` is 24 or 25, also enable core library desugaring (the
-SDK uses `java.time`, which Android added in API 26):
+Every app that uses the SDK must also enable core library desugaring with
+`desugar_jdk_libs` 2.1.5 or later, whatever its `minSdk`: the SDK uses
+`java.time`, and its AAR metadata fails the build without desugaring. Compile
+against SDK 36 or later.
 
 ```kotlin
 android {

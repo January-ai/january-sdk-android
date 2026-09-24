@@ -1,4 +1,4 @@
-# Food, Water and Weight Logs and Glucose API
+# Food, Water, and Weight Logs and Glucose API
 
 Prefer `client.forUser(...)` so one identity and timezone are reused across all
 SDK resources, including the Food Logs, Water Logs, Weight Logs, and Glucose
@@ -13,6 +13,7 @@ suspend fun create(
     name: String? = null,
 ): FoodLog
 suspend fun list(start: String, end: String): ListFoodLogsResponse
+suspend fun get(id: String): FoodLog
 suspend fun getSummary(
     start: String,
     end: String,
@@ -29,9 +30,12 @@ suspend fun delete(id: String): DeleteFoodLogResponse
 ```
 
 `timestampUtc` is an ISO-8601 offset date-time. `start` and `end` are ISO dates
-(`YYYY-MM-DD`) and are inclusive calendar boundaries in the scoped timezone.
-Log IDs must be UUID strings. `FoodLog` contains `id`, `foods`, `timestampUtc`,
-and optional `name`; list returns `totalCount` and items; delete returns `status`.
+(`YYYY-MM-DD`) and are inclusive calendar boundaries in the scoped timezone;
+`list` spans at most 60 days. Log IDs must be UUID strings. `update` sends only
+the fields you set; with none set it throws `ErrorCategory.VALIDATION` before
+any request. `FoodLog` contains a nullable `id`, `foods`, `timestampUtc`, and
+optional `name`; list returns `totalCount` and items; `get` returns one
+`FoodLog`; delete returns `Unit` (`DeleteFoodLogResponse` is an alias for it).
 
 `getSummary` aggregates the logs in the inclusive range (at most 366 days) into
 `buckets`, one per local calendar day or per week, each with `logsCount`,
@@ -45,6 +49,7 @@ The unscoped `client.foodLogs` has corresponding request-object methods:
 ```kotlin
 suspend fun create(request: CreateFoodLogRequest): FoodLog
 suspend fun list(request: ListFoodLogsRequest): ListFoodLogsResponse
+suspend fun get(request: GetFoodLogRequest): FoodLog
 suspend fun getSummary(request: GetFoodLogSummaryRequest): FoodLogSummary
 suspend fun update(request: UpdateFoodLogRequest): FoodLog
 suspend fun delete(request: DeleteFoodLogRequest): DeleteFoodLogResponse
@@ -62,8 +67,9 @@ suspend fun delete(id: String): DeleteWaterLogResponse
 ```
 
 `WaterAmount(value, unit)` is 1–811.5 `VolumeUnit.FL_OZ`, 0.1–101.4
-`VolumeUnit.CUP`, or 30–24000 `VolumeUnit.ML`; an end user's total is capped at 24 L per day. `consumedAt`
-is an ISO-8601 offset date-time and defaults to now. `WaterLog` contains `id`,
+`VolumeUnit.CUP`, or 30–24,000 `VolumeUnit.ML`; an end user's total is capped at
+24 L per day, counted against the day of `consumedAt`. `consumedAt` is an
+ISO-8601 offset date-time and defaults to now. `WaterLog` contains `id`,
 `amount` (as logged), and `consumedAt` in UTC. `list` returns `items`, one
 `DailyWaterTotal(date, total: Volume)` per local calendar day that has water
 logged, oldest first, in the requested `unit`, rounded to one decimal place.

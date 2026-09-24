@@ -78,6 +78,12 @@ project uses Semantic Versioning.
   `com.android.tools:desugar_jdk_libs` dependency); the AAR metadata makes a
   build without it fail with a clear message instead of crashing at runtime on
   API 24 and 25 devices.
+- Correction: the requirement is not limited to `minSdk` below 26. The AAR
+  metadata requires every app that depends on the SDK to enable core library
+  desugaring with `desugar_jdk_libs` 2.1.5 or later, whatever its `minSdk`;
+  without it, the build fails with `Dependency
+  'ai.january:january-sdk-android:<version>' requires core library desugaring
+  to be enabled`.
 
 ## [0.2.0] - 2026-09-16
 

@@ -15,17 +15,14 @@ val scan = january.foodAnalysis.analyzePhoto(
 )
 ```
 
-Correct a result using its current name and detections:
+Correct a result by sending the complete prior scan back, unchanged, with a
+plain-language instruction:
 
 ```kotlin
 import ai.january.partner.photos.CorrectPhotoScanRequest
 
 val corrected = january.foodAnalysis.correct(
-    CorrectPhotoScanRequest(
-        mealName = scan.mealName.orEmpty(),
-        detections = scan.detections.orEmpty(),
-        userInput = "Remove the fries",
-    ),
+    CorrectPhotoScanRequest(analysis = scan, instruction = "Remove the fries"),
 )
 ```
 

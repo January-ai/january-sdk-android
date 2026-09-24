@@ -39,7 +39,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // Required while minSdk is below 26: the SDK uses java.time.
+        // Required by the SDK (it uses java.time), at any minSdk.
         isCoreLibraryDesugaringEnabled = true
     }
 }
@@ -73,8 +73,8 @@ Create `app/src/main/AndroidManifest.xml`:
 </manifest>
 ```
 
-The SDK manifest contributes Internet and camera permissions. This smoke app
-does not open the camera.
+The SDK manifest contributes Internet, camera, and microphone permissions. This
+smoke app does not open the camera or the microphone.
 
 ## 3. Add the activity and provider
 

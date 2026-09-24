@@ -2,14 +2,17 @@
 
 ## Identifiers and context
 
-`PartnerUserId(String)` rejects blank values. `FoodId(Long)` and
-`ServingId(Long)` are typed value classes. `PartnerUserContext` contains a
-required `endUserId` and optional IANA `timezone`.
+`PartnerUserId(String)` rejects blank values. `FoodId(String)` and
+`ServingId(String)` are typed value classes; `FoodId(Long)` and `ServingId(Long)`
+still build one from a number. `PartnerUserContext` contains a required
+`endUserId` and optional IANA `timezone`.
 
 ## Food enums
 
-* `FoodCategory`: `GENERAL`, `BRANDED`, `RECIPE`
-* `AutocompleteFoodCategory`: `GENERAL`, `BRANDED`
+* `FoodCategory`: `GENERIC`, `BRANDED`, `RECIPE`; `GENERAL` remains as a
+  deprecated alias of `GENERIC`
+* `AutocompleteFoodCategory`: `GENERIC`, `BRANDED`; `GENERAL` remains as a
+  deprecated alias of `GENERIC`
 * `DietPreference`: `VEGETARIAN`, `VEGAN`, `KETO`, `PALEO`, `PESCATARIAN`,
   `LOW_CARBOHYDRATE`, `HIGH_PROTEIN`, `KOSHER`, `HALAL`
 * `DietRestriction`: gluten, lactose, yeast, tree nuts, peanuts, dairy, eggs,
@@ -54,6 +57,9 @@ GlucosePredictionProfile(
 )
 ```
 
+`age` is in whole years; a fractional value throws `JanuaryException` with
+`ErrorCategory.VALIDATION`.
+
 * `Sex`: `MALE`, `FEMALE`
 * `HeightUnit`: `INCHES`, `CENTIMETERS`
 * `WeightUnit`: `POUNDS`, `KILOGRAMS`
@@ -66,8 +72,9 @@ inches/centimeters and pounds/kilograms, then create typed values.
 
 ## Errors
 
-Network operations throw `JanuaryException(category, message, httpStatus,
-cause)`. `ErrorCategory` cases are `VALIDATION`, `AUTHENTICATION`,
+Network operations throw `JanuaryException` with `category`, `message`,
+`httpStatus`, `cause`, and, when the API returned them, its stable error `code`
+and `requestId`. `ErrorCategory` cases are `VALIDATION`, `AUTHENTICATION`,
 `AUTHORIZATION`, `NOT_FOUND`, `RATE_LIMITED`, `TIMEOUT`, `TRANSPORT`, `DECODING`,
 and `SERVER`. Local argument APIs may throw `IllegalArgumentException`,
 `FoodPortionException`, date parsing exceptions, or `NoBarcodeMatchException`.

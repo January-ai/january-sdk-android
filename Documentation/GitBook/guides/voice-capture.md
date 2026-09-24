@@ -38,7 +38,8 @@ composition owner:
 
 ```kotlin
 val voiceCapture = remember { VoiceCaptureSession(context) }
-// Optional: how long a pause ends the capture (default 2 seconds).
+// Optional: how long a pause ends the capture (default 2 seconds; a hint,
+// since some recognizers keep their own timing).
 // val voiceCapture = remember { VoiceCaptureSession(context, endOfSpeechSilence = Duration.ofSeconds(3)) }
 val state by voiceCapture.state.collectAsState()
 val level by voiceCapture.audioLevel.collectAsState()

@@ -28,7 +28,7 @@ val results = january.foods.search(SearchFoodsRequest(query = "banana"))
 val selected = results.items.first()
 val food = january.foods.get(GetFoodRequest(foodId = selected.id))
 
-val serving = food.servings.firstOrNull { it.isPrimary }
+val serving = food.servings.firstOrNull { it.isPrimary == true }
     ?: food.servings.first()
 val portion = food.portion(servingId = serving.id, quantity = 1.5)
 
