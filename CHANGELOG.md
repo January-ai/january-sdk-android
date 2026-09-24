@@ -134,3 +134,4 @@ decoding error. Update to this version to restore them.
 ## [0.1.0] - 2026-09-02
 
 - Publish the initial January Android SDK to Maven Central.
+
