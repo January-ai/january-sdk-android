@@ -47,7 +47,7 @@ android {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-    implementation("ai.january:january-sdk-android:0.3.1")
+    implementation("ai.january:january-sdk-android:0.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
 ```

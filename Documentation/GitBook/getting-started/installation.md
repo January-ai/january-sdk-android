@@ -32,7 +32,7 @@ dependencyResolutionManagement {
 ```kotlin
 // app/build.gradle.kts
 dependencies {
-    implementation("ai.january:january-sdk-android:0.3.1")
+    implementation("ai.january:january-sdk-android:0.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
 ```
@@ -48,7 +48,7 @@ raises your app's versions of these to at least the
 The SDK supports API 24 and uses `java.time`. Its AAR metadata requires every
 app that depends on it to enable core library desugaring with
 `desugar_jdk_libs` 2.1.5 or later, whatever the app's `minSdk`. Without it, the
-build fails with `Dependency 'ai.january:january-sdk-android:0.3.1' requires
+build fails with `Dependency 'ai.january:january-sdk-android:0.3.2' requires
 core library desugaring to be enabled`.
 
 ```kotlin
@@ -85,7 +85,7 @@ android {
 ./gradlew :app:assembleDebug
 ```
 
-The dependency report should show `ai.january:january-sdk-android:0.3.1` resolved
+The dependency report should show `ai.january:january-sdk-android:0.3.2` resolved
 from Maven Central.
 
 Next: [Backend token endpoint](backend-token-endpoint.md)

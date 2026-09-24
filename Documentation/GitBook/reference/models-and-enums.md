@@ -28,12 +28,14 @@
 `calories`, `protein`, `carbohydrates`, `netCarbohydrates`, `totalFat`,
 `saturatedFat`, `fiber`, `totalSugars`, `addedSugars`, and `sodium`.
 
-`FoodPortion` has `foodId`, `serving` (the `ServingOption`), `quantity`,
-`nutrition` (scaled `NutritionFacts`), `totalWeightGrams`, `glycemicIndex`,
-`glycemicLoad` (scaled), and `selection`.
+`FoodPortion` has `foodId`, `serving` (the `ServingOption`), `quantity` (an
+amount in the serving's unit), `nutrition` (scaled `NutritionFacts`),
+`totalWeightGrams`, `glycemicIndex`, `glycemicLoad` (scaled), and `selection`
+([Quantity and servings](../concepts/food-lifecycle.md#quantity-and-servings)).
 
 `FoodSelection(id: String, serving: ServingSelection(id: String, quantity: Double))`
-is what `foodLogs.create`, `foodLogs.update`, and `glucose.predict` take.
+is what `foodLogs.create`, `foodLogs.update`, and `glucose.predict` take. Its
+`quantity` is the number of servings eaten.
 
 `ServingSummary(id, quantity, unit, weightGrams)` is the catalog serving on a
 detected or alternative food; `quantity` is the size of one serving, and

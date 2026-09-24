@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 - 2026-09-24
+
+* Fixed: `FoodPortion.selection` sent the portion's amount in the serving's unit as the number of servings, so a portion of a serving whose quantity isn't 1 (such as 6 oz or 100 g) was logged that many times over. It now sends the number of servings
+
 ## 0.3.1 - 2026-09-23
 
 * Food, water, and weight logs send and read the API's `created_at` and keep `timestampUtc`, `consumedAt`, and `measuredAt`; 0.3.0's food, water, and weight logs don't work with the current API, so upgrade to 0.3.1
