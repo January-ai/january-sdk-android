@@ -92,6 +92,14 @@ internal fun DemoInput(value: String, onValueChange: (String) -> Unit, placehold
         colors = TextFieldDefaults.colors(focusedContainerColor = JanuaryColors.Control, unfocusedContainerColor = JanuaryColors.Control, focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent))
 }
 
+/**
+ * The number of servings in [amount], an amount in [serving]'s unit: 12 oz of a "6 oz" serving is
+ * 2. Food-log and glucose-prediction requests take a number of servings.
+ */
+internal fun servingsIn(amount: Double, serving: ServingOption): Double =
+    amount / (serving.quantity?.takeIf { it.isFinite() && it > 0 } ?: 1.0)
+
+/** [quantity] is an amount in [serving]'s unit, as the food and menu-item screens show it. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun FoodGlucoseSheet(client: JanuaryPartnerClient, foodId: FoodId, foodName: String, serving: ServingOption, quantity: Double, endUserId: PartnerUserId?, timezone: String, onDismiss: () -> Unit) {
@@ -104,7 +112,7 @@ internal fun FoodGlucoseSheet(client: JanuaryPartnerClient, foodId: FoodId, food
         scope.launch {
             runCatching { client.glucose.predict(PredictGlucoseRequest(
                 GlucosePredictionProfile(42.0, Sex.FEMALE, Height(66.0, HeightUnit.INCHES), Weight(150.0, WeightUnit.POUNDS)),
-                listOf(FoodSelection(foodId.value, ServingSelection(requireNotNull(serving.id).value, quantity))), OffsetDateTime.now(), endUserId = endUserId, timezone = timezone,
+                listOf(FoodSelection(foodId.value, ServingSelection(requireNotNull(serving.id).value, servingsIn(quantity, serving)))), OffsetDateTime.now(), endUserId = endUserId, timezone = timezone,
             )) }.onSuccess { result = it }.onFailure { error = it }
             loading = false
         }

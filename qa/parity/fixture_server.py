@@ -10,6 +10,19 @@ from pathlib import Path
 NUTRIENTS = {k: {'value':v,'unit':u} for k,v,u in [('calories',100,'kcal'),('protein',4,'g'),('carbohydrates',20,'g'),('total_fat',2,'g'),('fiber',3,'g'),('sodium',10,'mg')]}
 SERVINGS = [dict(id='11',quantity=1,unit='cup',scaling_factor=1,weight_grams=100,is_primary=True),dict(id='12',quantity=1,unit='oz',scaling_factor=0.2835,weight_grams=28.35,is_primary=False)]
 def food(id='101',name='Fixture oatmeal',full=True):return dict(id=str(id),type='generic',name=name,brand_name='January fixture',nutrients=NUTRIENTS,glycemic_index=52,glycemic_load=12,image_url=None,barcode=None,servings=SERVINGS if full else SERVINGS[:1])
+# A food whose primary serving isn't 1 of its unit, like greek yogurt's "6 oz": its nutrients are for
+# one 6 oz serving, so logging one serving is 100 kcal and logging 6 is 600.
+YOGURT_SERVINGS=[dict(id='31',quantity=6,unit='oz',scaling_factor=1,weight_grams=170,is_primary=True),dict(id='32',quantity=1,unit='cup',scaling_factor=1.3353,weight_grams=227,is_primary=False)]
+def yogurt(full=True):return dict(food(103,'Fixture greek yogurt'),servings=YOGURT_SERVINGS if full else YOGURT_SERVINGS[:1])
+def catalog():return {f['id']:f for f in (food(),food(102,'Fixture lentils'),yogurt())}
+def logged_food(entry):
+ # Like the API: a food's nutrients are for one primary serving, and a logged food's are
+ # quantity (a count of servings) x those nutrients x the serving's scaling_factor.
+ f=catalog().get(str(entry.get('food_id')))
+ serving=next((s for s in (f or {}).get('servings',[]) if s['id']==str(entry.get('serving_id'))),None)
+ if serving is None:return None
+ count=float(entry.get('quantity',1));scale=count*serving['scaling_factor']
+ return dict(food_id=f['id'],name=f['name'],brand_name=f['brand_name'],image_url=None,glycemic_index=f['glycemic_index'],glycemic_load=round(f['glycemic_load']*scale,4),nutrients={k:dict(value=round(v['value']*scale,4),unit=v['unit']) for k,v in f['nutrients'].items()},quantity=count,serving={k:serving[k] for k in ('id','quantity','unit','weight_grams')})
 PREDICTION = dict(points=[dict(minutes=m,value=v) for m,v in [(0,90),(30,125),(60,140),(90,115),(120,95)]],impact_score='medium',chart=dict(min=70,max=140))
 def suggestion(id,name):return dict(id=str(id),type='generic',name=name,brand_name=None,image_url=None,nutrients=NUTRIENTS)
 def detected(id='101',name='Fixture oatmeal'):return dict(id=str(id),name=name,brand_name='January fixture',nutrients=NUTRIENTS,quantity=1,serving=dict(id='11',quantity=1,unit='cup'))
@@ -138,7 +151,8 @@ class Handler(BaseHTTPRequestHandler):
   elif path.endswith('/alternatives'):result=dict(alternatives=[] if empty else [food('102','Fixture lentils')])
   elif path.endswith('/foods/101'):result=food()
   elif path.endswith('/foods/102'):result=food(102,'Fixture lentils')
-  elif path.endswith('/foods'):result=dict(items=[] if empty else [food(full=False)])
+  elif path.endswith('/foods/103'):result=yogurt()
+  elif path.endswith('/foods'):result=dict(items=[] if empty else [yogurt(full=False) if 'yogurt' in q.get('query','').lower() else food(full=False)])
   elif '/foods/barcode/' in path:result=food(full=False)
   elif path.endswith('/restaurants/cafe/menu-items'):result=dict(items=[] if empty or int(q.get('offset',0)) > 0 else [dict(id='101',name='Fixture bowl',nutrients=NUTRIENTS,servings=SERVINGS),dict(id='102',name='Fixture soup',nutrients=NUTRIENTS,servings=SERVINGS)])
   elif path.endswith('/menu-items') and '/restaurants/' not in path:
@@ -170,10 +184,18 @@ class Handler(BaseHTTPRequestHandler):
    result=dict(items=[] if empty else [dict(date=d,weight=w['weight']) for d,w in sorted(latest.items()) if in_range(d,q)][-LIST_LIMIT:])
   elif path.endswith('/food-logs/summary'):result=summary(q,mine('logs',user))
   elif '/food-logs' in path:
-   if self.command=='GET':result=dict(items=[] if empty else [l for l in mine('logs',user) if in_range(local_day(l['created_at'],q),q)])
+   log_id=path.split('/food-logs/',1)[1] if '/food-logs/' in path else None
+   if self.command=='GET' and log_id:
+    found=[l for l in mine('logs',user) if l['id']==log_id]
+    if not found:return self.respond(dict(code='not_found',message='No food log with id '+log_id+'.'),404)
+    result=found[0]
+   elif self.command=='GET':result=dict(items=[] if empty else [l for l in mine('logs',user) if in_range(local_day(l['created_at'],q),q)])
    elif self.command=='DELETE':state['logs'][user]=[];result=dict(status='success')
    else:
     result=log(body.get('name') or 'Fixture breakfast')
+    # The foods sent, with nutrients for the servings sent; a food the catalog doesn't know keeps the canned log's.
+    foods=[logged_food(entry) for entry in body.get('foods') or []]
+    if foods and all(foods):result['foods']=foods
     if body.get('created_at'):result['created_at']=stamp(body['created_at'])
     state['logs'][user]=[result]
   else:return self.respond(dict(message='Unmapped fixture route '+path),404)

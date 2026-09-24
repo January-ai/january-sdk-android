@@ -58,11 +58,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ai.january.partner.FoodId
 import ai.january.partner.foods.AutocompleteFoodsRequest
+import ai.january.partner.foods.FoodPortion
 import ai.january.partner.foods.FoodSearchItem
 import ai.january.partner.foods.FoodSuggestion
 import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.ServingOption
+import ai.january.partner.foods.portion
+import ai.january.partner.models.FoodSelection
+import ai.january.partner.models.ServingSelection
 import coil3.compose.SubcomposeAsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -71,8 +75,20 @@ import kotlin.math.roundToInt
 internal data class DemoSelectedFood(
     val food: FoodSearchItem,
     val serving: ServingOption,
+    /** How many servings: 1 is one "6 oz" serving. */
     val quantity: Double,
-)
+) {
+    /**
+     * The SDK portion the meal's nutrition and requests come from, so the meal logs what it shows.
+     * A portion's quantity is an amount in the serving's unit: one "6 oz" serving is 6.
+     */
+    val portion: FoodPortion?
+        get() = runCatching { food.portion(serving.id, quantity * (serving.quantity ?: 1.0)) }.getOrNull()
+
+    /** What food-log and glucose-prediction requests send: the portion's selection, in servings. */
+    val selection: FoodSelection
+        get() = portion?.selection ?: FoodSelection(food.id.value, ServingSelection(serving.id.value, quantity))
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

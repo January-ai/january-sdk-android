@@ -288,7 +288,7 @@ private fun LoggedFoodCard(food: LoggedFood) {
             Text(food.name ?: "Unnamed food", style = MaterialTheme.typography.titleMedium)
             food.brandName?.let { Text(it, color = JanuaryColors.Muted) }
             Text("${formatLogNumber(food.consumedServing.quantity ?: 1.0)} × ${formatLogNumber(food.servingDetails.quantity ?: 1.0)} ${food.servingDetails.unit.orEmpty()}", fontSize = 15.sp)
-            FoodLogMacros(listOf("Calories" to food.nutrients.calories, "Protein" to food.nutrients.protein, "Carbs" to food.nutrients.carbohydrates, "Fat" to food.nutrients.totalFat))
+            FoodLogMacros(listOf("Calories" to food.nutrients.calories, "Protein" to food.nutrients.protein, "Carbs" to food.nutrients.carbohydrates, "Fat" to food.nutrients.totalFat), caloriesTestTag = "food-log-food-calories")
             NutritionList(listOf(
                 "Net carbohydrates" to food.nutrients.netCarbohydrates,
                 "Trans fat" to food.nutrients.transFat,

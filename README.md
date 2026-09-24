@@ -130,7 +130,7 @@ the SDK to `app/build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("ai.january:january-sdk-android:0.3.1")
+    implementation("ai.january:january-sdk-android:0.3.2")
 }
 ```
 
