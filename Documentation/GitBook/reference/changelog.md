@@ -52,5 +52,5 @@
 * Reusable microphone speech recognition with live RMS, partial text, and stable lifecycle state
 * Typed imperial and metric glucose-profile measurements
 * Shared, white-label-ready Jetpack Compose demo components
-* Production restaurant-menu search and paginated lookup by restaurant ID
+* Restaurant menu-item search, and paginated restaurant-menu lookup by restaurant ID (`getMenuItems`)
 * Single food log retrieval and no-content deletion aligned with API `v1.2`
