@@ -58,7 +58,10 @@ tags:
       TARGET_ID: weight-chart
 - extendedWaitUntil:
     visible:
-      text: "Weight, last 7 days: 3 entries.*"
+      # A weight every third day: a week holds 3 when the fixture's day (the host's
+      # date) is the app's today and 2 when it is a day off, as on a UTC runner in
+      # the New York evening. Any 30 days hold 10, so the month count stays exact.
+      text: "Weight, last 7 days: [23] entries.*"
     timeout: 15000
 - takeScreenshot: demo/.maestro/artifacts/android-tracking-weight-chart-week
 - scrollUntilVisible:
