@@ -85,6 +85,20 @@ onFlowComplete:
     visible:
       id: food-log-detail
     timeout: 15000
+# The log ID first, so onFlowComplete can delete the log whatever fails next.
+# The food's nutrient list pushes "Technical details" below the fold; center it
+# clear of the floating tab bar (a bounded pass, then a plain scroll).
+- scrollUntilVisible:
+    element:
+      text: Technical details
+    direction: DOWN
+    centerElement: true
+    timeout: 8000
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: Technical details
+    direction: DOWN
 - tapOn: Technical details
 - copyTextFrom:
     text: "Log ID · .*"
@@ -92,6 +106,10 @@ onFlowComplete:
     file: ../scripts/live-verify.js
     env:
       CHECK: remember-log-id
+- scrollUntilVisible:
+    element:
+      id: food-log-food-calories
+    direction: UP
 - takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-71-portion-logged"
 - copyTextFrom:
     id: food-log-food-calories
