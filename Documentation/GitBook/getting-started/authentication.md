@@ -23,7 +23,9 @@ class PartnerBackendTokenProvider(
     override suspend fun fetchClientToken(): JanuaryClientToken =
         withContext(Dispatchers.IO) {
             val connection = (endpointUrl.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
+                requestMethod = "POST"
+                doOutput = true
+                setFixedLengthStreamingMode(0)
                 connectTimeout = 10_000
                 readTimeout = 10_000
                 setRequestProperty("Accept", "application/json")
