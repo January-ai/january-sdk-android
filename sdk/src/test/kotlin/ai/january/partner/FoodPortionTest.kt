@@ -57,7 +57,8 @@ public class FoodPortionTest {
         assertEquals(20.3389, portion.glycemicLoad!!, 0.001)
         assertEquals("70381819", portion.selection.id)
         assertEquals("2", portion.selection.serving.id)
-        // 200 g of the "100 g" serving is two servings.
+        // The API reads a selection's quantity as a count of servings: 200 g of the "100 g"
+        // serving is 2 servings, not 200.
         assertEquals(2.0, portion.selection.serving.quantity, 0.0)
     }
 

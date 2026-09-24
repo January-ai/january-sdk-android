@@ -1,0 +1,107 @@
+appId: ai.january.partner.demo
+name: Live - one 6 oz serving of greek yogurt logs the calories its portion showed, checked against the API
+tags:
+  - live
+# The log is deleted through the API whether or not the flow passed.
+onFlowComplete:
+  - runScript:
+      file: ../scripts/live-verify.js
+      env:
+        CHECK: delete-portion-log
+---
+# Food 70376084, "greek yogurt": its primary serving is 6 oz, and its nutrients
+# are for one such serving, about 100 kcal. Logged with the default portion, the
+# log must show the portion's calories, about 100, not the 6 servings (about
+# 600) the demo sent before 0.3.2. About 11 API requests.
+- runFlow: ../live-bootstrap.yaml
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: run-id
+- tapOn:
+    id: tab-food-logs
+- extendedWaitUntil:
+    visible:
+      id: food-log-add
+    timeout: 30000
+- tapOn:
+    id: food-log-add
+- tapOn:
+    id: food-log-name
+- inputText: Portion check ${output.runId}
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-add-food
+- tapOn:
+    id: food-log-add-food
+- tapOn:
+    id: food-picker-input
+- inputText: greek yogurt
+- pressKey: Enter
+# The result with a 6 oz primary serving at 100 cal; portion-log checks its ID.
+- extendedWaitUntil:
+    visible:
+      text: ".*100 cal · 6 oz.*"
+    timeout: 30000
+- tapOn:
+    text: ".*100 cal · 6 oz.*"
+- extendedWaitUntil:
+    visible:
+      id: food-serving-sheet
+    timeout: 30000
+- assertVisible: 6 oz
+- assertVisible:
+    id: food-serving-calories
+    text: "(99|100|101)(\\.[0-9])?"
+- copyTextFrom:
+    id: food-serving-calories
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: remember-portion
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-70-portion"
+- tapOn:
+    id: food-serving-add
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-save
+- tapOn:
+    id: food-log-save
+- extendedWaitUntil:
+    notVisible:
+      id: food-log-editor
+    timeout: 45000
+# The Logs screen shows the log at the portion's calories.
+- scrollUntilVisible:
+    element:
+      text: .*Portion check ${output.runId}.*
+    direction: DOWN
+    timeout: 30000
+- tapOn: .*Portion check ${output.runId}.*
+- extendedWaitUntil:
+    visible:
+      id: food-log-detail
+    timeout: 15000
+- tapOn: Technical details
+- copyTextFrom:
+    text: "Log ID · .*"
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: remember-log-id
+- takeScreenshot: "${typeof SHOTS === 'undefined' ? 'demo/.maestro/artifacts/live' : SHOTS}/android-live-71-portion-logged"
+- copyTextFrom:
+    id: food-log-food-calories
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: shown-calories
+- assertVisible: 1 × 6 oz
+# And the API has 1 serving of food 70376084 at those calories.
+- runScript:
+    file: ../scripts/live-verify.js
+    env:
+      CHECK: portion-log

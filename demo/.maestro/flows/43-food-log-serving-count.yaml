@@ -1,0 +1,118 @@
+appId: ai.january.partner.demo
+name: Food log - one 6 oz serving logs the calories its portion showed
+tags:
+  - fixture
+---
+# Fixture greek yogurt's primary serving is "6 oz", and its nutrients are for one
+# such serving: 100 kcal. The fixture server works out a log's nutrients from what
+# the demo sends, like the API (servings x nutrients x scaling factor), so the
+# log shows the portion's 100 only when the demo sends 1 serving; sending the 6
+# from "6 oz" would log 600.
+- runFlow: ../bootstrap.yaml
+- extendedWaitUntil:
+    visible:
+      id: tab-food-logs
+    timeout: 15000
+- tapOn:
+    id: tab-food-logs
+- extendedWaitUntil:
+    visible:
+      id: food-log-add
+    timeout: 15000
+- tapOn:
+    id: food-log-add
+- assertVisible: New food log
+- tapOn:
+    id: food-log-name
+- inputText: Yogurt snack
+- pressKey: Enter
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-add-food
+- tapOn:
+    id: food-log-add-food
+- assertVisible:
+    id: food-picker
+- tapOn:
+    id: food-picker-input
+- inputText: greek yogurt
+- pressKey: Enter
+- extendedWaitUntil:
+    visible:
+      id: food-picker-result-0
+    timeout: 15000
+- tapOn:
+    id: food-picker-result-0
+- extendedWaitUntil:
+    visible:
+      id: food-serving-sheet
+    timeout: 15000
+# The default portion: one 6 oz serving, 100 cal.
+- assertVisible: 6 oz
+- assertVisible:
+    id: food-serving-calories
+    text: "100"
+- tapOn:
+    id: food-serving-add
+- runFlow:
+    file: ../scroll-to.yaml
+    env:
+      TARGET_ID: food-log-save
+- tapOn:
+    id: food-log-save
+- extendedWaitUntil:
+    notVisible:
+      id: food-log-editor
+    timeout: 15000
+# The Logs tab shows the logged food at the portion's calories.
+- scrollUntilVisible:
+    element:
+      id: food-log-0
+    direction: DOWN
+    timeout: 30000
+- assertVisible: .*Yogurt snack.*
+- tapOn:
+    id: food-log-0
+- extendedWaitUntil:
+    visible:
+      id: food-log-detail
+    timeout: 15000
+- assertVisible:
+    id: food-log-food-calories
+    text: "100"
+- assertVisible: 1 × 6 oz
+- tapOn:
+    id: food-log-detail-back
+# So does the Tracking tab's day total.
+- tapOn:
+    id: tab-tracking
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-count
+      text: 1 log
+    direction: DOWN
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: food-logs-totals-calories
+    direction: DOWN
+    timeout: 15000
+- assertVisible:
+    id: food-logs-totals-calories
+    text: "100"
+# What the demo sent: one serving of the 6 oz serving.
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/food-logs
+      METHOD: POST
+      FIELD: body.foods.0.serving_id
+      VALUE: '"31"'
+- runScript:
+    file: ../scripts/assert-request.js
+    env:
+      ROUTE: /v1.2/food-logs
+      METHOD: POST
+      FIELD: body.foods.0.quantity
+      VALUE: "1"

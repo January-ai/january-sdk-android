@@ -40,8 +40,6 @@ import ai.january.partner.PartnerUserContext
 import ai.january.partner.foodlogs.FoodLog
 import ai.january.partner.foods.FoodSearchItem
 import ai.january.partner.foods.ServingOption
-import ai.january.partner.models.FoodSelection
-import ai.january.partner.models.ServingSelection
 import ai.january.partner.FoodId
 import ai.january.partner.ServingId
 import java.time.OffsetDateTime
@@ -78,9 +76,7 @@ internal fun FoodLogEditorSheet(
         error = null
         coroutineScope.launch {
             runCatching {
-                val selections = foods.map {
-                    FoodSelection(it.food.id.value, ServingSelection(it.serving.id.value, it.quantity))
-                }
+                val selections = foods.map { it.selection }
                 val timestampUtc = timestamp.withOffsetSameInstant(ZoneOffset.UTC).toString()
                 if (existing == null) {
                     userClient.foodLogs.create(

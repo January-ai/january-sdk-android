@@ -72,8 +72,6 @@ import ai.january.partner.glucose.PredictGlucoseRequest
 import ai.january.partner.glucose.Sex
 import ai.january.partner.glucose.Weight
 import ai.january.partner.glucose.WeightUnit
-import ai.january.partner.models.FoodSelection
-import ai.january.partner.models.ServingSelection
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
@@ -117,9 +115,7 @@ fun GlucoseScreen(state: DemoState, settingsAction: () -> Unit, modifier: Modifi
                             weight = Weight(weightPounds, WeightUnit.POUNDS),
                             healthConditions = conditions.toList(),
                         ),
-                        foods = foods.map {
-                            FoodSelection(it.food.id.value, ServingSelection(requireNotNull(it.serving.id).value, it.quantity))
-                        },
+                        foods = foods.map { it.selection },
                         startTime = startTime,
                     ),
                 )

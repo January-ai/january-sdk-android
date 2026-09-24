@@ -146,6 +146,6 @@ internal fun FoodLogSelectedFoodCard(selected: DemoSelectedFood, onServingChange
 }
 
 @Composable
-internal fun FoodLogMacros(values: List<Pair<String, NutrientAmount?>>) {
-    MacroGrid(values.map { (label, amount) -> MacroValue(label, amount?.value?.let(::formatMetricNumber) ?: "—", amount?.unit ?: if (label == "Calories") "cal" else "g") })
+internal fun FoodLogMacros(values: List<Pair<String, NutrientAmount?>>, caloriesTestTag: String? = null) {
+    MacroGrid(values.map { (label, amount) -> MacroValue(label, amount?.value?.let(::formatMetricNumber) ?: "—", amount?.unit ?: if (label == "Calories") "cal" else "g", caloriesTestTag.takeIf { label == "Calories" }) })
 }

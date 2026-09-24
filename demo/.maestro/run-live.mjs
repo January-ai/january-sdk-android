@@ -31,7 +31,7 @@ const flowsDir = path.join(maestroDir, 'flows');
 
 // Approximate API requests per flow (the demo's own requests plus the checks),
 // counted from what each flow does; minting client tokens included.
-const ESTIMATES = { 90: 13, 91: 7, 92: 10, 93: 38, 94: 55, 95: 28, 96: 18 };
+const ESTIMATES = { 90: 13, 91: 7, 92: 10, 93: 38, 94: 55, 95: 28, 96: 18, 97: 11 };
 const WEIGHT_FLOW = 96;
 
 const args = process.argv.slice(2);

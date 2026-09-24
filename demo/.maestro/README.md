@@ -107,10 +107,12 @@ Flows tagged `live` (`90-` onward) run the demo against the January API through
 your token relay and compare what it shows with what the API returns for the
 same end user: food logs, the day's totals, water and weight entries, and the
 water and weight charts. They create food logs and water entries and delete
-them again, and the last one logs two weights, which the API keeps, so use a
-test end user.
+them again, and `96-live-weight` logs two weights, which the API keeps, so use a
+test end user. `97-live-food-portion` logs one default portion of greek yogurt
+(food 70376084, a 6 oz serving) and checks that the log has the portion's
+calories, about 100 rather than 600, then deletes it even when a check fails.
 
-A full run makes about 170 API requests (the demo's own requests plus the
+A full run makes about 180 API requests (the demo's own requests plus the
 checks), so check your account's request allowance first. `run-live.mjs`
 prints the estimate per flow and can run part of the suite.
 
@@ -151,7 +153,7 @@ Other settings, each passed with `-e`:
 ## In CI
 
 `.github/workflows/quality.yml` runs `scripts/ui-coverage.mjs`, builds the APK
-once, then `ui-test-android` runs four shards (42 fixture and parity flows,
+once, then `ui-test-android` runs four shards (43 fixture and parity flows,
 dealt round-robin by `shard.mjs`) through
 `.github/scripts/android-ui-suite.sh`. Failed flows are
 rerun once and named in a workflow warning; each shard uploads its JUnit report

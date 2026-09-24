@@ -178,7 +178,9 @@ internal fun ServingSelectionSheet(
     var serving by remember(food.id) { mutableStateOf(servings.firstOrNull { it.isPrimary == true } ?: servings.first()) }
     var quantity by remember(food.id) { mutableStateOf(1.0) }
     var servingMenuOpen by remember { mutableStateOf(false) }
-    // Quantity counts servings, as the meal sends it: 1 is one "6 oz" serving, not 1 oz.
+    // Quantity counts servings: 1 is one "6 oz" serving, not 1 oz. The preview is the nutrition of
+    // the portion the meal sends; a food without servings scales its own values.
+    val nutrition = DemoSelectedFood(food, serving, quantity).portion?.nutrition
     val scale = quantity * serving.scalingFactor
 
     AppModalSheet(title = "Choose serving", onDismiss = onDismiss, expanded = false, testTag = "food-serving-sheet") {
@@ -234,10 +236,10 @@ internal fun ServingSelectionSheet(
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                ServingMetric("Calories", food.calories?.times(scale), "cal")
-                ServingMetric("Carbs", food.carbohydrates?.times(scale), "g")
-                ServingMetric("Protein", food.protein?.times(scale), "g")
-                ServingMetric("Fat", food.totalFat?.times(scale), "g")
+                ServingMetric("Calories", nutrition?.calories?.value ?: food.calories?.times(scale), "cal", valueTestTag = "food-serving-calories")
+                ServingMetric("Carbs", nutrition?.carbohydrates?.value ?: food.carbohydrates?.times(scale), "g")
+                ServingMetric("Protein", nutrition?.protein?.value ?: food.protein?.times(scale), "g")
+                ServingMetric("Fat", nutrition?.totalFat?.value ?: food.totalFat?.times(scale), "g")
             }
             DemoPrimaryButton(
                 text = "Add to meal",
@@ -266,11 +268,11 @@ internal fun DemoQuantityButton(symbol: String, primary: Boolean, onClick: () ->
 }
 
 @Composable
-internal fun ServingMetric(label: String, value: Double?, unit: String) {
+internal fun ServingMetric(label: String, value: Double?, unit: String, valueTestTag: String? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted, fontWeight = FontWeight.Bold)
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(value?.let(::formatMetricNumber) ?: "—", style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp), fontFamily = FontFamily.Monospace)
+            Text(value?.let(::formatMetricNumber) ?: "—", valueTestTag?.let { Modifier.testTag(it) } ?: Modifier, style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp), fontFamily = FontFamily.Monospace)
             Text(unit, style = MaterialTheme.typography.labelSmall, color = JanuaryColors.Muted)
         }
     }

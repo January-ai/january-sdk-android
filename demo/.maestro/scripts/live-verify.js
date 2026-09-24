@@ -199,6 +199,63 @@ function checkLogCount() {
   note('OK day totals on ' + day() + ': app "' + shown + '", API logs_count ' + count);
 }
 
+// The portion flow (97): what the serving picker showed for the default portion, and the log it made.
+// The log's calories may round differently from the search result's, so they match within 2.
+function portionCalories() {
+  if (typeof output.portionCalories !== 'number') fail('No portion remembered; run CHECK remember-portion first');
+  return output.portionCalories;
+}
+
+function rememberPortion() {
+  const shown = Number(String(maestro.copiedText).trim());
+  if (!(shown > 0)) fail('Not a calorie amount: "' + maestro.copiedText + '"');
+  output.portionCalories = shown;
+  note('Portion shows ' + shown + ' cal');
+}
+
+function rememberLogId() {
+  const match = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.exec(String(maestro.copiedText));
+  if (!match) fail('No log ID in "' + maestro.copiedText + '"');
+  output.portionLogId = match[0];
+  note('Log ' + output.portionLogId);
+}
+
+function checkShownCalories() {
+  const shown = Number(String(maestro.copiedText).trim());
+  if (!(Math.abs(shown - portionCalories()) <= 2)) {
+    fail('The log shows ' + maestro.copiedText + ' cal, but its portion showed ' + portionCalories() + ' cal');
+  }
+  note('OK the log shows ' + shown + ' cal; its portion showed ' + portionCalories() + ' cal');
+}
+
+function checkPortionLog() {
+  const foodId = typeof FOOD_ID === 'undefined' ? '70376084' : String(FOOD_ID);
+  if (!output.portionLogId) fail('No log remembered; run CHECK remember-log-id first');
+  const log = get('/v1.2/food-logs/' + output.portionLogId);
+  const food = (log.foods || [])[0];
+  if (!food || log.foods.length !== 1) fail('Expected one food in log ' + output.portionLogId + ', found ' + (log.foods || []).length);
+  const serving = food.serving.quantity + ' ' + food.serving.unit;
+  if (String(food.food_id) !== foodId) fail('The log has food ' + food.food_id + ', not ' + foodId);
+  if (Number(food.quantity) !== 1) fail('The log has ' + food.quantity + ' servings of ' + serving + ', not 1');
+  const calories = food.nutrients && food.nutrients.calories ? food.nutrients.calories.value : NaN;
+  if (!(Math.abs(calories - portionCalories()) <= 2)) fail('The API logged ' + calories + ' kcal; the portion showed ' + portionCalories() + ' cal');
+  note('OK the API logged 1 serving of ' + serving + ' of food ' + foodId + ', ' + calories + ' kcal');
+}
+
+// Runs from onFlowComplete, so the log is deleted whether or not the flow passed.
+function deletePortionLog() {
+  if (!output.portionLogId) {
+    note('No portion log to delete');
+    return;
+  }
+  const path = '/v1.2/food-logs/' + output.portionLogId;
+  const response = http.delete(api + path, { headers: { Authorization: 'Bearer ' + bearer() } });
+  stopIfRateLimited(response, 'DELETE ' + path);
+  note('DELETE ' + path + ' -> ' + response.status);
+  if (!response.ok && response.status !== 404) fail('DELETE ' + path + ' answered HTTP ' + response.status);
+  output.portionLogId = null;
+}
+
 function monthKey(date) {
   return date.slice(0, 7);
 }
@@ -276,5 +333,10 @@ switch (check) {
   case 'log-count': checkLogCount(); break;
   case 'water-chart': checkWaterChart(); break;
   case 'weight-chart': checkWeightChart(); break;
+  case 'remember-portion': rememberPortion(); break;
+  case 'remember-log-id': rememberLogId(); break;
+  case 'shown-calories': checkShownCalories(); break;
+  case 'portion-log': checkPortionLog(); break;
+  case 'delete-portion-log': deletePortionLog(); break;
   default: fail('Unknown CHECK ' + check);
 }

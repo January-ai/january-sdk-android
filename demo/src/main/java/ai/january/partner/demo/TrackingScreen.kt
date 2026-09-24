@@ -619,7 +619,7 @@ private fun DayTotalsCard(summary: FoodLogSummary?, error: Throwable?, retry: ()
                 )
             }
             val nutrients = bucket?.nutrients
-            FoodLogMacros(listOf("Calories" to nutrients?.calories, "Protein" to nutrients?.protein, "Carbs" to nutrients?.carbohydrates, "Fat" to nutrients?.totalFat))
+            FoodLogMacros(listOf("Calories" to nutrients?.calories, "Protein" to nutrients?.protein, "Carbs" to nutrients?.carbohydrates, "Fat" to nutrients?.totalFat), caloriesTestTag = "food-logs-totals-calories")
         }
     }
 }
