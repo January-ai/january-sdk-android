@@ -1,6 +1,8 @@
 # Example app
 
-The `demo` module is a Jetpack Compose application covering autocomplete,
+The `demo` module of the
+[January Android SDK repository](https://github.com/January-ai/january-sdk-android)
+is a Jetpack Compose application covering autocomplete,
 hydrated food servings, photo and barcode scanning, restaurants, food logs,
 a per-day tracking view (food logs with totals, water, and weight), glucose
 prediction, user context, and imperial/metric inputs.
@@ -41,7 +43,7 @@ dashboard before starting it. The key stays in the relay's `.env` file and
 never enters the Android app.
 
 For a hosted development relay, follow the relay's
-[Vercel guide](https://github.com/January-ai/january-token-relay#deploy),
+[Vercel guide](https://github.com/January-ai/january-token-relay#optional-deploy-to-vercel),
 then set `january.partnerTokenUrl` to its HTTPS token URL and
 `january.partnerSessionToken` to its `RELAY_TOKEN`. This is for development and
 testing only; production must use your authenticated backend.
@@ -59,7 +61,7 @@ demo should fail clearly instead of selecting a hidden URL.
 
 ## Optional debug-only shortcut
 
-For the absolute fastest local test, omit the token endpoint values and set
+For the quickest local test, omit the token endpoint values and set
 `january.apiKey=sk-your-server-api-key` in `local.properties`. The demo accepts
 it only in Debug builds and displays a warning. Never commit the key, share the
 APK, or distribute the build; switch back to client tokens afterward.

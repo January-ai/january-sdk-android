@@ -44,7 +44,7 @@ macro conveniences, glycemic values, photo URL, and `servings`.
 `ServingOption` fields are `id: ServingId`, `quantity`, `unit`, `scalingFactor`,
 optional `weightGrams`, and `isPrimary`.
 
-Alternatives returns `alternatives: List<FoodAlternative>`. Natural-language
+Alternatives returns `alternatives: List<AlternativeFood>`. Natural-language
 meal descriptions are handled by `foodAnalysis.analyzeDescription`.
 
 ## Portion helper

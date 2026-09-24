@@ -1,9 +1,9 @@
 # Compatibility and permissions
 
-| Requirement | Current preview |
+| Requirement | Value |
 | --- | --- |
-| Minimum Android | API 24 (apps with `minSdk` below 26 must enable core library desugaring; see Installation) |
-| Compile SDK used by source | 36 |
+| Minimum Android | API 24; every consuming app must enable core library desugaring (`desugar_jdk_libs` 2.1.5 or later); see [Installation](../getting-started/installation.md) |
+| Minimum compile SDK | 36 |
 | Gradle | 9.5.1 |
 | Android Gradle Plugin | 9.2.1 |
 | Java source/target | 17 |

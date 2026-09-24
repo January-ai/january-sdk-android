@@ -6,7 +6,8 @@ other directly identifying value when an opaque internal account ID is
 available.
 
 Create one lightweight scoped client after authentication and reuse it across
-Foods, Restaurants, Photo Scanning, Food Logs, and Glucose:
+Foods, Restaurants, Photo Scanning, Food Logs, Water Logs, Weight Logs, and
+Glucose:
 
 ```kotlin
 import ai.january.partner.PartnerUserId
@@ -19,8 +20,9 @@ val user = january.forUser(
 val foods = user.foods.search(SearchFoodsRequest(query = "banana"))
 ```
 
-`timezone` is an optional IANA identifier. It controls calendar-date boundaries
-for Food Logs and is forwarded to Glucose. Create a new scoped client after
+`timezone` is an optional IANA identifier. It sets the calendar days for
+food-log lists and summaries and water and weight lists, and is forwarded to
+Glucose. Without a timezone the SDK uses UTC. Create a new scoped client after
 sign-in, sign-out, account switching, or timezone changes. The SDK does not
 persist identity.
 

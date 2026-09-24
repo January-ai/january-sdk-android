@@ -57,6 +57,9 @@ GlucosePredictionProfile(
 )
 ```
 
+`age` is in whole years; a fractional value throws `JanuaryException` with
+`ErrorCategory.VALIDATION`.
+
 * `Sex`: `MALE`, `FEMALE`
 * `HeightUnit`: `INCHES`, `CENTIMETERS`
 * `WeightUnit`: `POUNDS`, `KILOGRAMS`
@@ -69,8 +72,9 @@ inches/centimeters and pounds/kilograms, then create typed values.
 
 ## Errors
 
-Network operations throw `JanuaryException(category, message, httpStatus,
-cause)`. `ErrorCategory` cases are `VALIDATION`, `AUTHENTICATION`,
+Network operations throw `JanuaryException` with `category`, `message`,
+`httpStatus`, `cause`, and, when the API returned them, its stable error `code`
+and `requestId`. `ErrorCategory` cases are `VALIDATION`, `AUTHENTICATION`,
 `AUTHORIZATION`, `NOT_FOUND`, `RATE_LIMITED`, `TIMEOUT`, `TRANSPORT`, `DECODING`,
 and `SERVER`. Local argument APIs may throw `IllegalArgumentException`,
 `FoodPortionException`, date parsing exceptions, or `NoBarcodeMatchException`.

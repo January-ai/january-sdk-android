@@ -79,8 +79,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
         // java.time is used throughout the SDK; desugaring makes it available below API 26.
-        // Consuming apps with minSdk < 26 must enable core library desugaring as well; the
-        // AAR metadata makes their build fail with a clear message if they do not.
+        // The AAR metadata then requires every consuming app to enable core library
+        // desugaring as well, whatever its minSdk; their build fails with a clear message
+        // if they do not.
         isCoreLibraryDesugaringEnabled = true
     }
 

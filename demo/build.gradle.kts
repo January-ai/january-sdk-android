@@ -71,7 +71,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-        // Required by the SDK below API 26 (java.time); every consuming app does the same.
+        // Required by the SDK (it uses java.time) in every consuming app, at any minSdk.
         isCoreLibraryDesugaringEnabled = true
     }
 }

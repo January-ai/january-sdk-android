@@ -11,6 +11,11 @@ val user = client.forUser(
 )
 ```
 
+Client tokens need the `water_logs:read`, `water_logs:write`,
+`weight_logs:read`, and `weight_logs:write` scopes for these operations; the
+[January Token Relay](https://github.com/January-ai/january-token-relay)
+requests them by default.
+
 ## Water
 
 Log one amount at a time, in fluid ounces (1–811.5), milliliters (30–24,000),
@@ -23,17 +28,21 @@ user.waterLogs.delete(glass.id)
 ```
 
 `consumedAt` defaults to now; pass an ISO-8601 offset date-time to backdate an
-entry. Its calendar day, in the scoped timezone, is the one the daily cap counts
-it against: an end user's total is capped at 24 L (about 811 fl oz) per day, and
-a log that would exceed it fails with `ErrorCategory.VALIDATION` and the error
-code `daily_water_limit_exceeded`.
+entry. The daily cap counts the entry against the day of `consumedAt`: an end
+user's total is capped at 24 L (about 811 fl oz) per day, and a log that would
+exceed it fails with `ErrorCategory.VALIDATION` and the error code
+`daily_water_limit_exceeded`.
+
+Creating a water log is not idempotent: after a timed-out create, check the
+day's total before retrying, since a retry records the water twice and counts
+twice toward the cap.
 
 Browse totals rather than individual entries. The list returns one total per
 local calendar day that has water logged, oldest first, in the unit you ask for:
 
 ```kotlin
 val days = user.waterLogs.list("2026-09-01", "2026-09-30", VolumeUnit.ML)
-days.items.forEach { day -> println("${day.date}: ${day.total.value} ${day.total.unit}") }
+days.items.forEach { day -> println("${day.date}: ${day.total.value} ${day.total.unit.value}") }
 ```
 
 ## Weight

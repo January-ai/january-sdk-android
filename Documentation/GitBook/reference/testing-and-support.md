@@ -14,10 +14,6 @@ For camera and Android-runtime coverage, connect an emulator or device and run:
 ./gradlew :demo:connectedDebugAndroidTest
 ```
 
-The demo app also has an end-to-end suite of Maestro flows that exercise every
-screen against a local fixture server; see `demo/.maestro/README.md` in the
-repository for how to run it.
-
 ## Verify an integration
 
 Test at least these partner-controlled conditions before shipping:
@@ -33,14 +29,12 @@ Test at least these partner-controlled conditions before shipping:
 
 ## Versioning and updates
 
-Releases are published to Maven Central as
-`ai.january:january-sdk-android:<version>` when the matching `v<version>` tag is
-pushed; the repository's GitHub Releases page lists the versions that exist. Pin
-an exact released version, review the changelog and public API diff, rerun the
-checks above, and update the pin deliberately.
+Released versions are listed on Maven Central and in the
+[changelog](changelog.md). Pin an exact released version, review the changelog
+and public API diff, rerun the checks above, and update the pin deliberately.
 
 ## Support report
 
-Include the pinned commit, Android/AGP/Java versions, failing operation,
+Include the SDK version, Android/AGP/Java versions, failing operation,
 `JanuaryException.category`, HTTP status, and reproduction steps. Never include
 tokens, server-side credentials, meal images, nutrition records, or health profiles.

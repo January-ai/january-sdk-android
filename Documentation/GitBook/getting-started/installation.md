@@ -37,15 +37,16 @@ dependencyResolutionManagement {
 dependencies {
     implementation("ai.january:january-sdk-android:0.3.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
 }
 ```
 
-### Apps with `minSdk` below 26
+### Enable core library desugaring
 
-The SDK supports API 24 and uses `java.time`, which Android added in API 26.
-If your `minSdk` is 24 or 25, enable core library desugaring so those classes
-are available on older devices:
+The SDK supports API 24 and uses `java.time`. Its AAR metadata requires every
+app that depends on it to enable core library desugaring with
+`desugar_jdk_libs` 2.1.5 or later, whatever the app's `minSdk`. Without it, the
+build fails with `Dependency 'ai.january:january-sdk-android:0.3.1' requires
+core library desugaring to be enabled`.
 
 ```kotlin
 // app/build.gradle.kts
@@ -60,13 +61,10 @@ dependencies {
 }
 ```
 
-The SDK's AAR metadata declares this requirement, so a build with `minSdk`
-below 26 and no desugaring fails with a clear Gradle error rather than crashing
-on API 24 and 25 devices. Apps with `minSdk` 26 or higher need no change.
+Your app must also compile against SDK 36 or later.
 
 Pin an exact SDK version in production builds. Coroutines are used by the
-complete token-provider example, and Lifecycle supplies `viewModelScope` in the
-first-request example.
+complete token-provider example and the first-request example.
 
 ## 3. Verify resolution
 
