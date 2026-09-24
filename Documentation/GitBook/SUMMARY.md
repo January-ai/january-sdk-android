@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Android SDK](README.md)
+* [Overview](README.md)
 
 ## Getting started
 
@@ -12,6 +12,7 @@
 
 ## Core concepts
 
+* [Client lifecycle](concepts/client-lifecycle.md)
 * [User identity and timezone](concepts/user-context.md)
 * [Food discovery and servings](concepts/food-lifecycle.md)
 
@@ -19,7 +20,7 @@
 
 * [Foods](guides/foods.md)
 * [Restaurants](guides/restaurants.md)
-* [Photo and barcode scanning](guides/photo-scanning.md)
+* [Food analysis](guides/photo-scanning.md)
 * [Voice capture](guides/voice-capture.md)
 * [Food logs](guides/food-logs.md)
 * [Water and weight logs](guides/water-and-weight-logs.md)
@@ -27,10 +28,10 @@
 
 ## Reference
 
-* [Client and authentication API](reference/client-and-resources.md)
+* [Client and resources](reference/client-and-resources.md)
 * [Foods API](reference/foods-api.md)
 * [Restaurants and food analysis API](reference/discovery-and-scanning-api.md)
-* [Food, Water, and Weight Logs and Glucose API](reference/user-resources-api.md)
+* [Logs and glucose API](reference/user-resources-api.md)
 * [Models and enums](reference/models-and-enums.md)
 * [Retries and token lifecycle](reference/retries-and-lifecycle.md)
 * [Error handling](reference/error-handling.md)

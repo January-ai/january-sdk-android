@@ -2,37 +2,61 @@
 
 ## Identifiers and context
 
-`PartnerUserId(String)` rejects blank values. `FoodId(String)` and
-`ServingId(String)` are typed value classes; `FoodId(Long)` and `ServingId(Long)`
-still build one from a number. `PartnerUserContext` contains a required
-`endUserId` and optional IANA `timezone`.
+`PartnerUserId(String)` rejects a blank value. `FoodId(String)` and
+`ServingId(String)` are value classes; `.value` returns the string, and
+`FoodId(Long)` and `ServingId(Long)` build one from a number.
+`PartnerUserContext` has a required `endUserId` and an optional IANA
+`timezone`.
 
-## Food enums
+## Foods
 
-* `FoodCategory`: `GENERIC`, `BRANDED`, `RECIPE`; `GENERAL` remains as a
-  deprecated alias of `GENERIC`
-* `AutocompleteFoodCategory`: `GENERIC`, `BRANDED`; `GENERAL` remains as a
-  deprecated alias of `GENERIC`
+* `FoodCategory`: `GENERIC`, `BRANDED`, `RECIPE` (`GENERAL` is a deprecated
+  alias of `GENERIC`)
+* `AutocompleteFoodCategory`: `GENERIC`, `BRANDED` (`GENERAL` is a deprecated
+  alias of `GENERIC`)
 * `DietPreference`: `VEGETARIAN`, `VEGAN`, `KETO`, `PALEO`, `PESCATARIAN`,
   `LOW_CARBOHYDRATE`, `HIGH_PROTEIN`, `KOSHER`, `HALAL`
-* `DietRestriction`: gluten, lactose, yeast, tree nuts, peanuts, dairy, eggs,
-  sulfites, soy, wheat, shellfish, fish, mushrooms, sesame, MSG, caffeine, and
-  FODMAP enum cases.
+* `DietRestriction`: `GLUTEN`, `LACTOSE`, `YEAST`, `TREE_NUTS`, `PEANUTS`,
+  `DAIRY`, `EGGS`, `SULFITES`, `SOY`, `WHEAT`, `SHELLFISH`, `FISH`,
+  `MUSHROOMS`, `SESAME`, `MONOSODIUM_GLUTAMATE`, `CAFFEINE`, `FODMAPS`
 
-`NutritionFacts` contains optional `NutrientAmount(value, unit)` values for
-calories, protein, carbohydrates, net carbohydrates, fats, fiber, sugars,
-cholesterol, calcium, iron, potassium, sodium, and vitamin D.
+`NutritionFacts` has optional `NutrientAmount(value, unit)` fields: `calories`,
+`protein`, `carbohydrates`, `netCarbohydrates`, `totalFat`, `transFat`,
+`saturatedFat`, `fiber`, `totalSugars`, `addedSugars`, `cholesterol`,
+`calcium`, `iron`, `potassium`, `sodium`, and `vitaminD`.
+`CompleteScanNutritionFacts`, used by food analysis and alternatives, has
+`calories`, `protein`, `carbohydrates`, `netCarbohydrates`, `totalFat`,
+`saturatedFat`, `fiber`, `totalSugars`, `addedSugars`, and `sodium`.
 
-`FoodSelection(id, serving)` uses `ServingSelection(id, quantity)` and is the
-input accepted by Food Logs and Glucose.
+`FoodPortion` has `foodId`, `serving` (the `ServingOption`), `quantity`,
+`nutrition` (scaled `NutritionFacts`), `totalWeightGrams`, `glycemicIndex`,
+`glycemicLoad` (scaled), and `selection`.
+
+`FoodSelection(id: String, serving: ServingSelection(id: String, quantity: Double))`
+is what `foodLogs.create`, `foodLogs.update`, and `glucose.predict` take.
+
+`ServingSummary(id, quantity, unit, weightGrams)` is the catalog serving on a
+detected or alternative food; `quantity` is the size of one serving, and
+`weightGrams` is its weight when the catalog knows it.
+
+* `AnalysisEffort`: `NONE`, `XHIGH`
+
+## Food logs
+
+`FoodLog` has `id` (nullable; a log without one can't be fetched, updated, or
+deleted), `foods: List<LoggedFood>`, `timestampUtc` (UTC), and optional `name`.
+
+`LoggedFood` has `id` (the food ID), `name`, `brandName`, `imageUrl`,
+`glycemicIndex`, `glycemicLoad`, `nutrients` (already scaled to the amount
+eaten), `consumedServing`, and `servingDetails`:
+
+* `ConsumedServing(id, quantity)`: the serving and how many of it were eaten.
+* `ServingDetails(id, quantity, unit, weightGrams)`: that serving's definition.
+  The amount eaten is `consumedServing.quantity × servingDetails.quantity`, in
+  `servingDetails.unit`.
 
 * `FoodLogSummaryGrouping`: `DAY`, `WEEK`
 * `WeekStart`: `MONDAY`, `SUNDAY`
-* `AnalysisEffort`: `NONE`, `XHIGH`
-
-`ServingSummary(id, quantity, unit, weightGrams)` is the catalog serving
-attached to a detected or alternative food; `weightGrams` is the weight of one
-serving when the catalog knows it.
 
 ## Water and weight logs
 
@@ -40,11 +64,11 @@ serving when the catalog knows it.
 
 `WaterAmount(value, unit: VolumeUnit)` is the input to a water log and the
 amount stored on a `WaterLog`; `Volume(value, unit)` is a daily total in the
-requested unit. Weight logs reuse the glucose profile's `Weight(value, unit:
-WeightUnit)`. A unit this SDK version does not know is reported as
-`ErrorCategory.DECODING`.
+requested unit. Weight logs use `Weight(value, unit: WeightUnit)` from the
+`ai.january.partner.glucose` package. A unit this SDK version doesn't know is
+reported as `ErrorCategory.DECODING`.
 
-## Glucose profile
+## Glucose
 
 ```kotlin
 GlucosePredictionProfile(
@@ -65,21 +89,18 @@ GlucosePredictionProfile(
 * `WeightUnit`: `POUNDS`, `KILOGRAMS`
 * `ActivityLevel`: `SEDENTARY`, `LIGHTLY_ACTIVE`, `MODERATELY_ACTIVE`, `VERY_ACTIVE`
 * `MedicalCondition`: `TYPE_2_DIABETES`, `PREDIABETES`
+* `GlucoseImpact`: `LOW`, `MEDIUM`, `HIGH`. It's a value class, so a grade
+  this SDK version doesn't know keeps its string in `value`.
 
-The convenience profile constructor taking raw `height` and `weight` interprets
-them as inches and pounds. User interfaces should explicitly support feet plus
-inches/centimeters and pounds/kilograms, then create typed values.
+The older profile constructor that takes raw `height` and `weight` numbers reads
+them as inches and pounds. Let users enter feet and inches or centimeters, and
+pounds or kilograms, then build typed values.
+
+`GlucosePrediction` has `prediction: List<GlucosePredictionPoint(minutes, value)>`,
+`impact: GlucoseImpact?`, and `chart: GlucoseChart(min, max)`
+([Glucose prediction](../guides/glucose-prediction.md)).
 
 ## Errors
 
-Network operations throw `JanuaryException` with `category`, `message`,
-`httpStatus`, `cause`, and, when the API returned them, its stable error `code`
-and `requestId`. `ErrorCategory` cases are `VALIDATION`, `AUTHENTICATION`,
-`AUTHORIZATION`, `NOT_FOUND`, `RATE_LIMITED`, `TIMEOUT`, `TRANSPORT`, `DECODING`,
-and `SERVER`. Local argument APIs may throw `IllegalArgumentException`,
-`FoodPortionException`, date parsing exceptions, or `NoBarcodeMatchException`.
-Cancelling the coroutine that called the SDK propagates its
-`CancellationException` unchanged. A `CancellationException` thrown by the
-token provider itself is reported as `JanuaryException` with category
-`AUTHENTICATION`, because the provider runs inside the HTTP pipeline where
-cancellation cannot propagate.
+`JanuaryException`, `ErrorCategory`, and the local exceptions are on
+[Error handling](error-handling.md).

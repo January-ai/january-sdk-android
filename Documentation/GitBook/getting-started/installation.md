@@ -1,11 +1,8 @@
 # Installation
 
-## Maven Central
-
-The Android SDK is published to Maven Central as
-`ai.january:january-sdk-android`. You do not need to clone this repository or
-configure a Gradle composite build. The verified toolchain is Gradle 9.5.1,
-Android Gradle Plugin 9.2.1, compile SDK 36, Java 17, and minimum Android API 24.
+The SDK is published to Maven Central as `ai.january:january-sdk-android`.
+Requirements and the verified toolchain are in
+[Compatibility and permissions](../reference/compatibility.md).
 
 ## 1. Enable Maven Central
 
@@ -40,7 +37,13 @@ dependencies {
 }
 ```
 
-### Enable core library desugaring
+Pin an exact SDK version. The SDK's API uses coroutines (`suspend` functions
+and `StateFlow`), so your app needs them too. The SDK also brings in Jetpack
+Compose, CameraX, ML Kit barcode scanning, Retrofit, and Moshi, and Gradle
+raises your app's versions of these to at least the
+[SDK's](../reference/compatibility.md#libraries).
+
+## 3. Enable core library desugaring
 
 The SDK supports API 24 and uses `java.time`. Its AAR metadata requires every
 app that depends on it to enable core library desugaring with
@@ -61,12 +64,19 @@ dependencies {
 }
 ```
 
-Your app must also compile against SDK 36 or later.
+## 4. Compile against SDK 36
 
-Pin an exact SDK version in production builds. Coroutines are used by the
-complete token-provider example and the first-request example.
+The SDK's AAR metadata also requires compile SDK 36 or later. `minSdk` can
+stay as low as 24.
 
-## 3. Verify resolution
+```kotlin
+// app/build.gradle.kts
+android {
+    compileSdk = 36
+}
+```
+
+## 5. Verify resolution
 
 ```bash
 ./gradlew :app:dependencyInsight \
@@ -77,3 +87,5 @@ complete token-provider example and the first-request example.
 
 The dependency report should show `ai.january:january-sdk-android:0.3.1` resolved
 from Maven Central.
+
+Next: [Backend token endpoint](backend-token-endpoint.md)

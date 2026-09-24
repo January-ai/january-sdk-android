@@ -28,7 +28,7 @@
 
 ## 0.2.0 - 2026-09-16
 
-* Breaking: `DetectedFood` exposes `serving` and `quantity` instead of `servings`, matching the current Partner API; `0.1.x` fails to decode photo scans
+* Breaking: `DetectedFood` exposes `serving` and `quantity` instead of `servings`, matching the current January API; `0.1.x` fails to decode photo scans
 * Food-log summaries per day or week with `foodLogs.getSummary`
 * Optional reasoning-based photo analysis with `ScanFoodPhotoRequest.reasoningEffort`
 * `SearchFoodsRequest` gains `offset` for paging and accepts `limit` up to 50
@@ -46,10 +46,11 @@
 * Coroutine-first Android SDK for API 26+, published to Maven Central
 * Provider-managed short-lived tokens with single-flight refresh
 * Nine-attempt bounded exponential backoff with jitter
-* User-scoped Foods, Restaurants, Photo Scanning, Food Logs, and Glucose clients
-* Food autocomplete, full hydration, and local portion calculations
+* User-scoped foods, restaurants, photo scanning, food log, and glucose clients
+* Food autocomplete, full food details, and local portion calculations
 * Photo preparation and native photo/barcode scanner
 * Reusable microphone speech recognition with live RMS, partial text, and stable lifecycle state
 * Typed imperial and metric glucose-profile measurements
 * Shared, white-label-ready Jetpack Compose demo components
-* Paginated restaurant-menu lookup by restaurant ID
+* Production restaurant-menu search and paginated lookup by restaurant ID
+* Single food log retrieval and no-content deletion aligned with API `v1.2`

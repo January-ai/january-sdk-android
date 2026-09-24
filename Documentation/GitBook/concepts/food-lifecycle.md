@@ -13,10 +13,10 @@ autocomplete ── selection ──▶ search ── selected result ──▶ 
 ```
 
 * `autocomplete` returns text-entry suggestions.
-* Selecting a suggestion should populate the search box and run `search`.
-* `search` returns discovery rows.
-* Before showing servings, call `get` with the selected food ID.
-* Build a `FoodPortion` from the hydrated food to validate the serving and scale
+* Selecting a suggestion should fill the search box and run `search`.
+* `search` returns discovery rows, which may not list every serving.
+* Before showing servings, fetch the full food with `get`.
+* Build a `FoodPortion` from the full food to validate the serving and scale
   nutrition locally.
 
 ```kotlin
@@ -24,17 +24,16 @@ import ai.january.partner.foods.GetFoodRequest
 import ai.january.partner.foods.SearchFoodsRequest
 import ai.january.partner.foods.portion
 
-val results = january.foods.search(SearchFoodsRequest(query = "banana"))
-val selected = results.items.first()
-val food = january.foods.get(GetFoodRequest(foodId = selected.id))
+val results = user.foods.search(SearchFoodsRequest(query = "banana"))
+val food = user.foods.get(GetFoodRequest(foodId = results.items.first().id))
 
-val serving = food.servings.firstOrNull { it.isPrimary == true }
-    ?: food.servings.first()
-val portion = food.portion(servingId = serving.id, quantity = 1.5)
+// Without a serving ID, portion uses the primary serving (or the first one).
+val portion = food.portion(quantity = 1.5)
 
 println(portion.nutrition.calories?.value)
-val apiSelection = portion.selection
+val selection = portion.selection
 ```
 
-`portion.selection` is accepted by Food Logs and Glucose requests. Handle an
-empty serving list and `FoodPortionException` as user-visible data errors.
+`portion.selection` is what `foodLogs.create` and `glucose.predict` take. Treat
+an empty serving list or a `FoodPortionException` as a data error to show the
+user ([Portion helper](../reference/foods-api.md#portion-helper)).

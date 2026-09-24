@@ -1,47 +1,36 @@
 # Backend token endpoint
 
-Every distributed Android app needs a partner-owned backend endpoint that
-returns a short-lived January client token. January's private server-side
-token-issuance integration stays outside the app and public SDK.
+The app gets client tokens from an endpoint on your backend, which mints each
+one with your API key through `POST https://partners.january.ai/v1.2/auth/client-tokens`.
+The endpoint's contract is the same for every SDK:
+[Your token endpoint](https://docs.january.ai/docs/authentication#your-token-endpoint).
 
-## Stable app-facing contract
+{% hint style="info" %}
+No backend yet? Run the [token relay](https://docs.january.ai/docs/authentication#develop-with-the-token-relay)
+and continue to [Authentication](authentication.md). Come back before launch.
+{% endhint %}
 
-Your endpoint may use any host, path, HTTP method, and application-authentication
-scheme. Its successful JSON response must be one of:
+## Response format
 
-```json
-{ "token": "ct-…", "expiresIn": 1800 }
-```
+The Android SDK reads January's response unchanged, so return it as is:
 
 ```json
 { "token": "ct-…", "expires_in": 1800 }
 ```
 
-The SDK accepts either expiry spelling. The lifetime must be greater than 60
-seconds because the SDK refreshes one minute early.
+`JanuaryClientToken.fromJson` reads `token` and `expires_in` (`expiresIn` is
+also accepted) and ignores other fields. The SDK refreshes a token 60 seconds
+before it expires and rejects one with 60 seconds or less left, so return a
+freshly minted token rather than one cached on your server.
 
-## Server responsibilities
+## Scopes
 
-1. Authenticate the signed-in partner user.
-2. Determine the stable end-user ID on the server; do not trust an arbitrary ID
-   from an unauthenticated request.
-3. Complete January's private server-side exchange for a token bound to that user.
-4. Return only `token` and its lifetime to the app.
-5. Apply normal server controls: TLS, authorization, rate limiting, audit events,
-   and secret rotation.
+The app uses one token for every resource, so mint it with the scopes for every
+feature the app uses ([scope table](https://docs.january.ai/rest-api/authentication#client-token-scopes)).
+A call outside those scopes fails with `403 scope_insufficient`, which the SDK
+reports as `ErrorCategory.AUTHORIZATION`.
 
-Do not log server-side credentials or returned client tokens. Do not put
-token-issuance credentials in Gradle properties, `BuildConfig`, app resources,
-remote configuration, or the APK.
+Minting returns `403 forbidden` until **Enable client tokens** is switched on in
+the [Developer Dashboard](https://dashboard.january.ai/dashboard/client-tokens).
 
-## Local proof flow
-
-During onboarding, configure the URL of your token endpoint only in the demo's
-untracked `local.properties`; the emulator reaches a service on the host machine
-through `10.0.2.2`:
-
-```properties
-january.partnerTokenUrl=http://10.0.2.2:8787/api/january/client-token
-```
-
-The public SDK always calls January production and exposes no environment switch.
+Next: [Authentication](authentication.md)
