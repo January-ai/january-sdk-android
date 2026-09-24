@@ -9,7 +9,7 @@
 | Core library desugaring | Required in every app that uses the SDK, whatever its `minSdk`, with `desugar_jdk_libs` 2.1.5 or later ([Installation](../getting-started/installation.md)) |
 | Java | 17 source and target |
 | Kotlin | 2.1 or later. AGP 9 compiles Kotlin itself; with AGP 8, apply the `org.jetbrains.kotlin.android` plugin. |
-| Distribution | Maven Central, `ai.january:january-sdk-android:0.3.1` |
+| Distribution | Maven Central, `ai.january:january-sdk-android:0.3.2` |
 
 The SDK is verified with Gradle 9.5.1 and Android Gradle Plugin 9.2.1.
 

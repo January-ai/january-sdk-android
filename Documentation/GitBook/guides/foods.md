@@ -24,11 +24,13 @@ import ai.january.partner.foods.portion
 
 val results = user.foods.search(SearchFoodsRequest("banana"))
 val food = user.foods.get(GetFoodRequest(results.items.first().id))
-val portion = food.portion(quantity = 1.5)
+val portion = food.portion() // One primary serving
 ```
 
 `portion` validates the serving and quantity and scales nutrients locally
-([Food discovery and servings](../concepts/food-lifecycle.md)).
+([Food discovery and servings](../concepts/food-lifecycle.md)). To use another
+amount, pass `quantity` in the serving's unit, not a number of servings
+([Quantity and servings](../concepts/food-lifecycle.md#quantity-and-servings)).
 
 Search returns up to `limit` results (1–50, default 10). To page, pass
 `offset`; a page shorter than `limit` is the last one. `totalCount` is the

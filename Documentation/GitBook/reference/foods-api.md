@@ -56,9 +56,11 @@ fun FoodSearchItem.portion(
 ): FoodPortion
 ```
 
-Without a serving ID, the primary or first serving is selected. Without a
-quantity, the serving's quantity is used. Quantity must be finite, positive, and
-at most 10,000. Failures throw `FoodPortionException` with a `reason` of type
-`FoodPortionError`: `NO_SERVINGS`, `SERVING_NOT_FOUND`, `INVALID_SERVING`, or
-`INVALID_QUANTITY`. [Models and enums](models-and-enums.md#foods) lists the
-`FoodPortion` fields.
+Without a serving ID, the primary or first serving is selected. `quantity` is an
+amount in the serving's unit, and without one the portion is one serving;
+`selection` sends the number of servings
+([Quantity and servings](../concepts/food-lifecycle.md#quantity-and-servings)).
+Quantity must be finite, positive, and at most 10,000. Failures throw
+`FoodPortionException` with a `reason` of type `FoodPortionError`:
+`NO_SERVINGS`, `SERVING_NOT_FOUND`, `INVALID_SERVING`, or `INVALID_QUANTITY`.
+[Models and enums](models-and-enums.md#foods) lists the `FoodPortion` fields.
