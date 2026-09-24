@@ -35,11 +35,12 @@ do {
 
     consume(page.items)
     offset += page.items.size
-} while (page.items.isNotEmpty() && offset < page.totalCount)
+} while (page.items.size == limit)
 ```
 
-An unknown restaurant returns `404`. An existing restaurant with no menu
-returns an empty `items` list.
+The response contains only `items`, with no `totalCount`; keep paging while a
+full page comes back. An empty page ends the menu, including for a restaurant
+with no menu on record. An unknown restaurant returns `404`.
 
-Queries contain 1–256 characters, radius is 1–17,000, limit is 1–100, and
-coordinates must be valid latitude and longitude values.
+Queries contain 1–256 characters, radius is 1–50,000 meters (8,000 by default),
+limit is 1–100, and coordinates must be valid latitude and longitude values.

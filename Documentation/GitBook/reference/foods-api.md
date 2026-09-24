@@ -27,7 +27,7 @@ suspend fun suggestAlternatives(
 | `SearchFoodsRequest` | `query: String`; `category: FoodCategory? = null`; `limit: Int = 10` (1–50); `endUserId: PartnerUserId? = null`; `offset: Int = 0` (last, so positional calls keep working) |
 | `GetFoodRequest` | `foodId: FoodId`; `endUserId: PartnerUserId? = null` |
 | `LookupFoodByBarcodeRequest` | `upc: String`; `endUserId: PartnerUserId? = null` |
-| `SuggestFoodAlternativesRequest` | `foodId: Long`; `dietRestrictions: List<DietRestriction> = emptyList()`; `dietPreferences: List<DietPreference> = emptyList()`; `endUserId: PartnerUserId? = null` |
+| `SuggestFoodAlternativesRequest` | `foodId: String` (a `Long` constructor remains); `dietRestrictions: List<DietRestriction> = emptyList()`; `dietPreferences: List<DietPreference> = emptyList()`; `endUserId: PartnerUserId? = null` |
 
 Autocomplete limits are 1–20 and its query may contain at most 64 characters.
 Search requires a nonblank 1–256-character query, a limit from 1–50, and an offset of 0 or more.

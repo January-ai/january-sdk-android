@@ -13,7 +13,7 @@ suspend fun searchMenuItems(
 ): SearchRestaurantMenuItemsResponse
 suspend fun getMenuItems(
     request: GetRestaurantMenuItemsRequest,
-): SearchRestaurantMenuItemsResponse
+): GetRestaurantMenuItemsResponse
 ```
 
 `SearchRestaurantsRequest` fields:
@@ -23,7 +23,7 @@ suspend fun getMenuItems(
 | `query` | `String`, required, nonblank, at most 256 characters |
 | `latitude` | `Double`, required, −90…90 |
 | `longitude` | `Double`, required, −180…180 |
-| `radius` | `Double = 8000.0`, range 1…17,000 |
+| `radius` | `Double = 8000.0`, in meters, range 1…50,000 |
 | `limit` | `Int = 10`, range 1…100 |
 | `endUserId` | `PartnerUserId? = null` |
 
@@ -33,10 +33,11 @@ metadata. Menu search returns `RestaurantMenuItem` values with restaurant name,
 optional nutrition/distance/photo data, and `servings`.
 
 `GetRestaurantMenuItemsRequest` accepts `restaurantId`, `limit` (default
-`100`, range 1–100), `offset` (default `0`), and optional `endUserId`. Advance
-the offset by the returned item count until it reaches `totalCount` or a page
-is empty. An unknown restaurant returns `404`; a restaurant without a menu
-returns an empty response.
+`100`, range 1–100), `offset` (default `0`), and optional `endUserId`.
+`GetRestaurantMenuItemsResponse` contains only `items: List<RestaurantMenuEntry>`,
+with no `totalCount`: advance the offset by the returned item count while a
+full page comes back. An empty page ends the menu, including for a restaurant
+with no menu on record. An unknown restaurant returns `404`.
 
 ## Food analysis
 
