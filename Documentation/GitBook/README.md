@@ -1,42 +1,50 @@
 # January SDK for Android
-
-Build food discovery, meal scanning, restaurant search, voice capture, logging
-for food, water, and weight, and glucose-prediction experiences in native Android
-apps with Kotlin coroutines and typed models.
+Add food search, food analysis, restaurant search, voice capture, food, water,
+and weight logging, and glucose prediction to a native Android app, with Kotlin
+coroutines and typed models.
 
 ## Start here
 
 1. [Install the SDK](getting-started/installation.md).
-2. Build an authenticated [backend token endpoint](getting-started/backend-token-endpoint.md).
-3. Implement `JanuaryTokenProvider` in the app.
+2. Add a [token endpoint](getting-started/backend-token-endpoint.md) to your
+   backend, or run the token relay while you build.
+3. Implement `JanuaryTokenProvider` in the app
+   ([Authentication](getting-started/authentication.md)).
 4. Run the [first food search](getting-started/quick-start.md).
-5. Follow the [food hydration and serving flow](concepts/food-lifecycle.md).
+5. Follow the [food discovery and serving flow](concepts/food-lifecycle.md).
 
 ## Security model
 
-Public SDK authentication uses client tokens only. The Android app calls your
-authenticated backend for a short-lived token and sends that token directly to
-January. The SDK never knows your token endpoint URL and never accepts a public
-base-URL override.
+The app gets a short-lived client token (`ct-…`) from your backend and sends it
+directly to January. Your API key (`sk-…`) stays on your backend. Never put it
+in an APK, whether in Gradle properties, `BuildConfig`, resources, or remote
+configuration.
 
 ```text
-Android app ── authenticated request ──▶ Partner backend
-                                            │
-                                            │ private token issuance
-                                            ▼
-                                       January token exchange
-                                            │
-Android app ◀──── { token, expiresIn } ─────┘
+Android app ── POST with the app session ──▶ Your backend
+                                                  │
+                                                  │ POST /v1.2/auth/client-tokens
+                                                  │ with your API key
+                                                  ▼
+                                             January API
+                                                  │
+Android app ◀── { token, expires_in } ────────────┘
      │
-     └──── Authorization: Bearer ct-… ──▶ January Partner API
+     └── Authorization: Bearer ct-… ──▶ January API
 ```
+
+The SDK always calls the production January API. It has no base-URL setting,
+and it never sees your token endpoint's URL; only your token provider does.
+[How authentication works](https://docs.january.ai/docs/authentication) walks through the flow.
+
+Never log tokens, API keys, meal images, nutrition data, or health profiles, and
+keep them out of analytics.
 
 ## Requirements
 
-* Android API 24+ with compile SDK 36, and core library desugaring (`desugar_jdk_libs` 2.1.5 or later) enabled in the app
-* Gradle 9.5.1 and Android Gradle Plugin 9.2.1 (verified toolchain)
-* Java 17
-* Kotlin coroutines
+Android API 24 or later, compile SDK 36, Java 17, and core library desugaring
+in every app that uses the SDK. [Compatibility and permissions](reference/compatibility.md)
+lists the verified toolchain and the permissions the SDK adds.
 
-The [example app](getting-started/example-app.md) demonstrates all public
-resources and the native camera scanner.
+The [example app](getting-started/example-app.md) uses every resource and the
+native food scanner.

@@ -1,51 +1,83 @@
 # Troubleshooting
 
-## Gradle cannot find `ai.january:january-sdk-android:0.3.1`
+## Gradle cannot find the SDK
 
 Confirm your `settings.gradle.kts` has `mavenCentral()` inside the
-`dependencyResolutionManagement { repositories { ... } }` block. Confirm your
-Gradle dependency declaration references
-`ai.january:january-sdk-android:0.3.1`, then run the `dependencyInsight` command
-from the [installation guide](../getting-started/installation.md).
+`dependencyResolutionManagement { repositories { ... } }` block and that the
+dependency names an exact released version, then run the `dependencyInsight`
+command from [Installation](../getting-started/installation.md).
+
+## The build requires core library desugaring
+
+`Dependency 'ai.january:january-sdk-android:…' requires core library desugaring
+to be enabled` means your app module hasn't turned on desugaring. Every app that
+uses the SDK needs it, whatever its `minSdk`
+([Installation](../getting-started/installation.md)).
+
+## Cleartext traffic is blocked
+
+Requests fail with `ErrorCategory.AUTHENTICATION` (with the sample provider,
+after about 50 seconds of token retries), and the exception's `cause` chain
+ends in `CLEARTEXT communication to 10.0.2.2 not permitted by network security
+policy`. Android
+blocks `http://` URLs such as the local token relay's. Allow cleartext in debug
+builds only, with the debug manifest from
+[First request](../getting-started/quick-start.md).
 
 ## Token provider fails
 
-Verify the app has an explicit token endpoint URL, an authenticated partner
-session, TLS outside local development, and a 2xx response containing a
-non-empty token plus `expiresIn` or `expires_in` greater than 60 seconds. The SDK
-has no default endpoint.
+Check that the app has a token endpoint URL and a valid app session, that the
+URL uses HTTPS outside local development, and that the endpoint returns a 2xx
+response with `token` and `expires_in` (or `expiresIn`) greater than 60
+seconds. The SDK has no default endpoint. The underlying failure is in the
+`JanuaryException`'s `cause`.
 
 ## Provider is called repeatedly
 
 The token may be inside the 60-second refresh window, the provider may be
-returning a near-expired token, or requests may receive `401 token_expired`.
-Concurrent refreshes normally share one call. Do not create a new
-`JanuaryPartnerClient` per request.
+returning a nearly expired token, or requests may be getting `401 token_expired`.
+Concurrent refreshes normally share one call. Create one `JanuaryPartnerClient`
+per signed-in account, not one per request
+([Client lifecycle](../concepts/client-lifecycle.md)).
+
+## Requests act as the previous account
+
+A new `forUser` scope doesn't change the account: the client keeps the token it
+cached for the previous one. Create a new `JanuaryPartnerClient` when the
+account changes ([Client lifecycle](../concepts/client-lifecycle.md)).
 
 ## Authentication is rejected
 
-Do not manually send `January-End-User-ID` or the legacy `x-end-user-id` header
-with a client token. Confirm the token was minted for the signed-in account and
-the public client is intended for the production API. Only `token_expired` is
-automatically refreshed and replayed.
+Confirm the token was minted for the signed-in account. The SDK removes
+`January-End-User-ID` from January requests; the header only matters on
+requests to your own token endpoint. Only `token_expired` is refreshed and
+replayed automatically.
+
+## `AUTHORIZATION` or `scope_insufficient`
+
+The token lacks the scope the operation needs. Mint it with the scopes for
+every feature the app uses ([Scopes](../getting-started/backend-token-endpoint.md#scopes)).
+`403 forbidden` when minting means **Enable client tokens** is off in the
+Developer Dashboard.
 
 ## Food picker has incomplete servings
 
-Call `foods.get` after selecting a search result. Autocomplete and search
-objects are discovery data and are not guaranteed to contain all servings.
+Call `foods.get` after the user selects a search result. Autocomplete and search
+results are discovery data and may not list every serving.
 
 ## Camera is blank or denied
 
-Inspect the merged manifest for `CAMERA`, test runtime permission, and use a
-device/emulator with a camera. `JanuaryFoodScanner` uses CameraX; it is not the
-system photo picker.
+Check the merged manifest for `CAMERA`, test the runtime permission, and use a
+device or emulator with a camera. `JanuaryFoodScanner` uses CameraX; it isn't
+the system photo picker.
+
+## Voice capture fails with `RECOGNIZER_UNAVAILABLE`
+
+The device has no speech recognition service. Many emulator images lack one;
+use a physical device or an emulator image with Google Play.
 
 ## Photo scan is too large or rotated
 
-Use `PhotoScanImage.dataUri` rather than original camera bytes.
+Use `PhotoScanImage.dataUri` rather than the original camera bytes.
 
-## Support diagnostics
-
-Provide the SDK version, Android/AGP/Java versions, operation, exception
-category, HTTP status, and minimal reproduction. Exclude keys, tokens, images,
-nutrition records, and health profiles.
+For anything else, send a [support report](testing-and-support.md#support-report).

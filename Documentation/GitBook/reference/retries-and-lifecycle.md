@@ -1,18 +1,24 @@
 # Retries and token lifecycle
 
-The provider-backed client handles credential lifecycle in memory:
+A client created with `withClientTokenProvider` manages its token in memory:
 
-* caches a usable token;
-* refreshes 60 seconds before expiry;
-* coalesces concurrent refreshes into one provider call;
-* retries provider exceptions with bounded exponential backoff;
-* preserves cancellation of the calling coroutine (a `CancellationException`
-  thrown by the provider itself is reported as `JanuaryException`);
-* refreshes and replays a January request once only for HTTP `401` with
-  `code: "token_expired"`.
+* It caches the token and refreshes it 60 seconds before it expires.
+* It rejects a token that is blank or has 60 seconds or less left
+  (`ErrorCategory.AUTHENTICATION`).
+* It combines concurrent refreshes into one provider call.
+* It retries the provider with bounded exponential backoff when the provider
+  throws `JanuaryTokenProviderException(retryable = true)`. Any other exception
+  fails at once.
+* On HTTP `401` with `code: "token_expired"`, it refreshes the token and
+  replays the request once.
 
-The default provider policy makes nine total attempts with ±20% jitter. Nominal
-delays are 1, 2, 4, 8, 8, 8, 8, and 8 seconds:
+The cache belongs to the client and is shared by all its `forUser` scopes
+([Client lifecycle](../concepts/client-lifecycle.md)).
+
+## Backoff
+
+The default policy makes nine attempts in total, with ±20% jitter. Nominal
+delays between attempts are 1, 2, 4, 8, 8, 8, 8, and 8 seconds:
 
 ```kotlin
 import ai.january.partner.JanuaryTokenRetryPolicy
@@ -27,13 +33,23 @@ val policy = JanuaryTokenRetryPolicy(
 )
 ```
 
-The policy applies only when the provider throws
-`JanuaryTokenProviderException(retryable = true)`. Ordinary exceptions stop
-immediately. Pass it as `tokenRetryPolicy` to `withClientTokenProvider`. Set
-`JanuaryTokenRetryPolicy.NONE` when an app-owned provider already applies its
-own retry policy.
+If your token endpoint keeps failing with retryable errors, the default policy
+spends about 47 seconds in backoff, plus each attempt's own timeout (up to
+20 seconds with the sample provider's timeouts), before the call fails. Pass a
+smaller policy as `tokenRetryPolicy` to `withClientTokenProvider` for
+interactive screens, or `JanuaryTokenRetryPolicy.NONE` when your provider
+already retries.
 
-The retry policy applies to fetching a credential, not to arbitrary January API
-requests. Other `401` responses, `403`, validation errors, rate limits, and
-server errors are surfaced immediately. Do not wrap the SDK in an unbounded
-retry loop.
+```kotlin
+import ai.january.partner.JanuaryPartnerClient
+import ai.january.partner.JanuaryTokenRetryPolicy
+
+val january = JanuaryPartnerClient.withClientTokenProvider(
+    provider = tokenProvider,
+    tokenRetryPolicy = JanuaryTokenRetryPolicy(maximumAttempts = 3),
+)
+```
+
+The policy covers fetching a token only. January API responses such as other
+`401`s, `403`, validation errors, rate limits, and server errors surface
+immediately ([Error handling](error-handling.md)).
