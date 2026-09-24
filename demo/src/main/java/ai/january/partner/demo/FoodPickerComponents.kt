@@ -178,7 +178,8 @@ internal fun ServingSelectionSheet(
     var serving by remember(food.id) { mutableStateOf(servings.firstOrNull { it.isPrimary == true } ?: servings.first()) }
     var quantity by remember(food.id) { mutableStateOf(1.0) }
     var servingMenuOpen by remember { mutableStateOf(false) }
-    val scale = quantity * serving.scalingFactor / serving.quantity.takeUnless { it == 0.0 }.orEmptyOne()
+    // Quantity counts servings, as the meal sends it: 1 is one "6 oz" serving, not 1 oz.
+    val scale = quantity * serving.scalingFactor
 
     AppModalSheet(title = "Choose serving", onDismiss = onDismiss, expanded = false, testTag = "food-serving-sheet") {
         Column(
@@ -247,8 +248,6 @@ internal fun ServingSelectionSheet(
         }
     }
 }
-
-internal fun Double?.orEmptyOne(): Double = this ?: 1.0
 
 @Composable
 internal fun DemoQuantityButton(symbol: String, primary: Boolean, onClick: () -> Unit) {

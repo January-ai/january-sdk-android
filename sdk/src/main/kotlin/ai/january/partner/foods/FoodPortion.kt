@@ -7,19 +7,35 @@ import ai.january.partner.models.NutrientAmount
 import ai.january.partner.models.NutritionFacts
 import ai.january.partner.models.ServingSelection
 
-/** A validated serving and quantity with locally calculated nutrition. */
+/**
+ * A validated serving and amount with locally calculated nutrition.
+ *
+ * [quantity] is an amount in the serving's unit; [selection] sends it to the API as a number of
+ * servings.
+ */
 public class FoodPortion private constructor(
     public val foodId: FoodId,
     public val serving: ServingOption,
+    /**
+     * The amount eaten in the serving's unit: 6 is one "6 oz" serving, and 150 is one and a half
+     * "100 g" servings. It defaults to the serving's own quantity, one serving.
+     */
     public val quantity: Double,
     public val nutrition: NutritionFacts,
     public val totalWeightGrams: Double?,
     public val glycemicIndex: Double?,
     public val glycemicLoad: Double?,
 ) {
-    /** The exact selection sent by food-log and glucose-prediction requests. */
+    /**
+     * The exact selection sent by food-log and glucose-prediction requests. Its quantity is the
+     * number of servings eaten, [quantity] divided by the serving's quantity: 12 oz of a "6 oz"
+     * serving is sent as 2.
+     */
     public val selection: FoodSelection
-        get() = FoodSelection(foodId.value, ServingSelection(serving.id.value, quantity))
+        get() = FoodSelection(
+            foodId.value,
+            ServingSelection(serving.id.value, quantity / checkNotNull(serving.quantity)),
+        )
 
     public companion object {
         @JvmStatic
@@ -72,6 +88,10 @@ public enum class FoodPortionError {
 public class FoodPortionException(public val reason: FoodPortionError) :
     IllegalArgumentException("Invalid food portion: ${reason.name.lowercase()}")
 
+/**
+ * A portion of this food. [quantity] is an amount in the serving's unit and defaults to one
+ * serving; [servingId] defaults to the primary serving.
+ */
 public fun FoodSearchItem.portion(
     servingId: ServingId? = null,
     quantity: Double? = null,
