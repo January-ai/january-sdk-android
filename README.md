@@ -92,7 +92,7 @@ demo. The first run takes about ten minutes.
     ```
 
 11. Open the installed app and search for `banana`. Terminal 1 prints
-    `minted=true status=200` the first time the app asks for a token.
+    `minted=true status=201` the first time the app asks for a token.
 
 For a physical device, start the relay with `HOST=0.0.0.0 ./start.sh`, use the
 Wi-Fi URL it prints for `january.partnerTokenUrl`, and set its generated relay
@@ -160,6 +160,7 @@ import ai.january.partner.JanuaryPartnerClient
 import ai.january.partner.JanuaryTokenProvider
 import ai.january.partner.PartnerUserId
 import ai.january.partner.foods.SearchFoodsRequest
+import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 
 val tokenProvider = JanuaryTokenProvider {
@@ -170,7 +171,7 @@ val tokenProvider = JanuaryTokenProvider {
 val january = JanuaryPartnerClient.withClientTokenProvider(tokenProvider)
 val user = january.forUser(
     endUserId = PartnerUserId(session.user.id),
-    timezone = "America/New_York",
+    timezone = ZoneId.systemDefault().id,
 )
 
 runBlocking {
@@ -188,10 +189,11 @@ an empty result is still a successful connection.
 See the [installation guide](Documentation/GitBook/getting-started/installation.md)
 for the complete Gradle configuration.
 
-Your production endpoint returns `{ "token": "ct-…", "expiresIn": 1800 }`,
-derives the stable end-user ID from the verified app session, and chooses scopes
-on the server. See the
+Your production endpoint authenticates the app session, takes the end-user ID
+from that session (never from the request), mints the token with the scopes
+your app uses, and returns January's response unchanged. See the
 [backend token endpoint guide](Documentation/GitBook/getting-started/backend-token-endpoint.md)
+and [Your token endpoint](https://docs.january.ai/docs/authentication#your-token-endpoint)
 for the complete contract.
 
 ## Common tasks
