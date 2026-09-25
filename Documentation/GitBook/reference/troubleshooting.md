@@ -17,7 +17,7 @@ uses the SDK needs it, whatever its `minSdk`
 ## Cleartext traffic is blocked
 
 Requests fail with `ErrorCategory.AUTHENTICATION` (with the sample provider,
-after about 50 seconds of token retries), and the exception's `cause` chain
+after about 47 seconds of token retries), and the exception's `cause` chain
 ends in `CLEARTEXT communication to 10.0.2.2 not permitted by network security
 policy`. Android
 blocks `http://` URLs such as the local token relay's. Allow cleartext in debug
