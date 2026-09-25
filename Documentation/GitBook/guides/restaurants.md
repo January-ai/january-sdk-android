@@ -54,5 +54,6 @@ do {
 The response contains only `items`, with no `totalCount`, so keep paging while
 a full page comes back. An empty page ends the menu, including for a restaurant
 with no menu on record. An unknown restaurant fails with
-`ErrorCategory.NOT_FOUND`; in a discovery UI, fall back to `searchMenuItems`
-with the user's original query and location.
+`ErrorCategory.NOT_FOUND`. In a discovery UI, fall back to `searchMenuItems`
+with the user's original query and location when the first page is empty or
+the restaurant is not found.
