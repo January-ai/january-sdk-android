@@ -33,9 +33,9 @@ import com.squareup.moshi.JsonClass
  * @param plan The plan this allowance comes from. `unlimited` is a partner with no ceiling, for whom both ceiling fields are `null`.
  * @param periodStart First day of the current billing period (UTC), inclusive.
  * @param periodEnd Last day of the current billing period (UTC), inclusive.
- * @param resetsAt When the allowance resets and `used_credits` returns to 0.
+ * @param resetsAt When the billing period ends and the next begins: `used_credits` and the free-call count return to 0 and the request allowance reopens.
  * @param includedCredits Credits included in the plan for this period, or `null` when the plan has no ceiling.
- * @param usedCredits Credits used so far this period. Billable operations consume credits — how many depends on the operation and your plan — while failed calls cost nothing.
+ * @param usedCredits Credits used so far this period. Each successful call costs the credits on the price list; failed calls cost nothing.
  * @param remainingCredits Credits left in this period, or `null` when the plan has no ceiling.
  */
 
@@ -54,7 +54,7 @@ internal data class CreditBalance (
     @Json(name = "period_end")
     val periodEnd: java.time.LocalDate,
 
-    /* When the allowance resets and `used_credits` returns to 0. */
+    /* When the billing period ends and the next begins: `used_credits` and the free-call count return to 0 and the request allowance reopens. */
     @Json(name = "resets_at")
     val resetsAt: java.time.OffsetDateTime,
 
@@ -62,7 +62,7 @@ internal data class CreditBalance (
     @Json(name = "included_credits")
     val includedCredits: kotlin.Int?,
 
-    /* Credits used so far this period. Billable operations consume credits — how many depends on the operation and your plan — while failed calls cost nothing. */
+    /* Credits used so far this period. Each successful call costs the credits on the price list; failed calls cost nothing. */
     @Json(name = "used_credits")
     val usedCredits: kotlin.Int,
 
