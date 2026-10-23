@@ -40,7 +40,7 @@ import com.squareup.moshi.JsonClass
  * @param height
  * @param weight
  * @param activityLevel
- * @param healthConditions Omit it (or send []) if none apply. Type 1 diabetes is not supported by the prediction model.
+ * @param healthConditions Send [] (or omit it) when none of these apply; the prediction is then for a person without these conditions. Type 1 diabetes is not supported by the prediction model.
  */
 
 
@@ -61,7 +61,7 @@ internal data class GlucosePredictionProfile (
     @Json(name = "activity_level")
     val activityLevel: ActivityLevel? = null,
 
-    /* Omit it (or send []) if none apply. Type 1 diabetes is not supported by the prediction model. */
+    /* Send [] (or omit it) when none of these apply; the prediction is then for a person without these conditions. Type 1 diabetes is not supported by the prediction model. */
     @Json(name = "health_conditions")
     val healthConditions: kotlin.collections.List<MedicalCondition>? = null
 

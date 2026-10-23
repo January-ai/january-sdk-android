@@ -10,6 +10,8 @@ public data class GetRestaurantMenuItemsRequest(
     public val limit: Int = 100,
     public val offset: Int = 0,
     public val endUserId: PartnerUserId? = null,
+    /** Optional case-insensitive dish-name filter; blank lists the whole menu. */
+    public val query: String? = null,
 )
 
 public data class SearchRestaurantsRequest(

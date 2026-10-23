@@ -190,16 +190,17 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
     var loading by remember(restaurant.id) { mutableStateOf(true) }
     var error by remember(restaurant.id) { mutableStateOf<Throwable?>(null) }
     var selected by remember { mutableStateOf<RestaurantMenuItem?>(null) }
+    var menuDraft by remember(restaurant.id) { mutableStateOf("") }
+    var menuQuery by remember(restaurant.id) { mutableStateOf("") }
     var attempt by remember { mutableStateOf(0) }
     androidx.activity.compose.BackHandler(onBack = onBack)
-    LaunchedEffect(restaurant.id, attempt) {
+    LaunchedEffect(restaurant.id, menuQuery, attempt) {
         if (client == null) { loading = false; return@LaunchedEffect }
-        loading = true; error = null
+        loading = true; error = null; items = emptyList()
         runCatching {
-            try {
                 val menu = mutableListOf<RestaurantMenuItem>()
                 do {
-                    val page = client.restaurants.getMenuItems(ai.january.partner.restaurants.GetRestaurantMenuItemsRequest(restaurant.id, offset = menu.size, endUserId = endUserId))
+                    val page = client.restaurants.getMenuItems(ai.january.partner.restaurants.GetRestaurantMenuItemsRequest(restaurant.id, offset = menu.size, endUserId = endUserId, query = menuQuery))
                     menu.addAll(page.items.map { entry ->
                         RestaurantMenuItem(
                             type = "menu_item", id = entry.id,
@@ -214,20 +215,10 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
                     })
                 } while (page.items.size == 100)
                 menu.toList()
-            } catch (failure: JanuaryException) {
-                if (!failure.isRestaurantMenuUnavailable()) throw failure
-                val page = client.restaurants.searchMenuItems(SearchRestaurantsRequest(
-                    query = restaurant.name ?: "Restaurant",
-                    latitude = latitude,
-                    longitude = longitude,
-                    radius = radius,
-                    limit = resultLimit.coerceIn(1, 100),
-                    endUserId = endUserId,
-                ))
-                val selectedName = normalizedRestaurantName(restaurant.name.orEmpty())
-                page.items.filter { normalizedRestaurantName(it.restaurantName.orEmpty()) == selectedName }
-            }
-        }.onSuccess { items = it }.onFailure { error = it }
+        }.onSuccess { items = it }.onFailure {
+            if (it is kotlinx.coroutines.CancellationException) throw it
+            error = it
+        }
         loading = false
     }
     selected?.let { MenuItemDetailScreen(state, it, { selected = null }, modifier); return }
@@ -247,6 +238,19 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
                     }
                 }
                 SectionLabel("Menu items")
+                OutlinedTextField(
+                    value = menuDraft, onValueChange = { menuDraft = it },
+                    label = { Text("Search this menu") }, singleLine = true,
+                    isError = menuDraft.length > 256,
+                    supportingText = { if (menuDraft.length > 256) Text("Use 256 characters or fewer.") },
+                    modifier = Modifier.fillMaxWidth().testTag("restaurant-menu-search"),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Button(onClick = { menuQuery = menuDraft.trim() }, enabled = menuDraft.length <= 256, modifier = Modifier.testTag("restaurant-menu-search-submit")) { Text("Search menu") }
+                    if (menuQuery.isNotEmpty() || menuDraft.isNotEmpty()) {
+                        TextButton(onClick = { menuDraft = ""; menuQuery = "" }, modifier = Modifier.testTag("restaurant-menu-search-clear")) { Text("Show full menu") }
+                    }
+                }
                 when {
                     loading -> DemoCard(Modifier.testTag("menu-loading")) { Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { LoadingSpinner(color = JanuaryColors.Green); Text("Loading menu", style = MaterialTheme.typography.titleMedium, color = JanuaryColors.Muted) } }
                     error != null -> ErrorCard(error!!, { attempt++ }, testTag = "menu-error", retryTestTag = "menu-error-retry")
@@ -267,14 +271,6 @@ internal fun RestaurantDetailScreen(state: DemoState, restaurant: Restaurant, la
         }
     }
 }
-
-private fun JanuaryException.isRestaurantMenuUnavailable(): Boolean = httpStatus == 404
-
-private fun normalizedRestaurantName(value: String): String = value
-    .substringBefore('(')
-    .lowercase()
-    .replace(Regex("[^a-z0-9]+"), " ")
-    .trim()
 
 @Composable
 internal fun MenuItemDetailScreen(state: DemoState, item: RestaurantMenuItem, onBack: () -> Unit, modifier: Modifier) {

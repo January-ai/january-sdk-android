@@ -31,13 +31,13 @@ import com.squareup.moshi.JsonClass
 /**
  *
  *
- * @param items The menu items, by name. Empty when the restaurant has no menu on record.
+ * @param items The menu items, by name. Empty when the restaurant has no menu on record or nothing on it matches `query`.
  */
 
 
 internal data class GetRestaurantMenuItemsResponse (
 
-    /* The menu items, by name. Empty when the restaurant has no menu on record. */
+    /* The menu items, by name. Empty when the restaurant has no menu on record or nothing on it matches `query`. */
     @Json(name = "items")
     val items: kotlin.collections.List<RestaurantMenuItem>
 

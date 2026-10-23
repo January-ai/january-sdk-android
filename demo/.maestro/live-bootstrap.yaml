@@ -25,6 +25,7 @@ appId: ai.january.partner.demo
 - assertVisible: Client token provider
 - tapOn:
     id: settings-user-id
+    point: "95%,50%"
 - eraseText: 80
 - inputText: "${typeof END_USER_ID === 'undefined' ? 'maestro-live-user' : END_USER_ID}"
 - pressKey: Enter

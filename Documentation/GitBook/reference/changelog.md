@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3 - 2026-10-23
+
+- Search one restaurant's menu by dish name through the SDK and demo.
+- Support optional menu queries and pages up to 500 items.
+
+
 ## 0.3.2 - 2026-09-24
 
 * Fixed: `FoodPortion.selection` sent the portion's amount in the serving's unit as the number of servings, so a portion of a serving whose quantity isn't 1 (such as 6 oz or 100 g) was logged that many times over. It now sends the number of servings

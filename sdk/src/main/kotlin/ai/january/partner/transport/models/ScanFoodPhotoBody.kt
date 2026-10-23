@@ -33,6 +33,7 @@ import com.squareup.moshi.JsonClass
  *
  * @param image The food photo — the food itself or a packaged product's label — as an http(s) URL or a base64 data URI (data:image/jpeg;base64,…). Formats: JPG, PNG, WEBP, and non-animated GIF. Around 1,024 px on the shorter side is enough for reliable results (a recommendation, not a validation rule). A URL must be publicly fetchable server-side — hosts that block hotlinking or require a login cannot be read — and has no enforced size cap, though very large files slow the analysis and can time out. Base64 must be a complete data URI and fit the 5 MB request-body cap, so keep raw images under ~3.5 MB before encoding (base64 inflates by ~33%). Prefer the URL when the image is already hosted.
  * @param reasoning
+ * @param context **Beta.** A note about the meal from the person or app that took the photo: details the image may not show, such as how it was cooked, oils and sauces, hidden ingredients, how many items, or the brand or restaurant. The analysis takes it into account alongside the photo.
  */
 
 
@@ -43,7 +44,11 @@ internal data class ScanFoodPhotoBody (
     val image: kotlin.String,
 
     @Json(name = "reasoning")
-    val reasoning: AnalysisReasoning? = null
+    val reasoning: AnalysisReasoning? = null,
+
+    /* **Beta.** A note about the meal from the person or app that took the photo: details the image may not show, such as how it was cooked, oils and sauces, hidden ingredients, how many items, or the brand or restaurant. The analysis takes it into account alongside the photo. */
+    @Json(name = "context")
+    val context: kotlin.String? = null
 
 ) {
 

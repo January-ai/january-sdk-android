@@ -54,6 +54,15 @@ do {
 The response contains only `items`, with no `totalCount`, so keep paging while
 a full page comes back. An empty page ends the menu, including for a restaurant
 with no menu on record. An unknown restaurant fails with
-`ErrorCategory.NOT_FOUND`. In a discovery UI, fall back to `searchMenuItems`
-with the user's original query and location when the first page is empty or
-the restaurant is not found.
+`ErrorCategory.NOT_FOUND`. Show lookup errors or empty results while keeping the selected restaurant.
+
+## Search this restaurant’s menu
+
+```kotlin
+val dishes = client.restaurants.getMenuItems(GetRestaurantMenuItemsRequest(restaurantId = restaurantId, query = "burger"))
+```
+
+Omit `query` or pass an empty string to show the full menu. Dish-name matching
+is case insensitive and accepts up to 256 characters. Pagination (`limit` 1–500,
+default 100; `offset` starting at zero) applies to the matching dishes. Stop at
+a page shorter than the requested limit; restart at offset zero for a new query.
