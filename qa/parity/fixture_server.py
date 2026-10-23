@@ -154,7 +154,12 @@ class Handler(BaseHTTPRequestHandler):
   elif path.endswith('/foods/103'):result=yogurt()
   elif path.endswith('/foods'):result=dict(items=[] if empty else [yogurt(full=False) if 'yogurt' in q.get('query','').lower() else food(full=False)])
   elif '/foods/barcode/' in path:result=food(full=False)
-  elif path.endswith('/restaurants/cafe/menu-items'):result=dict(items=[] if empty or int(q.get('offset',0)) > 0 else [dict(id='101',name='Fixture bowl',nutrients=NUTRIENTS,servings=SERVINGS),dict(id='102',name='Fixture soup',nutrients=NUTRIENTS,servings=SERVINGS)])
+  elif path.endswith('/restaurants/cafe/menu-items'):
+   items=[] if empty else [dict(id='101',name='Fixture bowl',nutrients=NUTRIENTS,servings=SERVINGS),dict(id='102',name='Fixture soup',nutrients=NUTRIENTS,servings=SERVINGS)]
+   query=q.get('query','').strip().casefold()
+   items=[item for item in items if query in item['name'].casefold()]
+   offset=int(q.get('offset',0));limit=int(q.get('limit',100))
+   result=dict(items=items[offset:offset+limit])
   elif path.endswith('/menu-items') and '/restaurants/' not in path:
    restaurant_name='Fixture Cafe'
    result=dict(items=[] if empty else [dict(type='menu_item',id='101',name='Fixture bowl',restaurant_name=restaurant_name,is_chain=False,distance_meters=100,image_url=None,nutrients=NUTRIENTS,glycemic_index=None,glycemic_load=None,servings=SERVINGS),dict(type='menu_item',id='102',name='Fixture soup',restaurant_name=restaurant_name,is_chain=False,distance_meters=100,image_url=None,nutrients=NUTRIENTS,glycemic_index=None,glycemic_load=None,servings=SERVINGS)])
