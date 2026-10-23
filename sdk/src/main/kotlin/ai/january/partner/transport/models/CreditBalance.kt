@@ -31,7 +31,7 @@ import com.squareup.moshi.JsonClass
  *
  *
  * @param plan The plan this allowance comes from. `unlimited` is a partner with no ceiling, for whom both ceiling fields are `null`.
- * @param periodStart First day of the current billing period (UTC), inclusive.
+ * @param periodStart First day of the current billing period (UTC), inclusive. In the month of a plan change that starts no new billing period (a move to Free, say), the day of the change, when the allowance restarted.
  * @param periodEnd Last day of the current billing period (UTC), inclusive.
  * @param resetsAt When the billing period ends and the next begins: `used_credits` and the free-call count return to 0 and the request allowance reopens.
  * @param includedCredits Credits included in the plan for this period, or `null` when the plan has no ceiling.
@@ -46,7 +46,7 @@ internal data class CreditBalance (
     @Json(name = "plan")
     val plan: kotlin.String,
 
-    /* First day of the current billing period (UTC), inclusive. */
+    /* First day of the current billing period (UTC), inclusive. In the month of a plan change that starts no new billing period (a move to Free, say), the day of the change, when the allowance restarted. */
     @Json(name = "period_start")
     val periodStart: java.time.LocalDate,
 

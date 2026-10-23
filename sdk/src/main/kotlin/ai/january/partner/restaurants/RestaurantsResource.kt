@@ -44,13 +44,13 @@ public class RestaurantsResource internal constructor(private val api: Restauran
         )
     }
 
-    /** Loads one page of the selected restaurant's menu without text search or coordinates. */
+    /** Loads one page of the selected restaurant's menu optionally filtered by dish name. */
     public suspend fun getMenuItems(request: GetRestaurantMenuItemsRequest): GetRestaurantMenuItemsResponse {
-        if (!Regex("^[A-Za-z0-9_-]{1,256}$").matches(request.restaurantId) || request.limit !in 1..100 || request.offset < 0) {
+        if (!Regex("^[A-Za-z0-9_-]{1,64}$").matches(request.restaurantId) || request.limit !in 1..500 || request.offset < 0 || (request.query?.length ?: 0) > 256) {
             throw JanuaryException(ErrorCategory.VALIDATION, "A restaurant id and valid menu pagination are required.")
         }
         return executeApiCall(
-            operation = { api.getRestaurantMenuItems(request.restaurantId, request.limit, request.offset) },
+            operation = { api.getRestaurantMenuItems(restaurantId = request.restaurantId, query = request.query, limit = request.limit, offset = request.offset) },
             transform = { response -> GetRestaurantMenuItemsResponse(response.items.map { item ->
                 RestaurantMenuEntry(
                     id = item.id,

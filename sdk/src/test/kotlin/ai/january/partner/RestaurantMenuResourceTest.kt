@@ -10,6 +10,21 @@ import org.junit.Test
 
 class RestaurantMenuResourceTest {
 
+    @Test fun menuQueryIsScopedAndEncoded(): Unit = runBlocking {
+        val server = MockWebServer().apply { start() }
+        try {
+            server.enqueue(MockResponse().setHeader("Content-Type", "application/json").setBody("""{"items":[]}"""))
+            val client = JanuaryPartnerClient.testing("fixture-key", server.url("/").toString(), OkHttpClient.Builder())
+            val result = client.restaurants.getMenuItems(ai.january.partner.restaurants.GetRestaurantMenuItemsRequest("cafe-123", limit = 500, offset = 100, query = "Burger & fries"))
+            val url = server.takeRequest().requestUrl!!
+            assertEquals("/v1.2/restaurants/cafe-123/menu-items", url.encodedPath)
+            assertEquals("Burger & fries", url.queryParameter("query"))
+            assertEquals("500", url.queryParameter("limit"))
+            assertEquals("100", url.queryParameter("offset"))
+            assertTrue(result.items.isEmpty())
+        } finally { server.shutdown() }
+    }
+
     @Test fun menuByIdUsesPaginationAndPreservesNutrition(): Unit = runBlocking {
         val server = MockWebServer().apply { start() }
         try {

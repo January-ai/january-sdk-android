@@ -111,7 +111,7 @@ private fun ai.january.partner.transport.models.FoodLog.toPublic() = FoodLog(
             consumedServing = ConsumedServing(food.serving.id, food.quantity?.toDouble()),
             servingDetails = ServingDetails(
                 food.serving.id,
-                food.serving.quantity.toDouble(),
+                food.serving.quantity?.toDouble(),
                 food.serving.unit,
                 food.serving.weightGrams?.toDouble(),
             ),

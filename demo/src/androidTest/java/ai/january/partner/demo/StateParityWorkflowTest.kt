@@ -144,21 +144,25 @@ class StateParityWorkflowTest {
         val menuRequest = (0 until requests.length()).map { requests.getJSONObject(it) }
             .first { it.getString("path") == "/v1.2/restaurants/cafe/menu-items" }
         assertEquals("0", menuRequest.getJSONObject("query").getString("offset"))
-        assertTrue(!menuRequest.getJSONObject("query").has("query"))
+        assertEquals("", menuRequest.getJSONObject("query").optString("query", ""))
         assertTrue((0 until requests.length()).none { requests.getJSONObject(it).getString("path") == "/v1.2/menu-items" })
         waitText("Fixture soup")
     }
 
-    @Test fun restaurantMenuFallsBackWhenTheSelectedIdHasNoMenu() {
+    @Test fun restaurantMenuSearchFiltersAndClears() {
         tap("Restaurants")
         ui.onNodeWithText("Restaurant name").performTextInput("Fixture")
-        tap("Search nearby");waitText("Fixture Cafe")
-        control("/v1.2/restaurants/cafe/menu-items",404)
-        tap("Fixture Cafe");waitText("Fixture bowl");waitText("Fixture soup")
+        tap("Search nearby");waitText("Fixture Cafe");tap("Fixture Cafe")
+        waitText("Fixture bowl")
+        ui.onNodeWithTag("restaurant-menu-search").performTextInput("SOUP")
+        tap("Search menu");waitText("Fixture soup")
+        ui.onAllNodesWithText("Fixture bowl").assertCountEquals(0)
+        capture("restaurant-menu-search")
         val requests = org.json.JSONArray(request("/__requests"))
-        val paths = (0 until requests.length()).map { requests.getJSONObject(it).getString("path") }
-        assertTrue(paths.contains("/v1.2/restaurants/cafe/menu-items"))
-        assertTrue(paths.contains("/v1.2/menu-items"))
+        val matching = (0 until requests.length()).map { requests.getJSONObject(it) }
+            .first { it.getString("path") == "/v1.2/restaurants/cafe/menu-items" && it.getJSONObject("query").optString("query") == "SOUP" }
+        assertEquals("0", matching.getJSONObject("query").getString("offset"))
+        tap("Show full menu");waitText("Fixture bowl");waitText("Fixture soup")
     }
 
     @Test fun restaurantSearchMenuLoadingEmptyErrorAndRecovery() {
