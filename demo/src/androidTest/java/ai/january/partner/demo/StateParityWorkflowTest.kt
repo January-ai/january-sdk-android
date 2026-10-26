@@ -155,7 +155,13 @@ class StateParityWorkflowTest {
         tap("Search nearby");waitText("Fixture Cafe");tap("Fixture Cafe")
         waitText("Fixture bowl")
         ui.onNodeWithTag("restaurant-menu-search").performTextInput("SOUP")
-        tap("Search menu");waitText("Fixture soup")
+        tap("Search menu")
+        // Soup is already in the unfiltered menu. Wait for the filtered result,
+        // rather than letting its old row satisfy the wait before the request runs.
+        ui.waitUntil(12_000) {
+            ui.onAllNodesWithText("Fixture bowl").fetchSemanticsNodes().isEmpty() &&
+                ui.onAllNodesWithText("Fixture soup").fetchSemanticsNodes().isNotEmpty()
+        }
         ui.onAllNodesWithText("Fixture bowl").assertCountEquals(0)
         capture("restaurant-menu-search")
         val requests = org.json.JSONArray(request("/__requests"))
